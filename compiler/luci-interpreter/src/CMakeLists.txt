@@ -19,7 +19,7 @@ message(STATUS "LUCI INTERPTER INITALIZED")
 
 set(SOURCES
     "${LUCI_INTERPRETER_INCLUDE_DIR}/luci_interpreter/Interpreter.h"
-    Interpreter.cpp)
+    Interpreter.cpp "${LUCI_INTERPRETER_INCLUDE_DIR}/luci_interpreter/SimpleMemoryManager.h" SimpleMemoryManager.cpp)
 
 add_library(luci_interpreter SHARED ${SOURCES})
 target_include_directories(luci_interpreter PUBLIC "${LUCI_INTERPRETER_INCLUDE_DIR}")
