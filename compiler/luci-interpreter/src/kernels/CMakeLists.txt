@@ -140,7 +140,8 @@ list(APPEND SOURCES
     BinaryOpCommon.h
     Utils.h
     Utils.cpp
-    ${TensorFlowSource_DIR}/tensorflow/lite/kernels/internal/quantization_util.cc)
+    ${TensorFlowSource_DIR}/tensorflow/lite/kernels/internal/quantization_util.cc
+        "${LUCI_INTERPRETER_INCLUDE_DIR}/luci_interpreter/SimpleMemoryManager.h" ${LUCI_INTERPRETER_SOURCE_DIR}/SimpleMemoryManager.cpp)
 
 add_library(luci_interpreter_kernels STATIC ${SOURCES})
 set_target_properties(luci_interpreter_kernels PROPERTIES POSITION_INDEPENDENT_CODE ON)
