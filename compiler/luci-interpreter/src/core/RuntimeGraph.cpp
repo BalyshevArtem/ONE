@@ -29,10 +29,10 @@ class RuntimeGraph::TensorAllocPlan
   std::vector<std::vector<Tensor *>> _alloc_plan;
   std::vector<std::vector<Tensor *>> _dealloc_plan;
   bool _valid = false;
-  MManager *_memory_manager;
+  IMemoryManager *_memory_manager;
 
 public:
-  explicit TensorAllocPlan(MManager *memory_manager);
+  explicit TensorAllocPlan(IMemoryManager *memory_manager);
   void invalidate() { _valid = false; }
   bool isValid() const { return _valid; }
   void build(const RuntimeGraph &graph);
@@ -40,7 +40,7 @@ public:
   void deallocate(size_t kernel_index) const;
 };
 
-RuntimeGraph::TensorAllocPlan::TensorAllocPlan(MManager *memory_manager)
+RuntimeGraph::TensorAllocPlan::TensorAllocPlan(IMemoryManager *memory_manager)
   : _memory_manager(memory_manager)
 {
 }
@@ -100,7 +100,7 @@ void RuntimeGraph::TensorAllocPlan::deallocate(size_t kernel_index) const
   }
 }
 
-RuntimeGraph::RuntimeGraph(RuntimeModule *owning_module, MManager *memory_manager)
+RuntimeGraph::RuntimeGraph(RuntimeModule *owning_module, IMemoryManager *memory_manager)
   : _owning_module(owning_module),
     _memory_manager(memory_manager),
     _tensor_alloc_plan(std::make_unique<TensorAllocPlan>(memory_manager))

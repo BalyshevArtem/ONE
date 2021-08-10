@@ -50,7 +50,7 @@ public:
 class Interpreter
 {
 public:
-  explicit Interpreter(const luci::Module *module, MManager *memory_manager = nullptr);
+  explicit Interpreter(const luci::Module *module, IMemoryManager *memory_manager = nullptr);
 
   ~Interpreter();
 
@@ -66,8 +66,8 @@ public:
 
 private:
   std::unique_ptr<class RuntimeModule> _runtime_module;
-  MManager *_memory_manager;
-  std::unique_ptr<MManager> _default_memory_manager = nullptr;
+  IMemoryManager *_memory_manager;
+  std::unique_ptr<IMemoryManager> _default_memory_manager = nullptr;
 
   // Observer functionality support.
   std::unique_ptr<struct RuntimeToIR> _runtime_to_ir;
