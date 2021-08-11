@@ -15,12 +15,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+
 import tensorflow as tf
 import argparse
 import sys
 
 from google.protobuf.message import DecodeError
 from google.protobuf import text_format as _text_format
+
+# TODO Find better way to suppress trackback on error
+sys.tracebacklimit = 0
 
 
 def wrap_frozen_graph(graph_def, inputs, outputs):
@@ -254,4 +261,9 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        prog_name = os.path.basename(__file__)
+        print(f"{prog_name}: {type(e).__name__}: " + str(e))
+        sys.exit(255)

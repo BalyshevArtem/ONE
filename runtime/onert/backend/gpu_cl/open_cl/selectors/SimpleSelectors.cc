@@ -21,6 +21,7 @@
 #include <set>
 
 #include "open_cl/kernels/Add.h"
+#include "open_cl/kernels/Relu.h"
 
 namespace onert
 {
@@ -34,6 +35,11 @@ void SelectAdd(const OperationDef &op_def, const std::vector<int> &channels, int
 {
   GPUOperation operation = CreateAdd(op_def, channels, dst_channels);
   *ptr = std::make_unique<GPUOperation>(std::move(operation));
+}
+
+std::unique_ptr<GPUOperation> SelectReLU(const ReLUAttributes &attr, const OperationDef &op_def)
+{
+  return absl::make_unique<GPUOperation>(CreateReLU(op_def, attr));
 }
 
 } // namespace gpu_cl

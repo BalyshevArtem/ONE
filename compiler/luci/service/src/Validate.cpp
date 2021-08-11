@@ -99,7 +99,7 @@ bool validate_shape_dtype(loco::Graph *g)
     assert(circle_output->from() != nullptr);
     auto circle_node = loco::must_cast<luci::CircleNode *>(circle_output->from());
 
-    // Shape and dtype validation for CiecleOutputExclude is not needed
+    // Shape and dtype validation for CircleOutputExclude is not needed
     if (dynamic_cast<luci::CircleOutputExclude *>(circle_node))
       continue;
 
@@ -165,6 +165,8 @@ public:
   bool visit(const luci::CircleUnpackOut *) final { return true; }
   bool visit(const luci::CircleUniqueOut *) final { return true; }
   bool visit(const luci::CircleWhileOut *) final { return true; }
+  bool visit(const luci::CircleOutputDummy *) final { return true; }
+  bool visit(const luci::CircleOutputExclude *) final { return true; }
 
   // Return false by default
   bool visit(const luci::CircleNode *) final { return false; }
@@ -194,6 +196,11 @@ bool validate_name(loco::Graph *g)
   for (uint32_t n = 0; n < nodes->size(); ++n)
   {
     auto node = loco::must_cast<luci::CircleNode *>(nodes->at(n));
+    // skip virtual nodes
+    VirtualNodeDetector d;
+    if (node->accept(&d))
+      continue;
+
     auto name = node->name();
     if (name.empty())
       return false;

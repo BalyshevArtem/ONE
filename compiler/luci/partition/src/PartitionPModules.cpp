@@ -28,6 +28,8 @@ namespace
 // forward declare
 void clone_ifnode_subgraphs(luci::PartedModule &pm, const luci::CircleIf *if_node,
                             const luci::CloneContext &clonectx);
+void clone_whilenode_subgraphs(luci::PartedModule &pm, const luci::CircleWhile *while_node,
+                               const luci::CloneContext &clonectx);
 
 void add_graph_input(loco::Graph *graph, luci::CircleInput *input_node)
 {
@@ -163,12 +165,21 @@ void clone_recursive_subgraphs(luci::PartedModule &pm, loco::Graph *graph,
   auto nodes = graph->nodes();
   for (uint32_t n = 0; n < nodes->size(); ++n)
   {
-    auto if_node = dynamic_cast<luci::CircleIf *>(nodes->at(n));
-    if (if_node != nullptr)
     {
-      clone_ifnode_subgraphs(pm, if_node, clonectx);
+      auto if_node = dynamic_cast<luci::CircleIf *>(nodes->at(n));
+      if (if_node != nullptr)
+      {
+        clone_ifnode_subgraphs(pm, if_node, clonectx);
+      }
     }
-    // TODO handle While
+    {
+      auto while_node = dynamic_cast<luci::CircleWhile *>(nodes->at(n));
+      if (while_node != nullptr)
+      {
+        clone_whilenode_subgraphs(pm, while_node, clonectx);
+      }
+    }
+    // TODO handle others
   }
 }
 
@@ -203,6 +214,39 @@ void clone_ifnode_subgraphs(luci::PartedModule &pm, const luci::CircleIf *if_nod
   // inside then_graph or else_graph.
   clone_recursive_subgraphs(pm, then_graph, then_clonectx);
   clone_recursive_subgraphs(pm, else_graph, else_clonectx);
+}
+
+void clone_whilenode_subgraphs(luci::PartedModule &pm, const luci::CircleWhile *while_node,
+                               const luci::CloneContext &clonectx)
+{
+  assert(while_node != nullptr);
+
+  auto it = clonectx.find(while_node);
+  assert(it != clonectx.end());
+  auto while_clone = loco::must_cast<luci::CircleWhile *>(it->second);
+
+  luci::CloneContext cond_clonectx;
+  luci::CloneContext body_clonectx;
+
+  auto cond_graph = while_node->cond_graph();
+  auto body_graph = while_node->body_graph();
+
+  auto cond_clone = clone_graph(cond_graph, cond_clonectx);
+  auto body_clone = clone_graph(body_graph, body_clonectx);
+  while_clone->cond_graph(cond_clone.get());
+  while_clone->body_graph(body_clone.get());
+
+  pm.module->add(std::move(cond_clone));
+  int32_t cond_index = pm.module->size() - 1;
+  pm.module->add(std::move(body_clone));
+  int32_t body_index = pm.module->size() - 1;
+  while_clone->cond_branch(cond_index);
+  while_clone->body_branch(body_index);
+
+  // do recursive copy subgraphs of CircleWhile if there are any,
+  // inside cond_graph or body_graph.
+  clone_recursive_subgraphs(pm, cond_graph, cond_clonectx);
+  clone_recursive_subgraphs(pm, body_graph, body_clonectx);
 }
 
 /**
@@ -288,12 +332,21 @@ void build_graph(luci::PartedModule &pm, loco::Graph *graph, const luci::PGroup 
   // subgraphs for IF/WHILE/... nodes
   for (auto &pnode : pgroup->pnodes)
   {
-    auto if_node = dynamic_cast<const luci::CircleIf *>(pnode->node);
-    if (if_node != nullptr)
     {
-      clone_ifnode_subgraphs(pm, if_node, clonectx);
+      auto if_node = dynamic_cast<const luci::CircleIf *>(pnode->node);
+      if (if_node != nullptr)
+      {
+        clone_ifnode_subgraphs(pm, if_node, clonectx);
+      }
     }
-    // TODO handle While
+    {
+      auto while_node = dynamic_cast<const luci::CircleWhile *>(pnode->node);
+      if (while_node != nullptr)
+      {
+        clone_whilenode_subgraphs(pm, while_node, clonectx);
+      }
+    }
+    // TODO handle others
   }
 }
 

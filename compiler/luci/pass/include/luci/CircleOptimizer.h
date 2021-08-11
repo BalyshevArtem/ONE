@@ -40,6 +40,8 @@ public:
       FuseBatchNormWithTConv,
       FuseBCQ,
       FuseInstanceNorm,
+      FuseMeanWithMean,
+      FuseTransposeWithMean,
       ResolveCustomOpAdd,
       ResolveCustomOpBatchMatMul,
       ResolveCustomOpMatMul,
