@@ -132,9 +132,7 @@ set(SOURCES
     TransposeConv.h
     TransposeConv.cpp
     Unpack.h
-    Unpack.cpp
-    While.h
-    While.cpp)
+    Unpack.cpp)
 
 list(APPEND SOURCES
     BinaryOpCommon.h
@@ -225,8 +223,7 @@ set(TEST_SOURCES
     Tanh.test.cpp
     Transpose.test.cpp
     TransposeConv.test.cpp
-    Unpack.test.cpp
-    While.test.cpp)
+    Unpack.test.cpp)
 
 list(APPEND TEST_SOURCES TestUtils.h TestUtils.cpp)
 

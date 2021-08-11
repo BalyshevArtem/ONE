@@ -37,8 +37,7 @@ def _get_parser():
 
     # driver
     parser.add_argument(
-        'driver', type=str, help='driver name to run (supported: tf, tflite,' \
-        ' bcq, onnx)')
+        'driver', type=str, help='driver name to run (supported: tf, tflite, bcq)')
 
     # version
     dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -69,8 +68,7 @@ def _get_driver_name(driver_name):
     return {
         'bcq': 'one-import-bcq',
         'tf': 'one-import-tf',
-        'tflite': 'one-import-tflite',
-        'onnx': 'one-import-onnx',
+        'tflite': 'one-import-tflite'
     }[driver_name]
 
 
@@ -100,4 +98,4 @@ def main():
 
 
 if __name__ == '__main__':
-    _utils._safemain(main, __file__)
+    main()

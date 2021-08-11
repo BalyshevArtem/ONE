@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-#ifndef __ONERT_GPU_CL_OPEN_CL_FUNCTION_H__
-#define __ONERT_GPU_CL_OPEN_CL_FUNCTION_H__
+#ifndef __ONERT_GPU_CL_CL_FUNCTION_H__
+#define __ONERT_GPU_CL_CL_FUNCTION_H__
 
 #include <exec/IFunction.h>
-
-#include <vector>
 #include <memory>
 
 #include "open_cl/kernels/GpuOperation.h"
@@ -36,48 +34,38 @@ namespace gpu_cl
 class ClFunction : public ::onert::exec::IFunction
 {
 public:
-  ClFunction() : _gpu_operations(), _creation_context() {}
+  ClFunction() : _gpu_operation(), _creation_context() {}
 
 public:
-  void configure(std::shared_ptr<CreationContext> creation_context)
+  void configure(std::unique_ptr<GPUOperation> gpu_operation,
+                 std::shared_ptr<CreationContext> creation_context)
   {
+    _gpu_operation = std::move(gpu_operation);
     _creation_context = creation_context;
-  }
-
-  void add_operation(std::unique_ptr<GPUOperation> gpu_operation)
-  {
-    _gpu_operations.push_back(std::move(gpu_operation));
   }
 
   void run() override
   {
-    for (const auto &gpu_operation : _gpu_operations)
+    if (!_gpu_operation->AddToQueue(_creation_context->queue).ok())
     {
-      if (!gpu_operation->AddToQueue(_creation_context->queue).ok())
-      {
-        throw std::runtime_error("Failed to AddToQueue.");
-      }
+      return;
     }
   }
 
   void prepare() override
   {
-    for (const auto &gpu_operation : _gpu_operations)
+    if (!_gpu_operation->Compile(*_creation_context).ok())
     {
-      if (!gpu_operation->Compile(*_creation_context).ok())
-      {
-        throw std::runtime_error("Failed to Compile.");
-      }
-
-      if (!gpu_operation->UpdateParams().ok())
-      {
-        throw std::runtime_error("Failed to UpdateParams.");
-      }
+      return;
+    }
+    if (!_gpu_operation->UpdateParams().ok())
+    {
+      return;
     }
   }
 
 private:
-  std::vector<std::unique_ptr<GPUOperation>> _gpu_operations;
+  std::unique_ptr<GPUOperation> _gpu_operation;
   std::shared_ptr<CreationContext> _creation_context;
 };
 
@@ -85,4 +73,4 @@ private:
 } // namespace backend
 } // namespace onert
 
-#endif // __ONERT_GPU_CL_OPEN_CL_FUNCTION_H__
+#endif // __ONERT_GPU_CL_CL_FUNCTION_H__

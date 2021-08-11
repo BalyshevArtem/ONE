@@ -25,7 +25,7 @@
 
 #include <tflite/Assert.h>
 #include <tflite/InterpreterSession.h>
-#include <tflite/interp/FlatBufferBuilder.h>
+#include <tflite/ext/kernels/register.h>
 
 #include <iostream>
 #include <fstream>
@@ -286,12 +286,14 @@ int main(const int argc, char **argv)
   // Read tflite model
   StderrReporter error_reporter;
   auto model = FlatBufferModel::BuildFromFile(tflite_file.c_str(), &error_reporter);
-  auto builder = FlatBufferBuilder(*model);
+
+  BuiltinOpResolver resolver;
+  InterpreterBuilder builder(*model, resolver);
 
   std::unique_ptr<Interpreter> interpreter;
   try
   {
-    interpreter = builder.build();
+    TFLITE_ENSURE(builder(&interpreter));
   }
   catch (const std::exception &e)
   {

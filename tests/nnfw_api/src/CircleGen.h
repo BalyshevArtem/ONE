@@ -164,7 +164,6 @@ public:
   uint32_t addOperatorExpandDims(const OperatorParams &params);
   uint32_t addOperatorFill(const OperatorParams &params);
   uint32_t addOperatorFloor(const OperatorParams &params);
-  uint32_t addOperatorFloorDiv(const OperatorParams &params);
   uint32_t addOperatorFullyConnected(const OperatorParams &params,
                                      circle::FullyConnectedOptionsWeightsFormat weights_format =
                                        circle::FullyConnectedOptionsWeightsFormat_DEFAULT);
@@ -189,8 +188,6 @@ public:
    * @brief Create circle Reshape op
    *        the second param new_shape can be optional just like circle::CreateReshapeOptionsDirect
    */
-  uint32_t addOperatorRelu(const OperatorParams &params);
-  uint32_t addOperatorRelu6(const OperatorParams &params);
   uint32_t addOperatorReshape(const OperatorParams &params, const Shape *new_shape = nullptr);
   uint32_t addOperatorResizeBilinear(const OperatorParams &params, bool align_corners = false,
                                      bool half_pixel_centers = false);

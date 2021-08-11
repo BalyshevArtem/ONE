@@ -24,6 +24,7 @@
 #define __NNFW_TFLITE_NNAPI_SESSION_H__
 
 #include "Session.h"
+#include "tflite/ext/nnapi_delegate.h"
 
 namespace nnfw
 {
@@ -43,7 +44,9 @@ public:
    */
   NNAPISession(::tflite::Interpreter *interp) : _interp{interp}
   {
-    // DO NOTHING
+    // Construct Graph from Interpreter
+    // primary_subgraph: Experimental interface. Return 1st sugbraph
+    _delegate.BuildGraph(&interp->primary_subgraph());
   }
 
 public:
@@ -62,7 +65,7 @@ public:
   {
     // Explicitly turn off T/F lite internal NNAPI delegation in order to use locally defined
     // NNAPI delegation.
-    _interp->UseNNAPI(true);
+    _interp->UseNNAPI(false);
 
     if (kTfLiteOk != _interp->AllocateTensors())
     {
@@ -76,7 +79,7 @@ public:
    * @brief Run the Invoke function of NNAPI delegate
    * @return @c true if Invoke() is successful, otherwise @c false
    */
-  bool run(void) override { return kTfLiteOk == _interp->Invoke(); }
+  bool run(void) override { return kTfLiteOk == _delegate.Invoke(&_interp->primary_subgraph()); }
 
   /**
    * @brief Tear down TfLite interpreter session
@@ -90,6 +93,7 @@ public:
 
 private:
   ::tflite::Interpreter *const _interp;
+  nnfw::tflite::NNAPIDelegate _delegate;
 };
 
 } // namespace tflite

@@ -10,7 +10,6 @@ set(ONE_COMMAND_FILES
     one-pack
     one-codegen
     one-prepare-venv
-    onecc
 )
 
 foreach(ONE_COMMAND IN ITEMS ${ONE_COMMAND_FILES})
@@ -38,7 +37,6 @@ endforeach(ONE_COMMAND)
 
 set(ONE_UTILITY_FILES
     one-build.template.cfg
-    onecc.template.cfg
     utils.py
     conv_mixin_1.8.0.patch
 )

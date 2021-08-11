@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "tflite/ext/kernels/register.h"
 #include "tensorflow/lite/model.h"
 
 #include "tflite/interp/FlatBufferBuilder.h"

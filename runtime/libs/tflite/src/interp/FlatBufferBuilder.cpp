@@ -16,7 +16,7 @@
 
 #include "tflite/interp/FlatBufferBuilder.h"
 
-#include <tensorflow/lite/kernels/register.h>
+#include "tflite/ext/kernels/register.h"
 
 namespace nnfw
 {
@@ -27,7 +27,7 @@ std::unique_ptr<::tflite::Interpreter> FlatBufferBuilder::build(void) const
 {
   std::unique_ptr<::tflite::Interpreter> interpreter;
 
-  ::tflite::ops::builtin::BuiltinOpResolver resolver;
+  nnfw::tflite::BuiltinOpResolver resolver;
 
   ::tflite::InterpreterBuilder builder(_model, resolver);
 
