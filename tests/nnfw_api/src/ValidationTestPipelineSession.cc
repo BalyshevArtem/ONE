@@ -52,7 +52,6 @@ TEST_F(ValidationTestPipelineSession, create_pipeline_001)
 {
   NNFW_ENSURE_SUCCESS(nnfw_create_session(&_session));
   NNFW_ENSURE_SUCCESS(nnfw_close_session(_session));
-  SUCCEED();
 }
 
 TEST_F(ValidationTestPipelineSession, pipeline_session_test_model)
@@ -72,7 +71,6 @@ TEST_F(ValidationTestPipelineSession, pipeline_session_test_model)
   NNFW_ENSURE_SUCCESS(nnfw_close_session(_session));
 
   remove("./partition_map.json");
-  SUCCEED();
 }
 
 TEST_F(ValidationTestPipelineSession, prepare_pipeline_001)
@@ -107,8 +105,6 @@ TEST_F(ValidationTestPipelineSession, prepare_pipeline_002)
   NNFW_ENSURE_SUCCESS(nnfw_close_session(_session));
 
   remove("./partition_map.json");
-
-  SUCCEED();
 }
 
 TEST_F(ValidationTestPipelineSession, input_tensorinfo_pipeline)
@@ -130,8 +126,6 @@ TEST_F(ValidationTestPipelineSession, input_tensorinfo_pipeline)
   NNFW_ENSURE_SUCCESS(nnfw_close_session(_session));
 
   remove("./partition_map.json");
-
-  SUCCEED();
 }
 
 TEST_F(ValidationTestPipelineSession, output_tensorinfo_pipeline)
@@ -153,8 +147,6 @@ TEST_F(ValidationTestPipelineSession, output_tensorinfo_pipeline)
   NNFW_ENSURE_SUCCESS(nnfw_close_session(_session));
 
   remove("./partition_map.json");
-
-  SUCCEED();
 }
 
 TEST_F(ValidationTestPipelineSession, input_size_pipeline)
@@ -536,6 +528,4 @@ TEST_F(ValidationTestPipelineSession, run_pipeline)
   NNFW_ENSURE_SUCCESS(nnfw_close_session(_session));
 
   remove("./partition_map.json");
-
-  SUCCEED();
 }

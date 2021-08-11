@@ -19,10 +19,7 @@
 
 #include <backend/ITensor.h>
 
-#include "open_cl/Api.h"
-#include "open_cl/Spi.h"
 #include "open_cl/ClCommandQueue.h"
-#include "open_cl/kernels/Converter.h"
 #include "open_cl/Tensor.h"
 
 namespace onert
@@ -43,8 +40,8 @@ public:
   ICLTensor(ICLTensor &&) = default;
   ICLTensor &operator=(ICLTensor &&) = default;
 
-  ICLTensor(size_t rank, ir::Shape shape, std::shared_ptr<Environment> environment)
-    : _rank{rank}, _shape{shape}, _environment(environment)
+  ICLTensor(size_t rank, ir::Shape shape, CLCommandQueue *queue)
+    : _rank{rank}, _shape{shape}, _queue(queue)
   {
   }
 
@@ -91,11 +88,7 @@ private:
 protected:
   size_t _rank; // Actual rank (reflects extended rank)
   ir::Shape _shape;
-  std::shared_ptr<Environment> _environment;
-  std::unique_ptr<TensorObjectConverterBuilder> _converter_builder;
-  CLMemory _cl_memory;
-  std::unique_ptr<TensorObjectConverter> _converter_cpu;
-  std::unique_ptr<TensorObjectConverter> _converter_bhwc;
+  CLCommandQueue *_queue;
 };
 
 } // namespace operand

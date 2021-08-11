@@ -219,9 +219,4 @@ def main():
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except Exception as e:
-        prog_name = os.path.basename(__file__)
-        print(f"{prog_name}: {type(e).__name__}: " + str(e))
-        sys.exit(255)
+    main()
