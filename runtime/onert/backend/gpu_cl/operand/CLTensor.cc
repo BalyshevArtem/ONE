@@ -30,8 +30,8 @@ namespace gpu_cl
 namespace operand
 {
 
-CLTensor::CLTensor(size_t rank, ir::Shape shape, CLCommandQueue *queue, size_t num_uses)
-  : ICLTensor{rank, shape, queue}, _tensor(std::make_shared<Tensor>()), _num_uses{num_uses}
+CLTensor::CLTensor(size_t rank, ir::Shape shape, std::shared_ptr<Environment> environment)
+  : ICLTensor{rank, shape, environment}, _tensor(std::make_shared<Tensor>())
 {
 }
 

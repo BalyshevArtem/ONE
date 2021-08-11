@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021 Samsung Electronics Co., Ltd. All Rights Reserved
- * Copyright 2020 The TensorFlow Authors. All Rights Reserved.
+ * Copyright 2019 The TensorFlow Authors. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
-#include "SimpleSelectors.h"
+#ifndef __ONERT_BACKEND_GPU_CL_OPENCL_CL_ERRORS_H__
+#define __ONERT_BACKEND_GPU_CL_OPENCL_CL_ERRORS_H__
 
-#include <memory>
-#include <set>
+#include <string>
 
-#include "open_cl/kernels/Add.h"
-#include "open_cl/kernels/Relu.h"
+#include "Util.h"
+#include "Status.h"
 
 namespace onert
 {
@@ -30,18 +30,19 @@ namespace backend
 namespace gpu_cl
 {
 
-void SelectAdd(const OperationDef &op_def, const std::vector<int> &channels, int dst_channels,
-               std::unique_ptr<GPUOperation> *ptr)
+// @return if error_code is success, then return OK status. Otherwise translates
+// error code into a message.
+inline absl::Status GetOpenCLError(cl_int error_code)
 {
-  GPUOperation operation = CreateAdd(op_def, channels, dst_channels);
-  *ptr = std::make_unique<GPUOperation>(std::move(operation));
-}
-
-std::unique_ptr<GPUOperation> SelectReLU(const ReLUAttributes &attr, const OperationDef &op_def)
-{
-  return absl::make_unique<GPUOperation>(CreateReLU(op_def, attr));
+  if (error_code == CL_SUCCESS)
+  {
+    return absl::OkStatus();
+  }
+  return absl::InternalError("OpenCL error: " + CLErrorCodeToString(error_code));
 }
 
 } // namespace gpu_cl
 } // namespace backend
 } // namespace onert
+
+#endif // __ONERT_BACKEND_GPU_CL_OPENCL_CL_ERRORS_H__

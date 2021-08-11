@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021 Samsung Electronics Co., Ltd. All Rights Reserved
- * Copyright 2020 The TensorFlow Authors. All Rights Reserved.
+ * Copyright 2019 The TensorFlow Authors. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
-#include "SimpleSelectors.h"
+#ifndef __ONERT_BACKEND_GPU_CL_OPENCL_KERNELS_CONVERTER_H__
+#define __ONERT_BACKEND_GPU_CL_OPENCL_KERNELS_CONVERTER_H__
 
 #include <memory>
-#include <set>
 
-#include "open_cl/kernels/Add.h"
-#include "open_cl/kernels/Relu.h"
+#include "open_cl/Environment.h"
+#include "open_cl/Spi.h"
 
 namespace onert
 {
@@ -29,19 +29,12 @@ namespace backend
 {
 namespace gpu_cl
 {
-
-void SelectAdd(const OperationDef &op_def, const std::vector<int> &channels, int dst_channels,
-               std::unique_ptr<GPUOperation> *ptr)
-{
-  GPUOperation operation = CreateAdd(op_def, channels, dst_channels);
-  *ptr = std::make_unique<GPUOperation>(std::move(operation));
-}
-
-std::unique_ptr<GPUOperation> SelectReLU(const ReLUAttributes &attr, const OperationDef &op_def)
-{
-  return absl::make_unique<GPUOperation>(CreateReLU(op_def, attr));
-}
+// Supports conversions from BHWC to internal OpenCL tensor representation and
+// back. Also supports F16/F32.
+std::unique_ptr<TensorObjectConverterBuilder> NewConverterBuilder(Environment *environment);
 
 } // namespace gpu_cl
 } // namespace backend
 } // namespace onert
+
+#endif // __ONERT_BACKEND_GPU_CL_OPENCL_KERNELS_CONVERTER_H__

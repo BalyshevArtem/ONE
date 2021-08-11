@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2021 Samsung Electronics Co., Ltd. All Rights Reserved
- * Copyright 2019 The TensorFlow Authors. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,27 +14,24 @@
  * limitations under the License.
  */
 
-#ifndef __ONERT_BACKEND_GPU_CL_OPENCL_TENSOR_TYPE_UTIL_H__
-#define __ONERT_BACKEND_GPU_CL_OPENCL_TENSOR_TYPE_UTIL_H__
+#ifndef __LUCI_FUSE_TRANSPOSE_WITH_MEAN_PASS_H__
+#define __LUCI_FUSE_TRANSPOSE_WITH_MEAN_PASS_H__
 
-#include "Api.h"
-#include "TensorType.h"
+#include <logo/Pass.h>
 
-namespace onert
-{
-namespace backend
-{
-namespace gpu_cl
+namespace luci
 {
 
-ObjectType ToObjectType(TensorStorageType type);
+/**
+ * @brief  Class to fuse Mean operation with a preceding Transpose
+ */
+struct FuseTransposeWithMeanPass final : public logo::Pass
+{
+  const char *name(void) const final { return "luci::FuseTransposeWithMeanPass"; }
 
-DataLayout ToDataLayout(TensorStorageType type);
+  bool run(loco::Graph *g) final;
+};
 
-TensorStorageType ToTensorStorageType(ObjectType object_type, DataLayout data_layout);
+} // namespace luci
 
-} // namespace gpu_cl
-} // namespace backend
-} // namespace onert
-
-#endif // __ONERT_BACKEND_GPU_CL_OPENCL_TENSOR_TYPE_UTIL_H__
+#endif // __LUCI_FUSE_TRANSPOSE_WITH_MEAN_PASS_H__
