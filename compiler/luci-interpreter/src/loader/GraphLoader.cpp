@@ -152,11 +152,16 @@ void GraphLoader::loadTensors()
 
     auto tensor = std::make_unique<Tensor>(node->dtype(), std::move(shape), std::move(quantization),
                                            node->name());
+    //printf("node name = %s\n", node->name().c_str());
+
     if (luci::has_memory_plan(node))
     {
+      //printf("has mem plan\n");
       auto memory_plan = luci::get_memory_plan(node);
       tensor->set_offset(memory_plan.offset()[0]);
-    } else {
+    } else
+    {
+     // printf("has not plan\n");
     }
 
     if (const auto *const_node = dynamic_cast<const luci::CircleConst *>(node))

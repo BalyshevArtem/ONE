@@ -45,6 +45,7 @@ private:
   RuntimeGraph *_runtime_graph;
   RuntimeToIR &_runtime_to_ir;
   IMemoryManager *_memory_manager;
+  std::map<uint32_t, std::vector<uint32_t>> _memory_plan;
 
   const std::unordered_map<const loco::Graph *, RuntimeGraph *> &_graph_to_runtime_graph;
   std::unordered_map<const loco::Node *, Tensor *> &_node_to_tensor;

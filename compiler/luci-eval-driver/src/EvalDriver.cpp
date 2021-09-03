@@ -20,7 +20,8 @@
 #include <luci/CircleFileExpContract.h>
 #include <luci_interpreter/SimpleMemoryManager.h>
 #include <luci_interpreter/StaticMemoryManager.h>
-#include "SimpleMemoryPlanner.h"
+//#include "SimpleMemoryPlanner.h"
+#include <luci/Profile/CircleNodeMemoryPlan.h>
 
 #include <cstdlib>
 #include <fstream>
@@ -101,15 +102,36 @@ int entry(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  if (module->memory_plan().size() == 0)
+  if (module->memory_plan().empty())
   {
     printf("equal 0\n");
   } else {
     printf("!= 0\n");
+    auto result_size = 0;
+    auto memory_plan = module->memory_plan();
+    int node_position = 0;
+    for (auto node : loco::postorder_traversal(loco::output_nodes(module->graph())))
+    {
+      if (auto circle_node = dynamic_cast<luci::CircleNode *>(node))
+      {
+        auto node_plan = memory_plan[node_position];
+        auto node_size = 1;
+        for (uint32_t axis = 0; axis < circle_node->rank(); ++axis)
+        {
+          node_size *= circle_node->dim(axis).value();
+        }
+        node_size *= size(circle_node->dtype());
+        result_size += node_size;
+        luci::add_memory_plan(circle_node,
+                              luci::CircleNodeMemoryPlan (node_plan[0],
+                                                         std::vector<uint32_t>(node_plan.begin() + 1, node_plan.end())));
+      }
+      node_position++;
+    }
   }
 
-  luci::SimpleMemoryPlanner memory_planner(module.get());
-  auto result = memory_planner.PlanAllocations();
+  //luci::SimpleMemoryPlanner memory_planner(module.get());
+  uint32_t result = 20566124;//memory_planner.PlanAllocations();
   printf("result = %d\n", result);
 
   uint8_t *buffer = new uint8_t[result];

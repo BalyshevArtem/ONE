@@ -65,7 +65,7 @@ public:
 
   void add_planner_table(uint32_t node_id, const std::vector<uint32_t> &planner_inform)
   {
-    _planner_table.at(node_id) = planner_inform;
+    _planner_table[node_id] = planner_inform;
   }
 
 public:

@@ -1687,7 +1687,7 @@ void OpExporterLet<OE::CIRC>::visit(luci::CircleInstanceNorm *node)
 }
 
 void exportNode(loco::Node *node, flatbuffers::FlatBufferBuilder &builder, SerializedModelData &md,
-                SerializedGraphData &gd)
+                SerializedGraphData &gd, uint32_t node_position)
 {
   if (auto circle_node = dynamic_cast<luci::CircleNode *>(node))
   {
@@ -1705,20 +1705,27 @@ void exportNode(loco::Node *node, flatbuffers::FlatBufferBuilder &builder, Seria
         md._metadata.add_op_table(node_id, source->id());
       }
     }
-    printf("check mem plan\n");
+  //  printf("check mem plan\n");
+   // printf("node with name = %s\n", circle_node->name().c_str());
     if (has_memory_plan(circle_node))
     {
-      printf("has memory plan\n");
-      const auto node_id = gd._operators.size() - 1;
+     // printf("has memory plan\n");
+      //const auto node_id = gd._operators.size();
+      printf("node_id = %d circle_name = %s\n", node_position, circle_node->name().c_str());
       const auto memory_plan = get_memory_plan(circle_node);
       std::vector<uint32_t> plan_vector;
-
+      printf("node_plan %d ", memory_plan.order_in_plan());
+      for (auto elem : memory_plan.offset())
+      {
+        printf(" %d ", elem);
+      }
+      printf("\n");
       plan_vector.push_back(memory_plan.order_in_plan());
       for (auto offset : memory_plan.offset())
       {
         plan_vector.push_back(offset);
       }
-      md._metadata.add_planner_table(node_id, plan_vector);
+      md._metadata.add_planner_table(node_position, plan_vector);
     }
   }
   else
@@ -1735,9 +1742,11 @@ namespace luci
 void exportNodes(loco::Graph *g, FlatBufferBuilder &builder, SerializedModelData &md,
                  SerializedGraphData &gd)
 {
+  uint32_t node_position = 0;
   for (auto node : loco::postorder_traversal(loco::output_nodes(g)))
   {
-    exportNode(node, builder, md, gd);
+    exportNode(node, builder, md, gd, node_position);
+    node_position++;
   }
 }
 

@@ -16,6 +16,7 @@
 
 #include "SimpleMemoryPlanner.h"
 #include <loco/IR/Algorithm.h>
+#include <luci/UserSettings.h>
 
 namespace luci
 {
@@ -50,6 +51,8 @@ uint32_t SimpleMemoryPlanner::PlanAllocations()
     luci::CircleNodeMemoryPlan memory_plan(i, _offsets[i]);
     luci::add_memory_plan(loco::must_cast<luci::CircleNode *>(_ordered_nodes[i]), memory_plan);
   }
+  auto settings = luci::UserSettings::settings();
+  settings->set(luci::UserSettings::Key::MemoryPlanGen, true);
   return _required_size;
 }
 

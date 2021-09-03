@@ -138,10 +138,12 @@ createCircleMetadataVector(flatbuffers::FlatBufferBuilder &builder, luci::Serial
     metadata_vec.emplace_back(
       metadata_offset(builder, md, md._metadata.encoded_op_table(), "ONE_op_table"));
 
+  }
+  if (settings->get(luci::UserSettings::Key::MemoryPlanGen))
+  {
     metadata_vec.emplace_back(
       metadata_offset(builder, md, md._metadata.encoded_planner_table(), "ONE_memory_plan"));
   }
-
   return metadata_vec;
 }
 

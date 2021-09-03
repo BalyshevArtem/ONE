@@ -34,7 +34,7 @@ public:
 
   ~StaticMemoryManager() override
   {
-    delete _buffer_ptr;
+    delete[] _buffer_ptr;
   }
 
   void allocate_memory(luci_interpreter::Tensor &tensor) final;

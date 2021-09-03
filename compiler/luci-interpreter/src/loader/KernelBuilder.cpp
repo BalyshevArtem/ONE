@@ -451,7 +451,9 @@ std::unique_ptr<Kernel> KernelBuilderLet<KB::ABC>::visit(const luci::CircleConv2
   im2col->make_unobservable();
   im2col->set_data_buffer(nullptr);
   auto memory_plan = luci::get_memory_plan(node);
-  im2col->set_offset(memory_plan.offset()[1]);
+  //printf("memory_plan im2col = %d\n", memory_plan.offset()[1]);
+  if (memory_plan.offset().size() > 1)
+    im2col->set_offset(memory_plan.offset()[1]);
   Tensor *tmp = getRuntimeGraph(node->graph())->addTensor(std::move(im2col));
 
   Conv2DParams params{};

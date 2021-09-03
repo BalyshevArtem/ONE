@@ -201,7 +201,7 @@ CircleImportMetadata::CircleImportMetadata(const luci::CircleReader &reader)
       _op_table = decoded_op_table(buffer);
     else if (meta.name.compare("ONE_source_table") == 0)
       _source_table = decoded_source_table(buffer);
-    else if (meta.name.compare("ONE_memory_planner") == 0)
+    else if (meta.name.compare("ONE_memory_plan") == 0)
       _memory_plan = decoded_memory_plan(buffer);
   }
 }
