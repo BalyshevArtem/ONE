@@ -44,6 +44,30 @@ flatbuffers::Offset<circle::Metadata> metadata_offset(flatbuffers::FlatBufferBui
 namespace luci
 {
 
+const std::vector<uint8_t> CircleExportMetadata::encoded_planner_table()
+{
+  std::vector<uint8_t> data;
+
+  write_u32(data, _planner_table.size());
+
+  for (auto &kv : _planner_table)
+  {
+    const auto id = kv.first;
+    write_u32(data, id);
+
+    const auto plan_vector = kv.second;
+    const auto size = plan_vector.size();
+    write_u32(data, size);
+
+    for (auto elem : plan_vector)
+    {
+      write_u32(data, elem);
+    }
+  }
+
+  return data;
+}
+
 // 'source_table' is encoded to binary format.
 const std::vector<uint8_t> CircleExportMetadata::encoded_source_table(void)
 {
@@ -113,6 +137,9 @@ createCircleMetadataVector(flatbuffers::FlatBufferBuilder &builder, luci::Serial
 
     metadata_vec.emplace_back(
       metadata_offset(builder, md, md._metadata.encoded_op_table(), "ONE_op_table"));
+
+    metadata_vec.emplace_back(
+      metadata_offset(builder, md, md._metadata.encoded_planner_table(), "ONE_memory_plan"));
   }
 
   return metadata_vec;

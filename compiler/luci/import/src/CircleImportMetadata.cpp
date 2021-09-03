@@ -134,6 +134,54 @@ decoded_op_table(const std::vector<uint8_t> &op_table_data)
   return node_source_ids_map;
 }
 
+const std::map<uint32_t, std::vector<uint32_t>>
+decoded_memory_plan(const std::vector<uint8_t> &memory_plan_data)
+{
+  std::map<uint32_t, std::vector<uint32_t>> memory_plan_map;
+  uint32_t idx = 0;
+
+  if (memory_plan_data.size() < 4)
+    throw std::runtime_error("Op table decode error : invalid entry number");
+
+  uint32_t entry_number = read_u32(memory_plan_data, idx);
+  idx += sizeof(uint32_t);
+
+  while (idx < memory_plan_data.size())
+  {
+    if (idx + 2 * sizeof(uint32_t) > memory_plan_data.size())
+      throw std::runtime_error("Op table decode error : invalid entry item");
+
+    uint32_t id = read_u32(memory_plan_data, idx);
+    idx += sizeof(uint32_t);
+
+    uint32_t size = read_u32(memory_plan_data, idx);
+    idx += sizeof(uint32_t);
+
+    if (idx + sizeof(uint32_t) * size > memory_plan_data.size())
+      throw std::runtime_error("Source table decode error : invalid entry data");
+
+    std::vector<uint32_t> plan_inform_vector;
+    for (uint32_t j = 0; j < size; ++j)
+    {
+      uint32_t plan_inform = read_u32(memory_plan_data, idx);
+      idx += sizeof(uint32_t);
+
+      plan_inform_vector.push_back(plan_inform);
+    }
+
+    if (memory_plan_map.insert({id, plan_inform_vector}).second == false)
+      throw std::runtime_error("Op table decode error : duplicated origin ID");
+  }
+
+  if (idx != memory_plan_data.size())
+    throw std::runtime_error("Op table decode error : data size invalid");
+
+  if (memory_plan_map.size() != entry_number)
+    throw std::runtime_error("Op table decode error : entry number invalid");
+
+  return memory_plan_map;
+}
+
 } // namespace
 
 namespace luci
@@ -153,6 +201,8 @@ CircleImportMetadata::CircleImportMetadata(const luci::CircleReader &reader)
       _op_table = decoded_op_table(buffer);
     else if (meta.name.compare("ONE_source_table") == 0)
       _source_table = decoded_source_table(buffer);
+    else if (meta.name.compare("ONE_memory_planner") == 0)
+      _memory_plan = decoded_memory_plan(buffer);
   }
 }
 

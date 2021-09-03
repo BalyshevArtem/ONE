@@ -47,10 +47,14 @@ public:
 
   const std::map<uint32_t, std::string> &source_table(void) const { return _source_table; }
 
+  const std::map<uint32_t, std::vector<uint32_t>> memory_plan(void) const { return _memory_plan; }
+
 private:
   // Decoded metadata is stored
   std::map<uint32_t, std::string> _source_table;
   std::map<uint32_t, std::set<uint32_t>> _op_table;
+
+  std::map<uint32_t, std::vector<uint32_t>> _memory_plan;
 };
 
 } // namespace luci

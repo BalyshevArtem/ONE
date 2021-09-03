@@ -22,6 +22,9 @@
 #include <luci/IR/CircleNodes.h>
 #include <luci/IR/CircleNodeVisitor.h>
 #include <luci/Profile/CircleNodeOrigin.h>
+
+#include <luci/Profile/CircleNodeMemoryPlan.h>
+
 #include <luci/UserSettings.h>
 #include <luci/Log.h>
 
@@ -1701,6 +1704,21 @@ void exportNode(loco::Node *node, flatbuffers::FlatBufferBuilder &builder, Seria
       {
         md._metadata.add_op_table(node_id, source->id());
       }
+    }
+    printf("check mem plan\n");
+    if (has_memory_plan(circle_node))
+    {
+      printf("has memory plan\n");
+      const auto node_id = gd._operators.size() - 1;
+      const auto memory_plan = get_memory_plan(circle_node);
+      std::vector<uint32_t> plan_vector;
+
+      plan_vector.push_back(memory_plan.order_in_plan());
+      for (auto offset : memory_plan.offset())
+      {
+        plan_vector.push_back(offset);
+      }
+      md._metadata.add_planner_table(node_id, plan_vector);
     }
   }
   else

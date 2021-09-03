@@ -63,13 +63,22 @@ public:
     _op_table.at(node_id).emplace(source_id);
   }
 
+  void add_planner_table(uint32_t node_id, const std::vector<uint32_t> &planner_inform)
+  {
+    _planner_table.at(node_id) = planner_inform;
+  }
+
 public:
   const std::vector<uint8_t> encoded_source_table(void);
   const std::vector<uint8_t> encoded_op_table(void);
 
+  const std::vector<uint8_t> encoded_planner_table(void);
+
 private:
   std::map<uint32_t, std::string> _source_table;
   std::map<uint32_t, std::set<uint32_t>> _op_table;
+
+  std::map<uint32_t, std::vector<uint32_t>> _planner_table;
 };
 
 } // namespace luci

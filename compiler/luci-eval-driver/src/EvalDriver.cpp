@@ -101,6 +101,13 @@ int entry(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
+  if (module->memory_plan().size() == 0)
+  {
+    printf("equal 0\n");
+  } else {
+    printf("!= 0\n");
+  }
+
   luci::SimpleMemoryPlanner memory_planner(module.get());
   auto result = memory_planner.PlanAllocations();
   printf("result = %d\n", result);
