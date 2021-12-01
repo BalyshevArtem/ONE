@@ -107,6 +107,7 @@ add_custom_command(
         -DLUCI_INTERPRETER_BINARY=${MICRO_ARM_BINARY}
         -DFlatBuffersSource_DIR=${FlatBuffersSource_DIR}
         -DONE_COMPILER_SRC_DIR=${ONE_COMPILER_SRC_DIR}
+        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
         WORKING_DIRECTORY "${MBED_OS_BUILD_DIR}"
         DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/mbed-os/CMakeLists.txt"
         VERBATIM
