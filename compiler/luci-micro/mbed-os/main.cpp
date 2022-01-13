@@ -30,9 +30,11 @@
 #include <stm32h7xx_hal.h>
 
 static DCMI_HandleTypeDef hdcmi;
-volatile uint8_t OV7670_buffer[IMG_ROWS * IMG_COLUMNS];
-static I2C i2c(PB_7, PB_6);
+static DMA_HandleTypeDef hdma_dcmi;
 
+volatile uint8_t OV7670_buffer[IMG_ROWS * IMG_COLUMNS];
+static I2C i2c(D14, D15);
+PwmOut mclk(PA_10);
 void OV7670_update(void){
   HAL_DCMI_Start_DMA(&hdcmi, DCMI_MODE_SNAPSHOT, (uint32_t)&OV7670_buffer, IMG_ROWS * IMG_COLUMNS * 2 / 4);
 }
@@ -154,13 +156,63 @@ void fill_in_tensor(std::vector<char> &data, loco::DataType dtype)
       assert(false);
   }
 }
+void DMA2_Stream1_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA2_Stream1_IRQn 0 */
+
+  /* USER CODE END DMA2_Stream1_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_dcmi);
+  /* USER CODE BEGIN DMA2_Stream1_IRQn 1 */
+
+  /* USER CODE END DMA2_Stream1_IRQn 1 */
+}
+
+/**
+  * @brief This function handles DCMI global interrupt.
+  */
+void DCMI_IRQHandler(void)
+{
+  /* USER CODE BEGIN DCMI_IRQn 0 */
+
+  /* USER CODE END DCMI_IRQn 0 */
+  HAL_DCMI_IRQHandler(&hdcmi);
+  /* USER CODE BEGIN DCMI_IRQn 1 */
+
+  /* USER CODE END DCMI_IRQn 1 */
+}
+
+/**
+  * @brief This function handles DMAMUX1 overrun interrupt.
+  */
+void DMAMUX1_OVR_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMAMUX1_OVR_IRQn 0 */
+
+  /* USER CODE END DMAMUX1_OVR_IRQn 0 */
+  // Handle DMA2_Stream1
+  HAL_DMAEx_MUX_IRQHandler(&hdma_dcmi);
+  /* USER CODE BEGIN DMAMUX1_OVR_IRQn 1 */
+
+  /* USER CODE END DMAMUX1_OVR_IRQn 1 */
+}
 int main()
 {
-  SystemClock_Config();
-  pin_mode(PB_7, OpenDrainPullUp);
-  pin_mode(PB_6, OpenDrainPullUp);
-  MX_DCMI_Init();
-  MX_DMA_Init();
+//  SystemClock_Config();
+/*Configure GPIO pin : PA8 */
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+  /*Configure GPIO pin : PA8 */
+  GPIO_InitStruct.Pin = GPIO_PIN_8;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Alternate = GPIO_AF0_MCO;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_RCC_MCOConfig(RCC_MCO1, RCC_MCO1SOURCE_HSI, RCC_MCODIV_1);
+
+  pin_mode(D14, OpenDrainPullUp);
+  pin_mode(D15, OpenDrainPullUp);
+//  MX_DCMI_Init();
+//  MX_DMA_Init();
   for (int i = 0; i < OV7670_REG_NUM; ++i) {
     auto err = i2c.write(OV7670_WRITE_ADDR, &(OV7670_reg[i][0]), 2);
 
@@ -169,9 +221,9 @@ int main()
       std::cout << "Failed to update register\r\n";
       break;
     }
-    ThisThread::sleep_for(50ms);
+//    ThisThread::sleep_for(10ms);
   }
-  OV7670_update();
+//  OV7670_update();
 
   setenv("ONE_HERMES_COLOR", "ON", 1);
   // Verify flatbuffers
