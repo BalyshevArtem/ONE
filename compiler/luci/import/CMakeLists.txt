@@ -1,11 +1,11 @@
 file(GLOB SOURCES "src/*.cpp")
 list(APPEND SOURCES
-        src/Nodes/CircleAbs.cpp
-#        src/Nodes/CircleAdd.cpp
+#        src/Nodes/CircleAbs.cpp
+        src/Nodes/CircleAdd.cpp
 #        src/Nodes/CircleAddN.cpp
 #        src/Nodes/CircleArgMax.cpp
 #        src/Nodes/CircleArgMin.cpp
-#        src/Nodes/CircleAveragePool2D.cpp
+        src/Nodes/CircleAveragePool2D.cpp
 #        src/Nodes/CircleBatchMatMul.cpp
 #        src/Nodes/CircleBatchToSpaceND.cpp
 #        src/Nodes/CircleBCQFullyConnected.cpp
@@ -16,11 +16,11 @@ list(APPEND SOURCES
 #        src/Nodes/CircleCustom.cpp
 #        src/Nodes/CircleConcatenation.cpp
         src/Nodes/CircleConst.cpp
-#        src/Nodes/CircleConv2D.cpp
+        src/Nodes/CircleConv2D.cpp
 #        src/Nodes/CircleCos.cpp
 #        src/Nodes/CircleDepthToSpace.cpp
-#        src/Nodes/CircleDepthwiseConv2D.cpp
-#        src/Nodes/CircleDequantize.cpp
+        src/Nodes/CircleDepthwiseConv2D.cpp
+        src/Nodes/CircleDequantize.cpp
 #        src/Nodes/CircleDiv.cpp
 #        src/Nodes/CircleElu.cpp
 #        src/Nodes/CircleEqual.cpp
@@ -31,7 +31,7 @@ list(APPEND SOURCES
 #        src/Nodes/CircleFloor.cpp
 #        src/Nodes/CircleFloorDiv.cpp
 #        src/Nodes/CircleFloorMod.cpp
-#        src/Nodes/CircleFullyConnected.cpp
+        src/Nodes/CircleFullyConnected.cpp
 #        src/Nodes/CircleGather.cpp
 #        src/Nodes/CircleGatherNd.cpp
 #        src/Nodes/CircleGreater.cpp
@@ -53,11 +53,11 @@ list(APPEND SOURCES
 #        src/Nodes/CircleMatrixDiag.cpp
 #        src/Nodes/CircleMatrixSetDiag.cpp
 #        src/Nodes/CircleMaximum.cpp
-#        src/Nodes/CircleMaxPool2D.cpp
+        src/Nodes/CircleMaxPool2D.cpp
 #        src/Nodes/CircleMean.cpp
 #        src/Nodes/CircleMinimum.cpp
 #        src/Nodes/CircleMirrorPad.cpp
-#        src/Nodes/CircleMul.cpp
+        src/Nodes/CircleMul.cpp
 #        src/Nodes/CircleNeg.cpp
 #        src/Nodes/CircleNonMaxSuppressionV4.cpp
 #        src/Nodes/CircleNonMaxSuppressionV5.cpp
@@ -68,7 +68,7 @@ list(APPEND SOURCES
 #        src/Nodes/CirclePadV2.cpp
 #        src/Nodes/CirclePow.cpp
 #        src/Nodes/CirclePRelu.cpp
-#        src/Nodes/CircleQuantize.cpp
+        src/Nodes/CircleQuantize.cpp
 #        src/Nodes/CircleRange.cpp
 #        src/Nodes/CircleRank.cpp
 #        src/Nodes/CircleReduceAny.cpp
@@ -78,7 +78,7 @@ list(APPEND SOURCES
 #        src/Nodes/CircleRelu.cpp
 #        src/Nodes/CircleRelu6.cpp
 #        src/Nodes/CircleReluN1To1.cpp
-#        src/Nodes/CircleReshape.cpp
+        src/Nodes/CircleReshape.cpp
 #        src/Nodes/CircleResizeBilinear.cpp
 #        src/Nodes/CircleResizeNearestNeighbor.cpp
 #        src/Nodes/CircleReverseSequence.cpp
@@ -92,7 +92,7 @@ list(APPEND SOURCES
 #        src/Nodes/CircleShape.cpp
 #        src/Nodes/CircleSin.cpp
 #        src/Nodes/CircleSlice.cpp
-#        src/Nodes/CircleSoftmax.cpp
+        src/Nodes/CircleSoftmax.cpp
 #        src/Nodes/CircleSpaceToBatchND.cpp
 #        src/Nodes/CircleSpaceToDepth.cpp
 #        src/Nodes/CircleSparseToDense.cpp

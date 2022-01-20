@@ -135,18 +135,23 @@ void fill_in_tensor(std::vector<char> &data, loco::DataType dtype)
   switch (dtype)
   {
     case loco::DataType::FLOAT32:
+      std::cout << "loco::DataType::FLOAT32\n";
+
       for (int i = 0; i < data.size() / sizeof(float); ++i)
       {
         reinterpret_cast<float *>(data.data())[i] = 123.f;
       }
       break;
     case loco::DataType::S8:
+      std::cout << "loco::DataType::S8\n";
+
       for (int i = 0; i < data.size() / sizeof(int8_t); ++i)
       {
         reinterpret_cast<int8_t *>(data.data())[i] = 123;
       }
       break;
     case loco::DataType::U8:
+      std::cout << "loco::DataType::U8\n";
       for (int i = 0; i < data.size() / sizeof(uint8_t); ++i)
       {
         reinterpret_cast<uint8_t *>(data.data())[i] = 123;
