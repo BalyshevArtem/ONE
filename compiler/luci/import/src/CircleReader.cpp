@@ -264,9 +264,11 @@ void copy_tensor_attributes(const circle::Tensor *tensor, CircleNode *node)
   node->rank(dims.size());
   for (uint32_t r = 0; r < dims.size(); ++r)
   {
+#if 0
     if (tensor_shape_signature.size() > 0 && tensor_shape_signature.at(r) == -1)
       node->dim(r).unset();
     else
+#endif
       node->dim(r).set(dims[r]);
   }
 
