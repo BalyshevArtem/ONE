@@ -5,9 +5,9 @@ list(APPEND SOURCES
 #        src/Nodes/CircleAddN.cpp
 #        src/Nodes/CircleArgMax.cpp
 #        src/Nodes/CircleArgMin.cpp
-        src/Nodes/CircleAveragePool2D.cpp
+#        src/Nodes/CircleAveragePool2D.cpp
 #        src/Nodes/CircleBatchMatMul.cpp
-#        src/Nodes/CircleBatchToSpaceND.cpp
+        src/Nodes/CircleBatchToSpaceND.cpp
 #        src/Nodes/CircleBCQFullyConnected.cpp
 #        src/Nodes/CircleBCQGather.cpp
 #        src/Nodes/CircleBidirectionalSequenceLSTM.cpp
@@ -19,13 +19,13 @@ list(APPEND SOURCES
         src/Nodes/CircleConv2D.cpp
 #        src/Nodes/CircleCos.cpp
 #        src/Nodes/CircleDepthToSpace.cpp
-        src/Nodes/CircleDepthwiseConv2D.cpp
-        src/Nodes/CircleDequantize.cpp
+#        src/Nodes/CircleDepthwiseConv2D.cpp
+#        src/Nodes/CircleDequantize.cpp
 #        src/Nodes/CircleDiv.cpp
 #        src/Nodes/CircleElu.cpp
 #        src/Nodes/CircleEqual.cpp
 #        src/Nodes/CircleExp.cpp
-#        src/Nodes/CircleExpandDims.cpp
+        src/Nodes/CircleExpandDims.cpp
 #        src/Nodes/CircleFakeQuant.cpp
 #        src/Nodes/CircleFill.cpp
 #        src/Nodes/CircleFloor.cpp
@@ -48,27 +48,27 @@ list(APPEND SOURCES
 #        src/Nodes/CircleLogicalAnd.cpp
 #        src/Nodes/CircleLogicalNot.cpp
 #        src/Nodes/CircleLogicalOr.cpp
-#        src/Nodes/CircleLogistic.cpp
+  #      src/Nodes/CircleLogistic.cpp
 #        src/Nodes/CircleLogSoftmax.cpp
 #        src/Nodes/CircleMatrixDiag.cpp
 #        src/Nodes/CircleMatrixSetDiag.cpp
 #        src/Nodes/CircleMaximum.cpp
-        src/Nodes/CircleMaxPool2D.cpp
+    #    src/Nodes/CircleMaxPool2D.cpp
 #        src/Nodes/CircleMean.cpp
 #        src/Nodes/CircleMinimum.cpp
-#        src/Nodes/CircleMirrorPad.cpp
-        src/Nodes/CircleMul.cpp
+    #    src/Nodes/CircleMirrorPad.cpp
+  #      src/Nodes/CircleMul.cpp
 #        src/Nodes/CircleNeg.cpp
 #        src/Nodes/CircleNonMaxSuppressionV4.cpp
 #        src/Nodes/CircleNonMaxSuppressionV5.cpp
 #        src/Nodes/CircleNotEqual.cpp
 #        src/Nodes/CircleOneHot.cpp
 #        src/Nodes/CirclePack.cpp
-#        src/Nodes/CirclePad.cpp
+        src/Nodes/CirclePad.cpp
 #        src/Nodes/CirclePadV2.cpp
 #        src/Nodes/CirclePow.cpp
 #        src/Nodes/CirclePRelu.cpp
-        src/Nodes/CircleQuantize.cpp
+   #     src/Nodes/CircleQuantize.cpp
 #        src/Nodes/CircleRange.cpp
 #        src/Nodes/CircleRank.cpp
 #        src/Nodes/CircleReduceAny.cpp
@@ -92,8 +92,8 @@ list(APPEND SOURCES
 #        src/Nodes/CircleShape.cpp
 #        src/Nodes/CircleSin.cpp
 #        src/Nodes/CircleSlice.cpp
-        src/Nodes/CircleSoftmax.cpp
-#        src/Nodes/CircleSpaceToBatchND.cpp
+     #   src/Nodes/CircleSoftmax.cpp
+        src/Nodes/CircleSpaceToBatchND.cpp
 #        src/Nodes/CircleSpaceToDepth.cpp
 #        src/Nodes/CircleSparseToDense.cpp
 #        src/Nodes/CircleSplit.cpp

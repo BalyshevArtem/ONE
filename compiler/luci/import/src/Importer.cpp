@@ -113,9 +113,9 @@ void convert_graph(const luci::GraphBuilderSource &source, luci::CircleReader &r
     input_shape->rank(input_dims.size());
     for (uint32_t r = 0; r < input_dims.size(); ++r)
     {
-      if (tensor_shape_signature.size() > 0 && tensor_shape_signature.at(r) == -1)
-        input_shape->dim(r).unset();
-      else
+     // if (tensor_shape_signature.size() > 0 && tensor_shape_signature.at(r) == -1)
+      //  input_shape->dim(r).unset();
+     // else
         input_shape->dim(r).set(input_dims[r]);
     }
     graph_input->shape(std::move(input_shape));

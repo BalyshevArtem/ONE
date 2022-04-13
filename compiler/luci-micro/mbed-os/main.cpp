@@ -22,7 +22,8 @@
 #include <luci/Importer.h>
 #include <luci/IR/Module.h>
 #include <loco/IR/DataTypeTraits.h>
-#include <circlemodel.h>
+#include "rev3_wavenet.h"
+//#include <circlemodel.h>
 #include <cstdlib>
 #include <iostream>
 #include <luci/Log.h>
@@ -84,37 +85,40 @@ int main()
   auto nodes = module->graph()->nodes();
   auto nodes_count = nodes->size();
   // Fill input tensors with some garbage
+
+  for (int i = 0; i < nodes_count; ++i)
+  {
+    auto *node = dynamic_cast<luci::CircleNode *>(nodes->at(i));
+    assert(node);
+    if (node->opcode() == luci::CircleOpcode::CIRCLEINPUT)
+    {
+      auto *input_node = static_cast<luci::CircleInput *>(node);
+      loco::GraphInput *g_input = module->graph()->inputs()->at(input_node->index());
+      const loco::TensorShape *shape = g_input->shape();
+      size_t data_size = 1;
+      for (int d = 0; d < shape->rank(); ++d)
+      {
+        assert(shape->dim(d).known());
+        data_size *= shape->dim(d).value();
+      }
+      data_size *= loco::size(g_input->dtype());
+      std::vector<char> data(data_size);
+      fill_in_tensor(data, g_input->dtype());
+
+      interpreter->writeInputTensor(static_cast<luci::CircleInput *>(node), data.data(),
+                                    data_size);
+    }
+  }
+
   while (true)
   {
     Timer t;
-    for (int i = 0; i < nodes_count; ++i)
-    {
-      auto *node = dynamic_cast<luci::CircleNode *>(nodes->at(i));
-      assert(node);
-      if (node->opcode() == luci::CircleOpcode::CIRCLEINPUT)
-      {
-        auto *input_node = static_cast<luci::CircleInput *>(node);
-        loco::GraphInput *g_input = module->graph()->inputs()->at(input_node->index());
-        const loco::TensorShape *shape = g_input->shape();
-        size_t data_size = 1;
-        for (int d = 0; d < shape->rank(); ++d)
-        {
-          assert(shape->dim(d).known());
-          data_size *= shape->dim(d).value();
-        }
-        data_size *= loco::size(g_input->dtype());
-        std::vector<char> data(data_size);
-        fill_in_tensor(data, g_input->dtype());
 
-        interpreter->writeInputTensor(static_cast<luci::CircleInput *>(node), data.data(),
-                                      data_size);
-      }
-    }
     t.start();
 
     interpreter->interpret();
     t.stop();
     std::cout << "Finished in " << t.read_us() << "\n";
-    ThisThread::sleep_for(10);
+    ThisThread::sleep_for(1000);
   }
 }
