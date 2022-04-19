@@ -31,7 +31,9 @@ include("test.local.lst" OPTIONAL)
 unset(TEST_DEPS)
 
 get_target_property(ARTIFACTS_BIN_PATH testDataGenerator BINARY_DIR)
-get_target_property(SCHEMA_BIN_PATH mio_circle04 BINARY_DIR)
+#get_target_property(SCHEMA_BIN_PATH mio_circle04 BINARY_DIR)
+
+set(SCHEMA_BIN_PATH "${CMAKE_CURRENT_BINARY_DIR}/gen/mio/circle")
 
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/gen_h5_explicit_inputs.py"
                "${CMAKE_CURRENT_BINARY_DIR}/gen_h5_explicit_inputs.py" COPYONLY)
@@ -43,18 +45,18 @@ set(VIRTUALENV "${NNCC_OVERLAY_DIR}/venv_2_8_0")
 ###
 set(TEST_CONFIG "${CMAKE_CURRENT_BINARY_DIR}/test.config")
 
-add_custom_command(
-  OUTPUT ${TEST_CONFIG}
-  COMMAND ${CMAKE_COMMAND} -E remove -f ${TEST_CONFIG}
-  COMMAND ${CMAKE_COMMAND} -E echo 'RECORD_MINMAX_PATH=\"$<TARGET_FILE:record-minmax>\"' >> ${TEST_CONFIG}
-  COMMAND ${CMAKE_COMMAND} -E echo 'CIRCLE_QUANTIZER_PATH=\"$<TARGET_FILE:circle-quantizer>\"' >> ${TEST_CONFIG}
-  COMMAND ${CMAKE_COMMAND} -E echo 'CIRCLE_TENSORDUMP_PATH=\"$<TARGET_FILE:circle-tensordump>\"' >> ${TEST_CONFIG}
-  COMMAND ${CMAKE_COMMAND} -E echo 'VIRTUALENV=\"${VIRTUALENV}\"' >> ${TEST_CONFIG}
-  DEPENDS record-minmax
-  DEPENDS circle-quantizer
-  DEPENDS circle-tensordump
-  COMMENT "Generate test configuration"
-)
+#add_custom_command(
+#  OUTPUT ${TEST_CONFIG}
+#  COMMAND ${CMAKE_COMMAND} -E remove -f ${TEST_CONFIG}
+#  COMMAND ${CMAKE_COMMAND} -E echo 'RECORD_MINMAX_PATH=\"$<TARGET_FILE:record-minmax>\"' >> ${TEST_CONFIG}
+#  COMMAND ${CMAKE_COMMAND} -E echo 'CIRCLE_QUANTIZER_PATH=\"$<TARGET_FILE:circle-quantizer>\"' >> ${TEST_CONFIG}
+#  COMMAND ${CMAKE_COMMAND} -E echo 'CIRCLE_TENSORDUMP_PATH=\"$<TARGET_FILE:circle-tensordump>\"' >> ${TEST_CONFIG}
+#  COMMAND ${CMAKE_COMMAND} -E echo 'VIRTUALENV=\"${VIRTUALENV}\"' >> ${TEST_CONFIG}
+#  DEPENDS record-minmax
+#  DEPENDS circle-quantizer
+#  DEPENDS circle-tensordump
+#  COMMENT "Generate test configuration"
+#)
 
 ###
 ### Generate python interface for circle schema

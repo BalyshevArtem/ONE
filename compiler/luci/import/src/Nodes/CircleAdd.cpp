@@ -25,7 +25,7 @@ namespace luci
 
 bool CircleAddGraphBuilder::validate(const ValidateArgs &args) const
 {
-  return GraphBuilder::validate(args, 2);
+  //return GraphBuilder::validate(args, 2);
 }
 
 CircleNode *CircleAddGraphBuilder::build_node(const circle::OperatorT &op,

@@ -222,22 +222,22 @@ foreach(RECIPE IN ITEMS ${RECIPES})
 
     if(NOT DEFINED NO_CIRCLIZE_${RECIPE})
       # Generate .circle
-      add_custom_command(OUTPUT ${CIRCLE_OUTPUT_PATH}
-        COMMAND $<TARGET_FILE:tflite2circle> ${TFLITE_OUTPUT_PATH} ${CIRCLE_OUTPUT_PATH}
-        DEPENDS $<TARGET_FILE:tflite2circle> ${TFLITE_OUTPUT_PATH}
-        COMMENT "Generate ${CIRCLE_FILE}"
-      )
-      set(MODEL_FORMAT "circle")
-      list(APPEND TEST_DEPS ${CIRCLE_OUTPUT_PATH})
+#      add_custom_command(OUTPUT ${CIRCLE_OUTPUT_PATH}
+#        COMMAND $<TARGET_FILE:tflite2circle> ${TFLITE_OUTPUT_PATH} ${CIRCLE_OUTPUT_PATH}
+#        DEPENDS $<TARGET_FILE:tflite2circle> ${TFLITE_OUTPUT_PATH}
+#        COMMENT "Generate ${CIRCLE_FILE}"
+#      )
+#      set(MODEL_FORMAT "circle")
+#      list(APPEND TEST_DEPS ${CIRCLE_OUTPUT_PATH})
     endif()
   else()
     # Generate .circle
-    add_custom_command(OUTPUT ${CIRCLE_OUTPUT_PATH}
-      COMMAND $<TARGET_FILE:circlechef-file> ${RECIPE_BINARY_PATH} ${CIRCLE_OUTPUT_PATH}
-      DEPENDS $<TARGET_FILE:circlechef-file> ${RECIPE_BINARY_PATH}
-      COMMENT "Generate ${CIRCLE_FILE}"
-    )
-    list(APPEND TEST_DEPS ${CIRCLE_OUTPUT_PATH})
+#    add_custom_command(OUTPUT ${CIRCLE_OUTPUT_PATH}
+#      COMMAND $<TARGET_FILE:circlechef-file> ${RECIPE_BINARY_PATH} ${CIRCLE_OUTPUT_PATH}
+#      DEPENDS $<TARGET_FILE:circlechef-file> ${RECIPE_BINARY_PATH}
+#      COMMENT "Generate ${CIRCLE_FILE}"
+#    )
+#    list(APPEND TEST_DEPS ${CIRCLE_OUTPUT_PATH})
   endif()
 
   set(OPT_CIRCLE_FILE "${RECIPE}.opt.circle")

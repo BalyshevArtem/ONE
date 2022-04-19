@@ -13,25 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#ifndef __LUCI_IMPORT_OP_CIRCLE_BIDIRECTIONALSEQUENCE_LSTM_H__
-#define __LUCI_IMPORT_OP_CIRCLE_BIDIRECTIONALSEQUENCE_LSTM_H__
-
-#include "luci/Import/GraphBuilderMultiOutput.h"
-
-namespace luci
-{
-
-class CircleBidirectionalSequenceLSTMGraphBuilder : public GraphBuilderMultiOutput
-{
-public:
-  bool validate(const ValidateArgs &args) const final;
-
-private:
-  CircleNode *build_node(const BuildNodeArgs &) const final;
-  CircleNode *build_out(const BuildOutArgs &) const final;
-};
-
-} // namespace luci
-
-#endif // __LUCI_IMPORT_OP_CIRCLE_BIDIRECTIONALSEQUENCE_LSTM_H__
+//
+//#ifndef __LUCI_IMPORT_OP_CIRCLE_BIDIRECTIONALSEQUENCE_LSTM_H__
+//#define __LUCI_IMPORT_OP_CIRCLE_BIDIRECTIONALSEQUENCE_LSTM_H__
+//
+//#include "luci/Import/GraphBuilderMultiOutput.h"
+//
+//namespace luci
+//{
+//
+//class CircleBidirectionalSequenceLSTMGraphBuilder : public GraphBuilderMultiOutput
+//{
+//public:
+//  bool validate(const ValidateArgs &args) const final;
+//
+//private:
+//  CircleNode *build_node(const BuildNodeArgs &) const final;
+//  CircleNode *build_out(const BuildOutArgs &) const final;
+//};
+//
+//} // namespace luci
+//
+//#endif // __LUCI_IMPORT_OP_CIRCLE_BIDIRECTIONALSEQUENCE_LSTM_H__

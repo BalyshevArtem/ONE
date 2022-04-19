@@ -13,25 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#ifndef __LUCI_IMPORT_OP_CIRCLE_ONEHOT_H__
-#define __LUCI_IMPORT_OP_CIRCLE_ONEHOT_H__
-
-#include "luci/Import/GraphBuilder.h"
-
-namespace luci
-{
-
-class CircleOneHotGraphBuilder : public GraphBuilder
-{
-public:
-  bool validate(const ValidateArgs &args) const final;
-
-private:
-  CircleNode *build_node(const circle::OperatorT &op, const std::vector<CircleNode *> &inputs,
-                         loco::Graph *graph) const final;
-};
-
-} // namespace luci
-
-#endif // __LUCI_IMPORT_OP_CIRCLE_ONEHOT_H__
+//
+//#ifndef __LUCI_IMPORT_OP_CIRCLE_ONEHOT_H__
+//#define __LUCI_IMPORT_OP_CIRCLE_ONEHOT_H__
+//
+//#include "luci/Import/GraphBuilder.h"
+//
+//namespace luci
+//{
+//
+//class CircleOneHotGraphBuilder : public GraphBuilder
+//{
+//public:
+//  bool validate(const ValidateArgs &args) const final;
+//
+//private:
+//  CircleNode *build_node(const circle::OperatorT &op, const std::vector<CircleNode *> &inputs,
+//                         loco::Graph *graph) const final;
+//};
+//
+//} // namespace luci
+//
+//#endif // __LUCI_IMPORT_OP_CIRCLE_ONEHOT_H__

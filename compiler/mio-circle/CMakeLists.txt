@@ -1,9 +1,9 @@
-nnas_find_package(FlatBuffers EXACT 2.0 QUIET)
+#nnas_find_package(FlatBuffers EXACT 2.0 QUIET)
 
-if(NOT FlatBuffers_FOUND)
-  message(STATUS "mio-circle skip: FlatBuffers 2.0 NOT FOUND")
-  return()
-endif(NOT FlatBuffers_FOUND)
+#if(NOT FlatBuffers_FOUND)
+#  message(STATUS "mio-circle skip: FlatBuffers 2.0 NOT FOUND")
+#  return()
+#endif(NOT FlatBuffers_FOUND)
 
 message(STATUS "Build mio-circle: TRUE")
 
@@ -17,12 +17,12 @@ add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/schema.fbs"
   DEPENDS "${SCHEMA_FILE}"
 )
 
-FlatBuffers_Target(mio_circle
-  OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/gen/mio/circle"
-  INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/gen"
-  SCHEMA_DIR "${CMAKE_CURRENT_BINARY_DIR}"
-  SCHEMA_FILES "schema.fbs"
-)
+#FlatBuffers_Target(mio_circle
+#  OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/gen/mio/circle"
+#  INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/gen"
+#  SCHEMA_DIR "${CMAKE_CURRENT_BINARY_DIR}"
+#  SCHEMA_FILES "schema.fbs"
+#)
 
 # This example shows how to use "mio-circle" library
 add_executable(mio_circle_example example.cpp)

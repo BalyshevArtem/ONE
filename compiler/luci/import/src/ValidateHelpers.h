@@ -17,19 +17,19 @@
 #ifndef __LUCI_VALIDATE_HELPERS_H__
 #define __LUCI_VALIDATE_HELPERS_H__
 
-#include "luci/Import/GraphBuilderBase.h"
-
-/**
- * @Note Methods in this file provides helper functions to reduce duplicate codes
- */
-
-namespace luci
-{
-
-bool validate_batch_space_nd(const GraphBuilderBase::ValidateArgs &args);
-bool validate_minmax(const GraphBuilderBase::ValidateArgs &args);
-bool validate_reduce_minmax(const GraphBuilderBase::ValidateArgs &args);
-
-} // namespace luci
+//#include "luci/Import/GraphBuilderBase.h"
+//
+///**
+// * @Note Methods in this file provides helper functions to reduce duplicate codes
+// */
+//
+//namespace luci
+//{
+//
+//bool validate_batch_space_nd(const GraphBuilderBase::ValidateArgs &args);
+//bool validate_minmax(const GraphBuilderBase::ValidateArgs &args);
+//bool validate_reduce_minmax(const GraphBuilderBase::ValidateArgs &args);
+//
+//} // namespace luci
 
 #endif // __LUCI_VALIDATE_HELPERS_H__

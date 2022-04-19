@@ -14,36 +14,36 @@
  * limitations under the License.
  */
 
-#include "luci/Import/Nodes/CircleMaxPool2D.h"
-
-#include <luci/IR/Nodes/CircleMaxPool2D.h>
-
-#include <loco.h>
-
-namespace luci
-{
-
-bool CircleMaxPool2DGraphBuilder::validate(const ValidateArgs &args) const
-{
-  return GraphBuilder::validate(args, 1);
-}
-
-CircleNode *CircleMaxPool2DGraphBuilder::build_node(const circle::OperatorT &op,
-                                                    const std::vector<CircleNode *> &inputs,
-                                                    loco::Graph *graph) const
-{
-  auto *node = graph->nodes()->create<CircleMaxPool2D>();
-  node->value(inputs.at(0));
-
-  const auto *options = op.builtin_options.AsPool2DOptions();
-  node->padding(luci_padding(options->padding));
-  node->stride()->w(options->stride_w);
-  node->stride()->h(options->stride_h);
-  node->filter()->w(options->filter_width);
-  node->filter()->h(options->filter_height);
-  node->fusedActivationFunction(luci_actfunc(options->fused_activation_function));
-
-  return node;
-}
-
-} // namespace luci
+//#include "luci/Import/Nodes/CircleMaxPool2D.h"
+//
+//#include <luci/IR/Nodes/CircleMaxPool2D.h>
+//
+//#include <loco.h>
+//
+//namespace luci
+//{
+//
+//bool CircleMaxPool2DGraphBuilder::validate(const ValidateArgs &args) const
+//{
+//  return GraphBuilder::validate(args, 1);
+//}
+//
+//CircleNode *CircleMaxPool2DGraphBuilder::build_node(const circle::OperatorT &op,
+//                                                    const std::vector<CircleNode *> &inputs,
+//                                                    loco::Graph *graph) const
+//{
+//  auto *node = graph->nodes()->create<CircleMaxPool2D>();
+//  node->value(inputs.at(0));
+//
+//  const auto *options = op.builtin_options.AsPool2DOptions();
+//  node->padding(luci_padding(options->padding));
+//  node->stride()->w(options->stride_w);
+//  node->stride()->h(options->stride_h);
+//  node->filter()->w(options->filter_width);
+//  node->filter()->h(options->filter_height);
+//  node->fusedActivationFunction(luci_actfunc(options->fused_activation_function));
+//
+//  return node;
+//}
+//
+//} // namespace luci

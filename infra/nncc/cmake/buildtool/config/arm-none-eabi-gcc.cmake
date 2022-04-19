@@ -7,7 +7,7 @@ set(CMAKE_CXX_COMPILER "${CXX_COMPILER}")
 set(CMAKE_ASM_COMPILER "${ASM_COMPILER}")
 set(CMAKE_OBJCOPY "${OBJCOPY}")
 
-set(TARGET_CPU "cortex-m4" CACHE STRING "Target CPU")
+set(TARGET_CPU "cortex-m7" CACHE STRING "Target CPU")
 
 # Convert TARGET_CPU=Cortex-M33+nofp+nodsp into
 #   - CMAKE_SYSTEM_PROCESSOR=cortex-m33

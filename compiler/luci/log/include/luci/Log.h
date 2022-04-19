@@ -18,6 +18,7 @@
 #define __LUCI_LOG_H__
 
 #include <hermes.h>
+#include <iostream>
 
 namespace luci
 {
@@ -63,12 +64,12 @@ private:
  *   INFO(l) << "Hello, World" << std::endl;
  *
  */
-#define LOGGER(name) ::luci::Logger name{::luci::LoggingContext::get()};
+#define LOGGER(name)
 
 // TODO Support FATAL, ERROR
-#define INFO(name) HERMES_VERBOSE(name, 3)
-#define WARN(name) HERMES_VERBOSE(name, 2)
-#define VERBOSE(name, lv) HERMES_VERBOSE(name, lv)
+#define INFO(name) std::cout
+#define WARN(name) std::cout
+#define VERBOSE(name, lv) std::cout
 
 // WARNING!
 //
