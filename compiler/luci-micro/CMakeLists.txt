@@ -83,6 +83,18 @@ add_custom_command(
 
 add_custom_target(luci_import_micro_arm DEPENDS "${MICRO_LUCI_IMPORT_ARM_BINARY}")
 
+set(MICRO_LUCI_INTERPRETER_IMPORT_ARM_BINARY "${MICRO_ARM_BUILD_DIR}/compiler/luci-interpreter/src/import/libluci_interpreter_import.a")
+
+add_custom_command(
+        OUTPUT "${MICRO_LUCI_INTERPRETER_IMPORT_ARM_BINARY}"
+        COMMAND "${CMAKE_MAKE_PROGRAM}" luci_interpreter_import -j ${CPU_COUNT}
+        WORKING_DIRECTORY "${MICRO_ARM_BUILD_DIR}"
+        DEPENDS luci_interpreter_micro_arm_cmake
+        VERBATIM
+)
+
+add_custom_target(luci_interpreter_import_micro_arm DEPENDS "${MICRO_LUCI_INTERPRETER_IMPORT_ARM_BINARY}")
+
 nnas_find_package(MbedOSSource EXACT 6.15 QUIET)
 nnas_find_package(FlatBuffersSource EXACT 2.0 QUIET)
 
@@ -134,7 +146,7 @@ add_custom_command(
         OUTPUT "${BENCHMARK_BINARY}"
         COMMAND "${CMAKE_MAKE_PROGRAM}" benchmark -j ${CPU_COUNT}
         WORKING_DIRECTORY "${MBED_OS_BUILD_DIR}"
-        DEPENDS mbed_os_arm luci_interpreter_micro_arm luci_import_micro_arm "${CMAKE_CURRENT_SOURCE_DIR}/mbed-os/main.cpp" ${MICRO_ARM_BINARY}
+        DEPENDS mbed_os_arm luci_interpreter_micro_arm luci_import_micro_arm luci_interpreter_import_micro_arm "${CMAKE_CURRENT_SOURCE_DIR}/mbed-os/main.cpp" ${MICRO_ARM_BINARY}
         VERBATIM
 )
 add_custom_target(luci_micro_benchmark_arm DEPENDS "${BENCHMARK_BINARY}")
