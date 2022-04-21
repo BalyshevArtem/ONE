@@ -35,6 +35,7 @@ CircleNode *CircleConv2DGraphBuilder::build_node(const circle::OperatorT &op,
                                                  const std::vector<CircleNode *> &inputs,
                                                  loco::Graph *graph) const
 {
+  printf("CONV2d\n");
   auto *node = graph->nodes()->create<CircleConv2D>();
   node->input(inputs.at(0));
   node->filter(inputs.at(1));

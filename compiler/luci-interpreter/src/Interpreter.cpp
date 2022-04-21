@@ -99,6 +99,11 @@ Interpreter::Interpreter(const luci::Module *module,
 
 Interpreter::~Interpreter() = default;
 
+Tensor *Interpreter::get_input_tensor_by_index(const luci::CircleInput *input_node)
+{
+  return _runtime_module->getInputTensors()[input_node->index()];
+}
+
 void Interpreter::writeInputTensor(const luci::CircleInput *input_node, const void *data,
                                    size_t data_size)
 {

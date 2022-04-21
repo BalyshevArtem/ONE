@@ -13,17 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#include "luci/LogHelper.h"
-#include "luci/FormattedGraph.h"
-
-namespace luci
-{
-
-FormattedGraph fmt(loco::Graph *g)
-{
-  auto node_summary_builder = std::make_unique<NodeSummaryBuilderFactory>();
-  return std::move(locop::fmt<locop::LinearV1>(g).with(std::move(node_summary_builder)));
-}
-
-} // namespace luci
+//
+//#include "luci/LogHelper.h"
+//#include "luci/FormattedGraph.h"
+//
+//namespace luci
+//{
+//
+//FormattedGraph fmt(loco::Graph *g)
+//{
+//  auto node_summary_builder = std::make_unique<NodeSummaryBuilderFactory>();
+//  return std::move(locop::fmt<locop::LinearV1>(g).with(std::move(node_summary_builder)));
+//}
+//
+//} // namespace luci

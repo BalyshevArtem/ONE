@@ -235,8 +235,9 @@ void GraphLoader::loadTensors()
       const void *const_data = getNodeData(const_node, &data_size);
       if (const_data != nullptr)
       {
-        _memory_manager->allocate_memory(*tensor);
-        tensor->writeData(const_data, data_size);
+       // _memory_manager->allocate_memory(*tensor);
+        tensor->write_data_without_copy(const_cast<void *>(const_data));
+       // tensor->writeData(const_data, data_size);
       }
     }
     else if (const auto *custom_out_node = dynamic_cast<const luci::CircleCustomOut *>(node))
@@ -250,8 +251,9 @@ void GraphLoader::loadTensors()
         const void *const_data = getNodeData(custom_node, &data_size);
         if (const_data != nullptr)
         {
-          _memory_manager->allocate_memory(*tensor);
-          tensor->writeData(const_data, data_size);
+         // _memory_manager->allocate_memory(*tensor);
+          tensor->write_data_without_copy(const_cast<void *>(const_data));
+         // tensor->writeData(const_data, data_size);
         }
       }
     }

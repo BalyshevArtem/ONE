@@ -13,35 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-//
-//#include "luci/Import/Nodes/CircleSpaceToBatchND.h"
-//
-//#include <luci/IR/Nodes/CircleSpaceToBatchND.h>
-//
-//#include "ValidateHelpers.h"
-//
-//#include <loco.h>
-//
-//namespace luci
-//{
-//
-//bool CircleSpaceToBatchNDGraphBuilder::validate(const ValidateArgs &args) const
-//{
-// // return validate_batch_space_nd(args);
-//}
-//
-//CircleNode *CircleSpaceToBatchNDGraphBuilder::build_node(const circle::OperatorT &,
-//                                                         const std::vector<CircleNode *> &inputs,
-//                                                         loco::Graph *graph) const
-//{
-//  auto *node = graph->nodes()->create<CircleSpaceToBatchND>();
-//  node->input(inputs.at(0));
-//  node->block_shape(inputs.at(1));
-//  node->paddings(inputs.at(2));
-//
-//  // No options for SpaceToBatchND
-//
-//  return node;
-//}
-//
-//} // namespace luci
+
+#include "luci/Import/Nodes/CircleSpaceToBatchND.h"
+
+#include <luci/IR/Nodes/CircleSpaceToBatchND.h>
+
+#include "ValidateHelpers.h"
+
+#include <loco.h>
+
+namespace luci
+{
+
+bool CircleSpaceToBatchNDGraphBuilder::validate(const ValidateArgs &args) const
+{
+  return validate_batch_space_nd(args);
+}
+
+CircleNode *CircleSpaceToBatchNDGraphBuilder::build_node(const circle::OperatorT &,
+                                                         const std::vector<CircleNode *> &inputs,
+                                                         loco::Graph *graph) const
+{
+  printf("hey 2.5\n");
+  auto *node = graph->nodes()->create<CircleSpaceToBatchND>();
+  node->input(inputs.at(0));
+  node->block_shape(inputs.at(1));
+  node->paddings(inputs.at(2));
+  printf("hey 3\n");
+
+  // No options for SpaceToBatchND
+
+  return node;
+}
+
+} // namespace luci

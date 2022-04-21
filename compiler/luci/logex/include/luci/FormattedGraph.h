@@ -13,44 +13,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#ifndef __LUCI_FORMATTED_GRAPH_H__
-#define __LUCI_FORMATTED_GRAPH_H__
-
-#include <locop/FormattedGraph.h>
-
-#include <memory>
-
-namespace luci
-{
-
-class NodeSummaryBuilder final : public locop::NodeSummaryBuilder
-{
-public:
-  NodeSummaryBuilder(const locop::SymbolTable *tbl) : _tbl{tbl}
-  {
-    // DO NOTHING
-  }
-
-public:
-  bool build(const loco::Node *node, locop::NodeSummary &s) const final;
-
-private:
-  const locop::SymbolTable *_tbl;
-};
-
-class NodeSummaryBuilderFactory final : public locop::NodeSummaryBuilderFactory
-{
-public:
-  NodeSummaryBuilderFactory() = default;
-
-public:
-  std::unique_ptr<locop::NodeSummaryBuilder> create(const locop::SymbolTable *tlb) const final
-  {
-    return std::make_unique<NodeSummaryBuilder>(tlb);
-  }
-};
-
-} // namespace luci
-
-#endif // __LUCI_FORMATTED_GRAPH_H__
+//
+//#ifndef __LUCI_FORMATTED_GRAPH_H__
+//#define __LUCI_FORMATTED_GRAPH_H__
+//
+//#include <locop/FormattedGraph.h>
+//
+//#include <memory>
+//
+//namespace luci
+//{
+//
+//class NodeSummaryBuilder final : public locop::NodeSummaryBuilder
+//{
+//public:
+//  NodeSummaryBuilder(const locop::SymbolTable *tbl) : _tbl{tbl}
+//  {
+//    // DO NOTHING
+//  }
+//
+//public:
+//  bool build(const loco::Node *node, locop::NodeSummary &s) const final;
+//
+//private:
+//  const locop::SymbolTable *_tbl;
+//};
+//
+//class NodeSummaryBuilderFactory final : public locop::NodeSummaryBuilderFactory
+//{
+//public:
+//  NodeSummaryBuilderFactory() = default;
+//
+//public:
+//  std::unique_ptr<locop::NodeSummaryBuilder> create(const locop::SymbolTable *tlb) const final
+//  {
+//    return std::make_unique<NodeSummaryBuilder>(tlb);
+//  }
+//};
+//
+//} // namespace luci
+//
+//#endif // __LUCI_FORMATTED_GRAPH_H__

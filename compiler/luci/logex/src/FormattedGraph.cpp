@@ -13,35 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#include "CircleNodeSummaryBuilder.h"
-#include "luci/FormattedGraph.h"
-
-#include <luci/IR/CircleDialect.h>
-#include <luci/IR/CircleNodes.h>
-
-#include <pepper/str.h>
-
-#include <cassert>
-#include <sstream>
-#include <vector>
-
-namespace luci
-{
-
-bool NodeSummaryBuilder::build(const loco::Node *node, locop::NodeSummary &s) const
-{
-  if (locop::CanonicalNodeSummaryBuilder(_tbl).build(node, s))
-  {
-    return true;
-  }
-
-  if (CircleNodeSummaryBuilder().build(node, _tbl, s))
-  {
-    return true;
-  }
-
-  return false;
-}
-
-} // namespace luci
+//
+//#include "CircleNodeSummaryBuilder.h"
+//#include "luci/FormattedGraph.h"
+//
+//#include <luci/IR/CircleDialect.h>
+//#include <luci/IR/CircleNodes.h>
+//
+//#include <pepper/str.h>
+//
+//#include <cassert>
+//#include <sstream>
+//#include <vector>
+//
+//namespace luci
+//{
+//
+//bool NodeSummaryBuilder::build(const loco::Node *node, locop::NodeSummary &s) const
+//{
+//  if (locop::CanonicalNodeSummaryBuilder(_tbl).build(node, s))
+//  {
+//    return true;
+//  }
+//
+//  if (CircleNodeSummaryBuilder().build(node, _tbl, s))
+//  {
+//    return true;
+//  }
+//
+//  return false;
+//}
+//
+//} // namespace luci

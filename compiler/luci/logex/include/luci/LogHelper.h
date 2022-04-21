@@ -13,24 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#ifndef __LUCI_LOG_HELPER_H__
-#define __LUCI_LOG_HELPER_H__
-
-#include <locop/FormattedGraph.h>
-#include <loco.h>
-
-#include <memory>
-
-namespace luci
-{
-
-using FormattedGraph = locop::FormattedGraphImpl<locop::Formatter::LinearV1>;
-
-FormattedGraph fmt(loco::Graph *g);
-
-static inline FormattedGraph fmt(const std::unique_ptr<loco::Graph> &g) { return fmt(g.get()); }
-
-} // namespace luci
-
-#endif // __LUCI_LOG_HELPER_H__
+//
+//#ifndef __LUCI_LOG_HELPER_H__
+//#define __LUCI_LOG_HELPER_H__
+//
+//#include <locop/FormattedGraph.h>
+//#include <loco.h>
+//
+//#include <memory>
+//
+//namespace luci
+//{
+//
+//using FormattedGraph = locop::FormattedGraphImpl<locop::Formatter::LinearV1>;
+//
+//FormattedGraph fmt(loco::Graph *g);
+//
+//static inline FormattedGraph fmt(const std::unique_ptr<loco::Graph> &g) { return fmt(g.get()); }
+//
+//} // namespace luci
+//
+//#endif // __LUCI_LOG_HELPER_H__

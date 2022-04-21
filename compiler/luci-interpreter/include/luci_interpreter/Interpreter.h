@@ -58,6 +58,8 @@ public:
 
   void writeInputTensor(const luci::CircleInput *input_node, const void *data, size_t data_size);
 
+  Tensor *get_input_tensor_by_index(const luci::CircleInput *input_node);
+
   void readOutputTensor(const luci::CircleOutput *output_node, void *data, size_t data_size);
 
   void interpret();

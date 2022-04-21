@@ -72,6 +72,8 @@ void ExecutionPlanner::make_execution_plan()
   }
   auto settings = luci::UserSettings::settings();
   settings->set(luci::UserSettings::Key::ExecutionPlanGen, true);
+
+  printf("\nrequired size = %d  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n", _required_size);
 }
 
 void ExecutionPlanner::get_default_execution_order_plan()

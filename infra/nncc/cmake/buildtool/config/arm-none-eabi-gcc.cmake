@@ -31,7 +31,7 @@ add_compile_options(
         -mcpu=${TARGET_CPU}
         -mthumb
         "$<$<CONFIG:DEBUG>:-gdwarf-3>"
-        "$<$<COMPILE_LANGUAGE:CXX>:-funwind-tables;-frtti;-fexceptions>")
+        "$<$<COMPILE_LANGUAGE:CXX>:-funwind-tables;-frtti;-fexceptions;-O3>")
 
 # Compile definescd
 add_compile_definitions(
@@ -54,7 +54,7 @@ elseif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "cortex-m33" OR
 else()
     set(FLOAT soft)
 endif()
-
+set(FLOAT hard)
 if (FLOAT)
     add_compile_options(-mfloat-abi=${FLOAT})
     add_link_options(-mfloat-abi=${FLOAT})

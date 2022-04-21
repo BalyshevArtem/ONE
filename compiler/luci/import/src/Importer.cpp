@@ -16,14 +16,14 @@
 
 #include "luci/Importer.h"
 #include "CircleImportMetadata.h"
-#include "PostImport.h"
+//#include "PostImport.h"
 
 #include "luci/Import/GraphBuilder.h"
 #include "luci/Import/GraphBuilderContext.h"
 #include "luci/Import/GraphBuilderRegistry.h"
 #include "luci/Import/CircleReader.h"
 #include "luci/Import/Nodes/CircleConst.h"
-#include "luci/Import/Nodes/CircleVariable.h"
+//#include "luci/Import/Nodes/CircleVariable.h"
 
 #include <luci/IR/Module.h>
 #include <luci/IR/CircleNodes.h>
@@ -137,12 +137,12 @@ void convert_graph(const luci::GraphBuilderSource &source, luci::CircleReader &r
 
   // Create CircleVariable nodes for variable tensors
   // TODO Add Origin if needed, skip for now
-  for (uint32_t i = 0; i < tensors.size(); ++i)
-  {
-    luci::CircleVariable *variable_node = luci::create_circlevariable(&gb_context, i);
-    if (variable_node != nullptr)
-      nodefinder->enroll(i, variable_node);
-  }
+//  for (uint32_t i = 0; i < tensors.size(); ++i)
+//  {
+//    luci::CircleVariable *variable_node = luci::create_circlevariable(&gb_context, i);
+//    if (variable_node != nullptr)
+//      nodefinder->enroll(i, variable_node);
+//  }
 
   // Import the operators.
   // Note that operators in model are stored in execution order. This means that when importing
@@ -151,6 +151,7 @@ void convert_graph(const luci::GraphBuilderSource &source, luci::CircleReader &r
   auto origin_table = circle_metadata->origin_table();
   for (uint32_t i = 0; i < operators.size(); ++i)
   {
+    printf("\ni = %d\n", i);
     const auto op = operators[i];
     assert(op != nullptr);
     circle::BuiltinOperator builtincode = reader.builtin_code(op);
@@ -167,6 +168,7 @@ void convert_graph(const luci::GraphBuilderSource &source, luci::CircleReader &r
         throw oops::UserExn("Invalid operator", reader.opcode_name(op));
       }
 
+      printf("hey\n");
       auto built_op = builder->build(oper_t, &gb_context);
       set_node_id(built_op, i);
       if (origin_table.find(i) != origin_table.end())
@@ -178,6 +180,7 @@ void convert_graph(const luci::GraphBuilderSource &source, luci::CircleReader &r
     {
       throw oops::UserExn("Not supported", reader.opcode_name(op));
     }
+    printf("hey 2 \n");
   }
 
   // graph outputs
@@ -231,9 +234,9 @@ void convert_graph(const luci::GraphBuilderSource &source, luci::CircleReader &r
     output_shape->rank(output_dims.size());
     for (uint32_t r = 0; r < output_dims.size(); ++r)
     {
-      if (tensor_shape_signature.size() > 0 && tensor_shape_signature.at(r) == -1)
-        output_shape->dim(r).unset();
-      else
+//      if (tensor_shape_signature.size() > 0 && tensor_shape_signature.at(r) == -1)
+//        output_shape->dim(r).unset();
+//      else
         output_shape->dim(r).set(output_dims[r]);
     }
     graph_output->shape(std::move(output_shape));
@@ -291,10 +294,10 @@ std::unique_ptr<loco::Graph> Importer::import(const circle::Model *model) const
   convert_graph(*source_ptr, reader, graph.get());
 
   LOGGER(l);
-  VERBOSE(l, 3) << "--- graph dump begin -------------------------------------------";
-  VERBOSE(l, 3) << "Name: " << graph->name();
-  VERBOSE(l, 3) << fmt(graph.get());
-  VERBOSE(l, 3) << "--- graph dump end ---------------------------------------------";
+//  VERBOSE(l, 3) << "--- graph dump begin -------------------------------------------";
+//  VERBOSE(l, 3) << "Name: " << graph->name();
+//  VERBOSE(l, 3) << fmt(graph.get());
+//  VERBOSE(l, 3) << "--- graph dump end ---------------------------------------------";
 
   assert(loco::valid(graph.get(), std::make_unique<ValidateCollector>()));
 
@@ -330,17 +333,17 @@ std::unique_ptr<Module> Importer::importModule(const circle::Model *model) const
     convert_graph(*source_ptr, reader, graph.get());
 
     LOGGER(l);
-    VERBOSE(l, 3) << "--- graph dump begin -------------------------------------------";
-    VERBOSE(l, 3) << "Name: " << graph->name();
-    VERBOSE(l, 3) << fmt(graph.get());
-    VERBOSE(l, 3) << "--- graph dump end ---------------------------------------------";
+//    VERBOSE(l, 3) << "--- graph dump begin -------------------------------------------";
+//    VERBOSE(l, 3) << "Name: " << graph->name();
+//    VERBOSE(l, 3) << fmt(graph.get());
+//    VERBOSE(l, 3) << "--- graph dump end ---------------------------------------------";
 
     assert(loco::valid(graph.get(), std::make_unique<ValidateCollector>()));
 
     module->add(std::move(graph));
   }
 
-  post_import_graph(module.get(), reader);
+//  post_import_graph(module.get(), reader);
 
   // Initialize 'source_table'
   auto circle_metadata = std::make_unique<luci::CircleImportMetadata>(reader);

@@ -122,6 +122,7 @@ int entry(int argc, char **argv)
 
   // Do main job
   circle_planner::ExecutionPlanner execution_planner(module->graph(), {platform_type, use_dsp});
+  execution_planner.change_planning_mode(true, false, false);
   execution_planner.make_execution_plan();
 
   // Export to output Circle file

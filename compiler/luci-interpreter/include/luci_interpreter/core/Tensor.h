@@ -127,6 +127,16 @@ public:
     return reinterpret_cast<T *>(_data);
   }
 
+  void write_data_without_copy(void *data_ptr)
+  {
+    _data = static_cast<uint8_t *>(data_ptr);
+  }
+
+  void *get_data_ptr()
+  {
+    return _data;
+  }
+
   const std::string &name() const { return _name; }
 
   void readData(void *data_ptr, size_t data_size) const;

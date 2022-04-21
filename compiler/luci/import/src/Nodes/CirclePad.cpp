@@ -14,33 +14,34 @@
  * limitations under the License.
  */
 
-//#include "luci/Import/Nodes/CirclePad.h"
-//
-//#include <luci/IR/Nodes/CirclePad.h>
-//
-//#include <loco.h>
-//
-//namespace luci
-//{
-//
-//bool CirclePadGraphBuilder::validate(const ValidateArgs &args) const
-//{
-//  // TODO do attribute checks
-//  return GraphBuilder::validate(args, 2);
-//}
-//
-//CircleNode *CirclePadGraphBuilder::build_node(const circle::OperatorT &op,
-//                                              const std::vector<CircleNode *> &inputs,
-//                                              loco::Graph *graph) const
-//{
-//  auto *node = graph->nodes()->create<CirclePad>();
-//  node->input(inputs.at(0));
-//  node->paddings(inputs.at(1));
-//
-//  const auto *options = op.builtin_options.AsPadOptions();
-//  (void)options; // There are no options.
-//
-//  return node;
-//}
-//
-//} // namespace luci
+#include "luci/Import/Nodes/CirclePad.h"
+
+#include <luci/IR/Nodes/CirclePad.h>
+
+#include <loco.h>
+
+namespace luci
+{
+
+bool CirclePadGraphBuilder::validate(const ValidateArgs &args) const
+{
+  // TODO do attribute checks
+  return GraphBuilder::validate(args, 2);
+}
+
+CircleNode *CirclePadGraphBuilder::build_node(const circle::OperatorT &op,
+                                              const std::vector<CircleNode *> &inputs,
+                                              loco::Graph *graph) const
+{
+  printf("PAD\n");
+  auto *node = graph->nodes()->create<CirclePad>();
+  node->input(inputs.at(0));
+  node->paddings(inputs.at(1));
+
+  const auto *options = op.builtin_options.AsPadOptions();
+  (void)options; // There are no options.
+
+  return node;
+}
+
+} // namespace luci
