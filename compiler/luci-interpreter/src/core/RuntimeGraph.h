@@ -21,6 +21,8 @@
 #include "luci_interpreter/MemoryManager.h"
 #include "core/Kernel.h"
 
+#include "luci_interpreter/core/Kernel.h"
+
 #include <memory>
 #include <vector>
 
@@ -42,6 +44,10 @@ public:
   Tensor *addTensor(std::unique_ptr<Tensor> &&tensor);
 
   void setInputTensors(const std::vector<Tensor *> &input_tensors);
+
+  void add_input_tensor(Tensor *input_tensor);
+  void add_output_tensor(Tensor *output_tensor);
+
   void setOutputTensors(const std::vector<Tensor *> &output_tensors);
 
   void configureAllocations(Tensor *tensor);

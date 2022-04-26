@@ -54,7 +54,7 @@ void ProgressReporter::notify(const logo::PhaseEventInfo<logo::PhaseEvent::Phase
   INFO(prime) << "==============================================================";
   INFO(prime) << "PhaseRunner<" << to_str(strategy()) << ">";
   INFO(prime) << "Initial graph";
-  INFO(prime) << luci::fmt(graph());
+  //INFO(prime) << luci::fmt(graph());
 }
 
 void ProgressReporter::notify(const logo::PhaseEventInfo<logo::PhaseEvent::PhaseEnd> *)
@@ -78,7 +78,7 @@ void ProgressReporter::notify(const logo::PhaseEventInfo<logo::PhaseEvent::PassE
 
   INFO(prime) << "After " << logo::pass_name(info->pass())
               << " (changed: " << to_char(info->changed()) << ")";
-  INFO(prime) << luci::fmt(graph());
+  //INFO(prime) << luci::fmt(graph());
 }
 
 void ModuleProgressReporter::notify(const logo::PhaseEventInfo<logo::PhaseEvent::PhaseBegin> *)
@@ -91,7 +91,7 @@ void ModuleProgressReporter::notify(const logo::PhaseEventInfo<logo::PhaseEvent:
   for (size_t g = 0; g < module()->size(); ++g)
   {
     INFO(prime) << "graphs #" << g;
-    INFO(prime) << luci::fmt(module()->graph(g));
+   // INFO(prime) << luci::fmt(module()->graph(g));
   }
 }
 
@@ -119,7 +119,7 @@ void ModuleProgressReporter::notify(const logo::PhaseEventInfo<logo::PhaseEvent:
   for (size_t g = 0; g < module()->size(); ++g)
   {
     INFO(prime) << "graphs #" << g;
-    INFO(prime) << luci::fmt(module()->graph(g));
+   // INFO(prime) << luci::fmt(module()->graph(g));
   }
 }
 

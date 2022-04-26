@@ -19,7 +19,7 @@
 
 #include "core/Kernel.h"
 #include <vector>
-
+#include "luci_interpreter/core/Kernel.h"
 namespace luci_interpreter
 {
 namespace kernels

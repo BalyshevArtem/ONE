@@ -17,20 +17,20 @@
 #ifndef LUCI_INTERPRETER_CORE_EVENTNOTIFIER_H
 #define LUCI_INTERPRETER_CORE_EVENTNOTIFIER_H
 
-namespace luci_interpreter
-{
-
-// Used at execution stage to tell the interpreter that the runtime state has changed in some way.
-class EventNotifier
-{
-public:
-  virtual ~EventNotifier() = default;
-
-  virtual void postTensorWrite(const Tensor *tensor) = 0;
-  virtual void preOperatorExecute(const Kernel *kernel) = 0;
-  virtual void postOperatorExecute(const Kernel *kernel) = 0;
-};
-
-} // namespace luci_interpreter
+//namespace luci_interpreter
+//{
+//
+//// Used at execution stage to tell the interpreter that the runtime state has changed in some way.
+//class EventNotifier
+//{
+//public:
+//  virtual ~EventNotifier() = default;
+//
+//  virtual void postTensorWrite(const Tensor *tensor) = 0;
+//  virtual void preOperatorExecute(const Kernel *kernel) = 0;
+//  virtual void postOperatorExecute(const Kernel *kernel) = 0;
+//};
+//
+//} // namespace luci_interpreter
 
 #endif // LUCI_INTERPRETER_CORE_EVENTNOTIFIER_H

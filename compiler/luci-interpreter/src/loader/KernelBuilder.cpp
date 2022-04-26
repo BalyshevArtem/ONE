@@ -17,10 +17,41 @@
 #include "loader/KernelBuilder.h"
 #include "loader/nodes/Builders.h"
 
+#include "luci_interpreter/core/KernelParams.h"
+#include "kernels/FullyConnected.h"
+#include "kernels/Logistic.h"
+#include "../../../luci/import/include/luci/Import/CircleReader.h"
 #include <stdexcept>
 
 namespace luci_interpreter
 {
+
+//namespace
+//{
+//std::unique_ptr<Kernel> build_kernel_micro_CircleFullyConnected(const circle::OperatorT &op, std::vector<Tensor *> &inputs, Tensor *output)
+//{
+//  const Tensor *input = inputs[0];
+//  const Tensor *weights = inputs[1];
+//  const Tensor *bias = nullptr;
+//  if (inputs.size() == 3)
+//    bias = inputs[2];
+//
+//  FullyConnectedParams params{};
+//
+//  const auto *options = op.builtin_options.AsFullyConnectedOptions();
+//  params.activation= luci::luci_actfunc(options->fused_activation_function);
+//  params.keep_num_dims = options->keep_num_dims;
+//
+//  return std::make_unique<kernels::FullyConnected>(input, weights, bias, output, params);
+//}
+//
+//std::unique_ptr<Kernel> build_kernel_micro_CircleLogistic(const circle::OperatorT &op, std::vector<Tensor *> &inputs, Tensor *output)
+//{
+//  return std::make_unique<kernels::Logistic>(inputs[0], output);
+//}
+//
+//
+//} // namespace
 
 #define CIRCLE_NODE(OPCODE, CLASS) CLASS,
 #define CIRCLE_VNODE(OPCODE, CLASS) CLASS,
@@ -100,5 +131,27 @@ std::unique_ptr<Kernel> KernelBuilder::build(const luci::CircleNode *node)
   msg += std::to_string(static_cast<uint32_t>(node->opcode())) + " " + std::string(node->name());
   throw std::invalid_argument(msg.c_str());
 }
+
+//std::unique_ptr<Kernel> KernelBuilder::build(const circle::OperatorT &op, circle::BuiltinOperator opcode, std::vector<Tensor *> &inputs, Tensor *output)
+//{
+//  switch (opcode)
+//  {
+//    case circle::BuiltinOperator_FULLY_CONNECTED:
+//      return build_kernel_micro_CircleFullyConnected();
+//    case circle::BuiltinOperator_LOGISTIC:
+//    default:
+//      throw std::runtime_error("not supported kernel");
+//
+//  }
+//
+//
+////  auto specific_builder = _builder_registry->get_kernel_builder_func(node->opcode());
+////  if (specific_builder != nullptr)
+////    return specific_builder(node, *this);
+////
+////  std::string msg = "Unsupported operator: ";
+////  msg += std::to_string(static_cast<uint32_t>(node->opcode())) + " " + std::string(node->name());
+////  throw std::invalid_argument(msg.c_str());
+//}
 
 } // namespace luci_interpreter

@@ -41,7 +41,7 @@ GraphBuilderRegistry::GraphBuilderRegistry()
  // CIRCLE_NODE(CAST, CircleCastGraphBuilder);                                               // 53
  // CIRCLE_NODE(CEIL, CircleCeilGraphBuilder);                                               // 104
  // CIRCLE_NODE(CUSTOM, CircleCustomGraphBuilder);                                           // 32
- // CIRCLE_NODE(CONCATENATION, CircleConcatenationGraphBuilder);                             // 2
+  CIRCLE_NODE(CONCATENATION, CircleConcatenationGraphBuilder);                             // 2
    CIRCLE_NODE(CONV_2D, CircleConv2DGraphBuilder);                                          // 3
  // CIRCLE_NODE(COS, CircleCosGraphBuilder);                                                 // 108
 //  CIRCLE_NODE(DEPTH_TO_SPACE, CircleDepthToSpaceGraphBuilder);                             // 5
@@ -74,12 +74,12 @@ GraphBuilderRegistry::GraphBuilderRegistry()
 //  CIRCLE_NODE(LOGICAL_AND, CircleLogicalAndGraphBuilder);                                  // 86
 //  CIRCLE_NODE(LOGICAL_NOT, CircleLogicalNotGraphBuilder);                                  // 87
 //  CIRCLE_NODE(LOGICAL_OR, CircleLogicalOrGraphBuilder);                                    // 84
-  //CIRCLE_NODE(LOGISTIC, CircleLogisticGraphBuilder);                                       // 14
+  CIRCLE_NODE(LOGISTIC, CircleLogisticGraphBuilder);                                       // 14
 //  CIRCLE_NODE(LOG_SOFTMAX, CircleLogSoftmaxGraphBuilder);                                  // 50
 //  CIRCLE_NODE(MATRIX_DIAG, CircleMatrixDiagGraphBuilder);                                  // 113
 //  CIRCLE_NODE(MATRIX_SET_DIAG, CircleMatrixSetDiagGraphBuilder);                           // 115
 //  CIRCLE_NODE(MAXIMUM, CircleMaximumGraphBuilder);                                         // 55
-  //CIRCLE_NODE(MAX_POOL_2D, CircleMaxPool2DGraphBuilder);                                   // 17
+  CIRCLE_NODE(MAX_POOL_2D, CircleMaxPool2DGraphBuilder);                                   // 17
 //  CIRCLE_NODE(MEAN, CircleMeanGraphBuilder);                                               // 40
 //  CIRCLE_NODE(MINIMUM, CircleMinimumGraphBuilder);                                         // 57
 //  CIRCLE_NODE(MIRROR_PAD, CircleMirrorPadGraphBuilder);                                    // 100

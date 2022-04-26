@@ -18,6 +18,7 @@
 #define LUCI_INTERPRETER_KERNELS_ADD_H
 
 #include "core/Kernel.h"
+#include "luci_interpreter/core/Kernel.h"
 #include "core/KernelParams.h"
 
 namespace luci_interpreter

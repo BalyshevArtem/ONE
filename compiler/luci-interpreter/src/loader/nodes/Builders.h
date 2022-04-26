@@ -19,6 +19,8 @@
 
 #include "loader/KernelBuilderHelper.h"
 
+#include "luci_interpreter/core/Kernel.h"
+
 #include "luci/IR/CircleNodes.h"
 
 namespace luci_interpreter

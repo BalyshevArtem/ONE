@@ -18,7 +18,7 @@
 #define LUCI_INTERPRETER_KERNELS_LESS_H
 
 #include "core/Kernel.h"
-
+#include "luci_interpreter/core/Kernel.h"
 namespace luci_interpreter
 {
 namespace kernels

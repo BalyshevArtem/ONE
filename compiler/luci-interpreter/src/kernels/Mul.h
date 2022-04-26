@@ -19,7 +19,7 @@
 
 #include "core/Kernel.h"
 #include "core/KernelParams.h"
-
+#include "luci_interpreter/core/Kernel.h"
 #include <cstdint>
 #include <vector>
 

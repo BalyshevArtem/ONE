@@ -24,6 +24,8 @@
 
 #include <luci/IR/CircleNodeVisitor.h>
 
+#include <mio/circle/schema_generated.h>
+
 #include <memory>
 #include <unordered_map>
 
@@ -43,6 +45,7 @@ public:
 
   std::unique_ptr<Kernel> build(const luci::CircleNode *node);
 
+  //std::unique_ptr<Kernel> build(const circle::OperatorT &op, circle::BuiltinOperator opcode, std::vector<Tensor *> &inputs, Tensor *output);
 private:
   std::unique_ptr<KernelBuilderRegistry> _builder_registry;
 };

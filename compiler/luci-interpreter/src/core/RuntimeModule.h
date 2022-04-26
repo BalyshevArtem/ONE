@@ -30,9 +30,11 @@ namespace luci_interpreter
 class RuntimeModule
 {
 public:
-  explicit RuntimeModule(EventNotifier *event_notifier) : _event_notifier(event_notifier) {}
+  //explicit RuntimeModule(EventNotifier *event_notifier) : _event_notifier(event_notifier) {}
 
-  EventNotifier *getEventNotifier() const { return _event_notifier; }
+  explicit RuntimeModule() = default;
+
+  //EventNotifier *getEventNotifier() const { return _event_notifier; }
 
   RuntimeGraph *addGraph(IMemoryManager *memory_manager)
   {
@@ -51,7 +53,7 @@ public:
 private:
   RuntimeGraph *getMainGraph() const { return _graphs[0].get(); }
 
-  EventNotifier *const _event_notifier;
+ // EventNotifier *const _event_notifier;
   std::vector<std::unique_ptr<RuntimeGraph>> _graphs;
 };
 

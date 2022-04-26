@@ -22,7 +22,7 @@
 #include <luci/Importer.h>
 #include <luci/IR/Module.h>
 #include <loco/IR/DataTypeTraits.h>
-#include "rev3_wavenet.h"
+#include "rev5.h"
 #include <cstdlib>
 #include <iostream>
 #include <luci/Log.h>
@@ -87,6 +87,7 @@ int main()
   std::cout << "luci::Importer().importModule\n";
   const auto optimized_source = luci_interpreter::source_without_constant_copying();
   auto module = luci::Importer(optimized_source.get()).importModule(model);
+  //auto module = luci::Importer().importModule(model);
 
   std::cout << "OK\n";
   std::cout << "std::make_unique<luci_interpreter::Interpreter>(module.get())\n";

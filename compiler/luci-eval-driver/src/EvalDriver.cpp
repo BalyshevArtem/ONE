@@ -47,6 +47,19 @@ void writeDataToFile(const std::string &filename, const char *data, size_t data_
   }
 }
 
+std::vector<char> import_model(const std::string &filename)
+{
+  std::ifstream fs(filename, std::ifstream::binary);
+  if (fs.fail())
+  {
+    throw std::runtime_error("Cannot open model file \"" + filename + "\".\n");
+  }
+  std::vector<char> model_data((std::istreambuf_iterator<char>(fs)),
+                               std::istreambuf_iterator<char>());
+  return std::vector<char> ((std::istreambuf_iterator<char>(fs)),
+                           std::istreambuf_iterator<char>());
+}
+
 std::unique_ptr<luci::Module> importModel(const std::string &filename)
 {
   std::ifstream fs(filename, std::ifstream::binary);
@@ -59,12 +72,19 @@ std::unique_ptr<luci::Module> importModel(const std::string &filename)
   return luci::Importer().importModule(circle::GetModel(model_data.data()));
 }
 
-template <typename NodeT> size_t getTensorSize(const NodeT *node)
+//template <typename NodeT> size_t getTensorSize(const NodeT *node)
+//{
+//  uint32_t tensor_size = loco::size(node->dtype());
+//  for (uint32_t i = 0; i < node->rank(); ++i)
+//    tensor_size *= node->dim(i).value();
+//  return tensor_size;
+//}
+
+size_t get_tensor_size(const luci_interpreter::Tensor *tensor)
 {
-  uint32_t tensor_size = loco::size(node->dtype());
-  for (uint32_t i = 0; i < node->rank(); ++i)
-    tensor_size *= node->dim(i).value();
-  return tensor_size;
+  uint32_t tensor_size = loco::size(tensor->element_type());
+
+  return loco::size(tensor->element_type()) * tensor->shape().num_elements();
 }
 
 } // namespace
@@ -91,40 +111,59 @@ int entry(int argc, char **argv)
   const char *output_file = argv[4];
 
   // Load model from the file
-  std::unique_ptr<luci::Module> module = importModel(filename);
-  if (module == nullptr)
-  {
-    std::cerr << "ERROR: Failed to load '" << filename << "'" << std::endl;
-    return EXIT_FAILURE;
-  }
+//  std::unique_ptr<luci::Module> module = importModel(filename);
+//  if (module == nullptr)
+//  {
+//    std::cerr << "ERROR: Failed to load '" << filename << "'" << std::endl;
+//    return EXIT_FAILURE;
+//  }
+
+  //auto model_data_raw = import_model(filename);
+
+  std::ifstream fs(filename, std::ifstream::binary);
+
+  std::vector<char> model_data_raw((std::istreambuf_iterator<char>(fs)),
+                               std::istreambuf_iterator<char>());
 
   // Create interpreter.
-  luci_interpreter::Interpreter interpreter(module.get());
+  //luci_interpreter::Interpreter interpreter(module.get());
+
+  luci_interpreter::Interpreter interpreter(&model_data_raw);
 
   // Set input.
   // Data for n'th input is read from ${input_prefix}n
   // (ex: Add.circle.input0, Add.circle.input1 ..)
-  const auto input_nodes = loco::input_nodes(module->graph());
-  assert(num_inputs == input_nodes.size());
+
+
+  //const auto input_nodes = loco::input_nodes(module->graph());
+
+  const auto input_tensors = interpreter.getInputTensors();
+
+  assert(num_inputs == input_tensors.size());
   for (int32_t i = 0; i < num_inputs; i++)
   {
-    const auto *input_node = loco::must_cast<const luci::CircleInput *>(input_nodes[i]);
-    std::vector<char> input_data(getTensorSize(input_node));
+    const auto input_tensor = input_tensors.at(i);
+    std::vector<char> input_data(get_tensor_size(input_tensor));
     readDataFromFile(std::string(input_prefix) + std::to_string(i), input_data.data(),
                      input_data.size());
-    interpreter.writeInputTensor(input_node, input_data.data(), input_data.size());
+    //interpreter.writeInputTensor(input_node, input_data.data(), input_data.size());
+    interpreter.write_input_tensor(input_tensor, input_data.data(), input_data.size());
   }
 
   // Do inference.
   interpreter.interpret();
 
   // Get output.
-  const auto output_nodes = loco::output_nodes(module->graph());
-  for (int i = 0; i < module->graph()->outputs()->size(); i++)
+  //const auto output_nodes = loco::output_nodes(module->graph());
+
+  const auto output_tensors = interpreter.getOutputTensors();
+
+  for (int i = 0; i < output_tensors.size(); i++)
   {
-    const auto *output_node = loco::must_cast<const luci::CircleOutput *>(output_nodes[i]);
-    std::vector<char> output_data(getTensorSize(output_node));
-    interpreter.readOutputTensor(output_node, output_data.data(), output_data.size());
+    const auto output_tensor = output_tensors.at(i);
+    std::vector<char> output_data(get_tensor_size(output_tensor));
+
+    interpreter.read_output_tensor(output_tensor, output_data.data(), output_data.size());
 
     // Output data is written in ${output_file}
     // (ex: Add.circle.output0)
@@ -134,17 +173,17 @@ int entry(int argc, char **argv)
                     output_data.size());
     // In case of Tensor output is Scalar value.
     // The output tensor with rank 0 is treated as a scalar with shape (1)
-    if (output_node->rank() == 0)
+    if (output_tensor->shape().num_dims() == 0)
     {
       writeDataToFile(std::string(output_file) + std::to_string(i) + ".shape", "1", 1);
     }
     else
     {
-      auto shape_str = std::to_string(output_node->dim(0).value());
-      for (int j = 1; j < output_node->rank(); j++)
+      auto shape_str = std::to_string(output_tensor->shape().dim(0));
+      for (int j = 1; j < output_tensor->shape().num_dims(); j++)
       {
         shape_str += ",";
-        shape_str += std::to_string(output_node->dim(j).value());
+        shape_str += std::to_string(output_tensor->shape().dim(j));
       }
       writeDataToFile(std::string(output_file) + std::to_string(i) + ".shape", shape_str.c_str(),
                       shape_str.size());

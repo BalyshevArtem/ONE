@@ -260,7 +260,7 @@ bool validate(luci::Module *module)
   {
     auto graph = module->graph(g);
 
-    INFO(l) << luci::fmt(graph) << std::endl;
+    //INFO(l) << luci::fmt(graph) << std::endl;
 
     if (!validate(graph))
     {

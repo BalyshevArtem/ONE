@@ -129,6 +129,16 @@ void RuntimeGraph::setInputTensors(const std::vector<Tensor *> &input_tensors)
   _input_tensors = input_tensors;
 }
 
+void RuntimeGraph::add_input_tensor(Tensor *input_tensor)
+{
+  _input_tensors.push_back(input_tensor);
+}
+
+void RuntimeGraph::add_output_tensor(Tensor *output_tensor)
+{
+  _output_tensors.push_back(output_tensor);
+}
+
 void RuntimeGraph::setOutputTensors(const std::vector<Tensor *> &output_tensors)
 {
   assert(std::all_of(output_tensors.cbegin(), output_tensors.cend(),
@@ -153,25 +163,25 @@ void RuntimeGraph::execute() const
   if (!_tensor_alloc_plan->isValid())
     _tensor_alloc_plan->build(*this);
 
-  EventNotifier *event_notifier = _owning_module->getEventNotifier();
+  //EventNotifier *event_notifier = _owning_module->getEventNotifier();
 
   // Notify the observers that the input tensors have changed.
-  if (event_notifier != nullptr)
-  {
-    for (const Tensor *input_tensor : getInputTensors())
-    {
-      if (input_tensor->is_observable())
-        event_notifier->postTensorWrite(input_tensor);
-    }
-  }
+//  if (event_notifier != nullptr)
+//  {
+//    for (const Tensor *input_tensor : getInputTensors())
+//    {
+//      if (input_tensor->is_observable())
+//        event_notifier->postTensorWrite(input_tensor);
+//    }
+//  }
 
   for (size_t index = 0; index < _kernels.size(); ++index)
   {
     const auto &kernel = _kernels[index];
-    if (event_notifier != nullptr)
-    {
-      event_notifier->preOperatorExecute(kernel.get());
-    }
+//    if (event_notifier != nullptr)
+//    {
+//      event_notifier->preOperatorExecute(kernel.get());
+//    }
 
     // TODO The `configure` method should only be called if the outputs of an operator need to be
     //  resized.
@@ -182,18 +192,18 @@ void RuntimeGraph::execute() const
 
     kernel->execute();
 
-    if (event_notifier != nullptr)
-    {
-      event_notifier->postOperatorExecute(kernel.get());
-    }
+//    if (event_notifier != nullptr)
+//    {
+//      event_notifier->postOperatorExecute(kernel.get());
+//    }
 
-    for (const Tensor *tensor : kernel->getOutputTensors())
-    {
-      if (event_notifier != nullptr && tensor->is_observable())
-      {
-        event_notifier->postTensorWrite(tensor);
-      }
-    }
+//    for (const Tensor *tensor : kernel->getOutputTensors())
+//    {
+//      if (event_notifier != nullptr && tensor->is_observable())
+//      {
+//        event_notifier->postTensorWrite(tensor);
+//      }
+//    }
     _tensor_alloc_plan->deallocate(index);
   }
 }

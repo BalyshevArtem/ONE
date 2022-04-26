@@ -20,6 +20,7 @@
 #include "core/RuntimeModule.h"
 #include "loader/RuntimeToIR.h"
 #include "luci_interpreter/MemoryManager.h"
+#include "luci_interpreter/core/Kernel.h"
 
 #include <luci/IR/Module.h>
 
@@ -31,20 +32,31 @@ namespace luci_interpreter
 class ModuleLoader
 {
 public:
-  ModuleLoader(const luci::Module *module, RuntimeModule *runtime_module,
-               RuntimeToIR &runtime_to_ir,
-               std::unordered_map<const loco::Node *, Tensor *> &node_to_tensor,
+//  ModuleLoader(const luci::Module *module, RuntimeModule *runtime_module,
+//               RuntimeToIR &runtime_to_ir,
+//               std::unordered_map<const loco::Node *, Tensor *> &node_to_tensor,
+//               IMemoryManager *memory_manager);
+
+  ModuleLoader(std::vector<char> *model_data_raw, RuntimeModule *runtime_module,
+               std::unordered_map<Kernel *, Tensor *> &kernel_to_tensor,
                IMemoryManager *memory_manager);
 
   void load();
 
 private:
   IMemoryManager *_memory_manager;
-  const luci::Module *_module;
+ // const luci::Module *_module;
+
+  std::vector<char> *_model_data_raw = nullptr;
+
   RuntimeModule *_runtime_module;
-  RuntimeToIR &_runtime_to_ir;
-  std::unordered_map<const loco::Node *, Tensor *> &_node_to_tensor;
-  std::unordered_map<const loco::Graph *, RuntimeGraph *> _graph_to_runtime_graph;
+  //RuntimeToIR &_runtime_to_ir;
+  //std::unordered_map<const loco::Node *, Tensor *> &_node_to_tensor;
+  std::unordered_map<Kernel *, Tensor *> &_kernel_to_tensor;
+  //std::unordered_map<const loco::Graph *, RuntimeGraph *> _graph_to_runtime_graph;
+  std::vector<RuntimeGraph *> _graph_to_runtime_graph;
+
+  std::unordered_map<int32_t, Tensor *> _index_to_tensor;
 };
 
 } // namespace luci_interpreter

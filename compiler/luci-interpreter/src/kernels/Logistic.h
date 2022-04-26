@@ -16,7 +16,7 @@
 
 #ifndef LUCI_INTERPRETER_KERNELS_LOGISTIC_H
 #define LUCI_INTERPRETER_KERNELS_LOGISTIC_H
-
+#include "luci_interpreter/core/Kernel.h"
 #include "core/Kernel.h"
 
 namespace luci_interpreter

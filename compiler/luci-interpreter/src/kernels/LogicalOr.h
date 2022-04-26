@@ -19,7 +19,7 @@
 #define LUCI_INTERPRETER_KERNELS_LOGICALOR_H
 
 #include "core/Kernel.h"
-
+#include "luci_interpreter/core/Kernel.h"
 namespace luci_interpreter
 {
 namespace kernels

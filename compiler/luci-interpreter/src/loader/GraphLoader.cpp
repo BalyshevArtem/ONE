@@ -170,177 +170,187 @@ bool isSupportedCustomNode(const luci::CircleNode *node)
 
 } // namespace
 
-GraphLoader::GraphLoader(
-  const loco::Graph *graph, RuntimeGraph *runtime_graph, RuntimeToIR &runtime_to_ir,
-  const std::unordered_map<const loco::Graph *, RuntimeGraph *> &graph_to_runtime_graph,
-  std::unordered_map<const loco::Node *, Tensor *> &node_to_tensor, IMemoryManager *memory_manager)
-  : _graph(graph), _runtime_graph(runtime_graph), _runtime_to_ir(runtime_to_ir),
-    _graph_to_runtime_graph(graph_to_runtime_graph), _node_to_tensor(node_to_tensor),
+//GraphLoader::GraphLoader(
+//  const loco::Graph *graph, RuntimeGraph *runtime_graph,// RuntimeToIR &runtime_to_ir,
+//  const std::unordered_map<const loco::Graph *, RuntimeGraph *> &graph_to_runtime_graph,
+//  std::unordered_map<const loco::Node *, Tensor *> &node_to_tensor, IMemoryManager *memory_manager)
+//  : _graph(graph), _runtime_graph(runtime_graph), //_runtime_to_ir(runtime_to_ir),
+//    _graph_to_runtime_graph(graph_to_runtime_graph), _node_to_tensor(node_to_tensor),
+//    _memory_manager(memory_manager)
+//{
+//}
+
+GraphLoader::GraphLoader(std::vector<char> *model_data_raw, RuntimeGraph *runtime_graph,
+            const std::unordered_map<const loco::Graph *, RuntimeGraph *> &graph_to_runtime_graph,
+            std::unordered_map<Kernel *, Tensor *> &kernel_to_tensor,
+            IMemoryManager *memory_manager)
+  : _model_data_raw(model_data_raw), _runtime_graph(runtime_graph),
+    _graph_to_runtime_graph(graph_to_runtime_graph), _kernel_to_tensor(kernel_to_tensor),
     _memory_manager(memory_manager)
 {
 }
 
 void GraphLoader::loadTensors()
 {
-  for (uint32_t i = 0; i < _graph->nodes()->size(); ++i)
-  {
-    const auto *node = loco::must_cast<const luci::CircleNode *>(_graph->nodes()->at(i));
-
-    if (node->opcode() == luci::CircleOpcode::CUSTOM && !isSupportedCustomNode(node))
-      throw std::runtime_error("Unknown Custom Node, yet.");
-
-    if (!isTensorProducingNode(node))
-      continue;
-
-    // Only Input, Const, Custom and Variable nodes have shapes. Shapes of intermediate tensors will
-    // be inferred.
-    Shape shape{};
-    switch (node->opcode())
-    {
-      case luci::CircleOpcode::CIRCLECONST:
-      case luci::CircleOpcode::CIRCLECUSTOMOUT:
-      case luci::CircleOpcode::CIRCLEINPUT:
-      case luci::CircleOpcode::CIRCLEVARIABLE:
-        shape = getNodeShape(node);
-        break;
-      default:
-        break;
-    }
-
-    AffineQuantization quantization;
-    if (node->quantparam() != nullptr)
-    {
-      const luci::CircleQuantParam *params = node->quantparam();
-      assert(params->scale.size() == params->zerop.size());
-      quantization.scale.assign(params->scale.cbegin(), params->scale.cend());
-      quantization.zero_point.assign(params->zerop.cbegin(), params->zerop.cend());
-      quantization.quantized_dimension = params->quantized_dimension;
-    }
-
-    auto tensor = std::make_unique<Tensor>(node->dtype(), std::move(shape), std::move(quantization),
-                                           node->name());
-
-    // If node has execution plan then read memory offsets for nodes
-    // from the beginning of shared memory buffer. Used in Static Memory Manager.
-    if (luci::has_execution_plan(node))
-    {
-      auto execution_plan = luci::get_execution_plan(node);
-      assert(!execution_plan.offsets().empty());
-      tensor->set_offset(execution_plan.offsets().front());
-    }
-
-    if (const auto *const_node = dynamic_cast<const luci::CircleConst *>(node))
-    {
-      size_t data_size{};
-      const void *const_data = getNodeData(const_node, &data_size);
-      if (const_data != nullptr)
-      {
-       // _memory_manager->allocate_memory(*tensor);
-        tensor->write_data_without_copy(const_cast<void *>(const_data));
-       // tensor->writeData(const_data, data_size);
-      }
-    }
-    else if (const auto *custom_out_node = dynamic_cast<const luci::CircleCustomOut *>(node))
-    {
-      const auto *custom_node =
-        loco::must_cast<const luci::CircleCustom *>(custom_out_node->input());
-
-      if (custom_node->custom_code() == "CircleReferencingConst")
-      {
-        size_t data_size{};
-        const void *const_data = getNodeData(custom_node, &data_size);
-        if (const_data != nullptr)
-        {
-         // _memory_manager->allocate_memory(*tensor);
-          tensor->write_data_without_copy(const_cast<void *>(const_data));
-         // tensor->writeData(const_data, data_size);
-        }
-      }
-    }
-
-    _node_to_tensor.emplace(node, tensor.get());
-    _runtime_to_ir.tensor_to_node.emplace(tensor.get(), node);
-
-    _runtime_graph->addTensor(std::move(tensor));
-  }
+//  for (uint32_t i = 0; i < _graph->nodes()->size(); ++i)
+//  {
+//    const auto *node = loco::must_cast<const luci::CircleNode *>(_graph->nodes()->at(i));
+//
+//    if (node->opcode() == luci::CircleOpcode::CUSTOM && !isSupportedCustomNode(node))
+//      throw std::runtime_error("Unknown Custom Node, yet.");
+//
+//    if (!isTensorProducingNode(node))
+//      continue;
+//
+//    // Only Input, Const, Custom and Variable nodes have shapes. Shapes of intermediate tensors will
+//    // be inferred.
+//    Shape shape{};
+//    switch (node->opcode())
+//    {
+//      case luci::CircleOpcode::CIRCLECONST:
+//      case luci::CircleOpcode::CIRCLECUSTOMOUT:
+//      case luci::CircleOpcode::CIRCLEINPUT:
+//      case luci::CircleOpcode::CIRCLEVARIABLE:
+//        shape = getNodeShape(node);
+//        break;
+//      default:
+//        break;
+//    }
+//
+//    AffineQuantization quantization;
+//    if (node->quantparam() != nullptr)
+//    {
+//      const luci::CircleQuantParam *params = node->quantparam();
+//      assert(params->scale.size() == params->zerop.size());
+//      quantization.scale.assign(params->scale.cbegin(), params->scale.cend());
+//      quantization.zero_point.assign(params->zerop.cbegin(), params->zerop.cend());
+//      quantization.quantized_dimension = params->quantized_dimension;
+//    }
+//
+//    auto tensor = std::make_unique<Tensor>(node->dtype(), std::move(shape), std::move(quantization),
+//                                           node->name());
+//
+//    // If node has execution plan then read memory offsets for nodes
+//    // from the beginning of shared memory buffer. Used in Static Memory Manager.
+//    if (luci::has_execution_plan(node))
+//    {
+//      auto execution_plan = luci::get_execution_plan(node);
+//      assert(!execution_plan.offsets().empty());
+//      tensor->set_offset(execution_plan.offsets().front());
+//    }
+//
+//    if (const auto *const_node = dynamic_cast<const luci::CircleConst *>(node))
+//    {
+//      size_t data_size{};
+//      const void *const_data = getNodeData(const_node, &data_size);
+//      if (const_data != nullptr)
+//      {
+//        _memory_manager->allocate_memory(*tensor);
+//       // tensor->write_data_without_copy(const_cast<void *>(const_data));
+//        tensor->writeData(const_data, data_size);
+//      }
+//    }
+//    else if (const auto *custom_out_node = dynamic_cast<const luci::CircleCustomOut *>(node))
+//    {
+//      const auto *custom_node =
+//        loco::must_cast<const luci::CircleCustom *>(custom_out_node->input());
+//
+//      if (custom_node->custom_code() == "CircleReferencingConst")
+//      {
+//        size_t data_size{};
+//        const void *const_data = getNodeData(custom_node, &data_size);
+//        if (const_data != nullptr)
+//        {
+//          _memory_manager->allocate_memory(*tensor);
+//         // tensor->write_data_without_copy(const_cast<void *>(const_data));
+//          tensor->writeData(const_data, data_size);
+//        }
+//      }
+//    }
+//
+//    _node_to_tensor.emplace(node, tensor.get());
+//   // _runtime_to_ir.tensor_to_node.emplace(tensor.get(), node);
+//
+//    _runtime_graph->addTensor(std::move(tensor));
+//  }
 }
 
 void GraphLoader::initInputOutputTensors() const
 {
-  auto input_nodes = loco::input_nodes(_graph);
-  std::vector<Tensor *> input_tensors(input_nodes.size());
-  for (size_t i = 0; i < input_nodes.size(); ++i)
-  {
-    input_tensors[i] = _node_to_tensor.at(input_nodes[i]);
-    _memory_manager->allocate_memory(*input_tensors[i]);
-  }
-  _runtime_graph->setInputTensors(input_tensors);
-
-  auto output_nodes = loco::output_nodes(const_cast<loco::Graph *>(_graph));
-  std::vector<Tensor *> output_tensors(output_nodes.size());
-  for (size_t i = 0; i < output_nodes.size(); ++i)
-  {
-    const auto *node = loco::must_cast<const luci::CircleOutput *>(output_nodes[i]);
-    output_tensors[i] = _node_to_tensor.at(node->from());
-  }
-  _runtime_graph->setOutputTensors(output_tensors);
+//  auto input_nodes = loco::input_nodes(_graph);
+//  std::vector<Tensor *> input_tensors(input_nodes.size());
+//  for (size_t i = 0; i < input_nodes.size(); ++i)
+//  {
+//    input_tensors[i] = _node_to_tensor.at(input_nodes[i]);
+//    _memory_manager->allocate_memory(*input_tensors[i]);
+//  }
+ // _runtime_graph->setInputTensors(input_tensors);
+//
+//  auto output_nodes = loco::output_nodes(const_cast<loco::Graph *>(_graph));
+//  std::vector<Tensor *> output_tensors(output_nodes.size());
+//  for (size_t i = 0; i < output_nodes.size(); ++i)
+//  {
+//    const auto *node = loco::must_cast<const luci::CircleOutput *>(output_nodes[i]);
+//    output_tensors[i] = _node_to_tensor.at(node->from());
+//  }
+//  _runtime_graph->setOutputTensors(output_tensors);
 }
 
 void GraphLoader::loadOperators()
 {
-  KernelBuilder kernel_builder(_graph_to_runtime_graph, _node_to_tensor);
-
-  // Create kernels for executable nodes. This has to be done in execution order.
-  auto graph = const_cast<loco::Graph *>(_graph);
-
-  auto const graph_nodes = loco::all_nodes(graph);
-
-  // Checking for execution plan in node annotations.
-  bool has_execution_annotation = true;
-  auto const checking_exec_plan = [&has_execution_annotation](auto const node) {
-    const auto *circle_node = loco::must_cast<const luci::CircleNode *>(node);
-    if (!luci::has_execution_plan(circle_node))
-      has_execution_annotation = false;
-  };
-  std::for_each(begin(graph_nodes), end(graph_nodes), checking_exec_plan);
-
-  if (has_execution_annotation)
-  {
-    // Build ordered_nodes vector that stores the order of execution of graph nodes.
-    std::vector<const luci::CircleNode *> ordered_nodes(graph_nodes.size());
-
-    auto const filler = [&ordered_nodes](auto const node) {
-      const auto *circle_node = loco::must_cast<const luci::CircleNode *>(node);
-      auto const position = luci::get_execution_plan(circle_node).order_in_plan();
-      ordered_nodes.at(position) = circle_node;
-    };
-    std::for_each(begin(graph_nodes), end(graph_nodes), filler);
-
-    for (auto node : ordered_nodes)
-    {
-      if (isExecutableNode(node))
-      {
-        std::unique_ptr<Kernel> kernel = kernel_builder.build(node);
-        _runtime_to_ir.kernel_to_node.emplace(kernel.get(), node);
-        _runtime_graph->addKernel(std::move(kernel));
-      }
-    }
-  }
-  else
-  {
-    // If it is impossible to build the execution order plan,
-    // then we use the default postorder_traversal approach.
-    for (const loco::Node *loco_node : loco::postorder_traversal(loco::output_nodes(graph)))
-    {
-      const auto *node = loco::must_cast<const luci::CircleNode *>(loco_node);
-      if (isExecutableNode(node))
-      {
-        std::unique_ptr<Kernel> kernel = kernel_builder.build(node);
-        _runtime_to_ir.kernel_to_node.emplace(kernel.get(), node);
-        _runtime_graph->addKernel(std::move(kernel));
-      }
-    }
-  }
+//  KernelBuilder kernel_builder(_graph_to_runtime_graph, _node_to_tensor);
+//
+//  // Create kernels for executable nodes. This has to be done in execution order.
+//  auto graph = const_cast<loco::Graph *>(_graph);
+//
+//  auto const graph_nodes = loco::all_nodes(graph);
+//
+//  // Checking for execution plan in node annotations.
+//  bool has_execution_annotation = true;
+//  auto const checking_exec_plan = [&has_execution_annotation](auto const node) {
+//    const auto *circle_node = loco::must_cast<const luci::CircleNode *>(node);
+//    if (!luci::has_execution_plan(circle_node))
+//      has_execution_annotation = false;
+//  };
+//  std::for_each(begin(graph_nodes), end(graph_nodes), checking_exec_plan);
+//
+//  if (has_execution_annotation)
+//  {
+//    // Build ordered_nodes vector that stores the order of execution of graph nodes.
+//    std::vector<const luci::CircleNode *> ordered_nodes(graph_nodes.size());
+//
+//    auto const filler = [&ordered_nodes](auto const node) {
+//      const auto *circle_node = loco::must_cast<const luci::CircleNode *>(node);
+//      auto const position = luci::get_execution_plan(circle_node).order_in_plan();
+//      ordered_nodes.at(position) = circle_node;
+//    };
+//    std::for_each(begin(graph_nodes), end(graph_nodes), filler);
+//
+//    for (auto node : ordered_nodes)
+//    {
+//      if (isExecutableNode(node))
+//      {
+//        std::unique_ptr<Kernel> kernel = kernel_builder.build(node);
+//     //   _runtime_to_ir.kernel_to_node.emplace(kernel.get(), node);
+//        _runtime_graph->addKernel(std::move(kernel));
+//      }
+//    }
+//  }
+//  else
+//  {
+//    // If it is impossible to build the execution order plan,
+//    // then we use the default postorder_traversal approach.
+//    for (const loco::Node *loco_node : loco::postorder_traversal(loco::output_nodes(graph)))
+//    {
+//      const auto *node = loco::must_cast<const luci::CircleNode *>(loco_node);
+//      if (isExecutableNode(node))
+//      {
+//        std::unique_ptr<Kernel> kernel = kernel_builder.build(node);
+//     //   _runtime_to_ir.kernel_to_node.emplace(kernel.get(), node);
+//        _runtime_graph->addKernel(std::move(kernel));
+//      }
+//    }
+//  }
 }
 
 } // namespace luci_interpreter

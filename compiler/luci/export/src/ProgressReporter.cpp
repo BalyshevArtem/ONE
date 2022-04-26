@@ -54,7 +54,7 @@ void ProgressReporter::notify(const logo::PhaseEventInfo<logo::PhaseEvent::Phase
   VERBOSE(l, 4) << "==============================================================";
   VERBOSE(l, 4) << "luci::PhaseRunner<" << to_str(strategy()) << ">";
   VERBOSE(l, 4) << "Initial graph";
-  VERBOSE(l, 4) << fmt(graph());
+ // VERBOSE(l, 4) << fmt(graph());
 }
 
 void ProgressReporter::notify(const logo::PhaseEventInfo<logo::PhaseEvent::PhaseEnd> *)
@@ -78,7 +78,7 @@ void ProgressReporter::notify(const logo::PhaseEventInfo<logo::PhaseEvent::PassE
 
   VERBOSE(l, 4) << "After " << logo::pass_name(info->pass())
                 << " (changed: " << to_char(info->changed()) << ")";
-  VERBOSE(l, 4) << fmt(graph());
+ // VERBOSE(l, 4) << fmt(graph());
 }
 
 } // namespace luci
