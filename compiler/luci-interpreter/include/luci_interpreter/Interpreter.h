@@ -56,7 +56,7 @@ public:
 
   explicit Interpreter(const luci::Module *module, IMemoryManager *memory_manager);
 
-  explicit Interpreter(std::vector<char> *model_data_raw);
+  explicit Interpreter(char *model_data_raw);
 
   ~Interpreter();
 
@@ -85,7 +85,7 @@ private:
   std::unique_ptr<IMemoryManager> _default_memory_manager = nullptr;
   std::unique_ptr<class RuntimeModule> _runtime_module;
 
-  std::unordered_map<Kernel *, Tensor *> _kernel_to_tensor;
+ // std::unordered_map<Kernel *, Tensor *> _kernel_to_tensor;
 
   // Observer functionality support.
 //  std::unique_ptr<struct RuntimeToIR> _runtime_to_ir;

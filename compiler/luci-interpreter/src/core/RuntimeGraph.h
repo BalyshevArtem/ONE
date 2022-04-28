@@ -43,6 +43,9 @@ public:
 
   Tensor *addTensor(std::unique_ptr<Tensor> &&tensor);
 
+  void make_tensor_alloca_plan() const;
+  void make_tensor_configure() const;
+
   void setInputTensors(const std::vector<Tensor *> &input_tensors);
 
   void add_input_tensor(Tensor *input_tensor);

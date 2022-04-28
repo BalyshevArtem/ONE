@@ -84,14 +84,26 @@ namespace
 //}
 
 
-Interpreter::Interpreter(std::vector<char> *model_data_raw)
+Interpreter::Interpreter(char *model_data_raw)
 {
   _runtime_module = std::make_unique<RuntimeModule>();
 
   _default_memory_manager = std::make_unique<SimpleMemoryManager>();
 
-  ModuleLoader loader(model_data_raw, _runtime_module.get(), _kernel_to_tensor, _default_memory_manager.get());
+  ModuleLoader loader(model_data_raw, _runtime_module.get(), _default_memory_manager.get());
   loader.load();
+
+//  printf("\nSimple Memory Manager size : \n");
+//  auto size_mm = sizeof(SimpleMemoryManager);
+//  printf("%lu\n", size_mm);
+//
+//  printf("\nRuntime module size : \n");
+//  auto size_rm = sizeof(RuntimeModule);
+//  printf("%lu\n", size_rm);
+
+ // printf("\nKernel to tensor size : \n");
+  //auto size_kt = sizeof(_kernel_to_tensor);
+ // printf("%lu\n", size_kt);
 }
 
 const std::vector<Tensor *> &Interpreter::getInputTensors()

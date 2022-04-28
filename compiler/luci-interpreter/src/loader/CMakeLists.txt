@@ -16,7 +16,7 @@ set(SOURCES
 
 # include kernel specific builders
 macro(REGISTER_KERNEL NODE)
-  list(APPEND SOURCES "nodes/${NODE}.cpp")
+  #list(APPEND SOURCES "nodes/${NODE}.cpp")
 endmacro(REGISTER_KERNEL)
 include(${KERNEL_REGISTER_FILE})
 
@@ -30,7 +30,6 @@ target_include_directories(${LUCI_INTERPRETER_LOADER} PUBLIC "${LUCI_INTERPRETER
 
 set(ONE_COMPILER_SRC_DIR "${NNAS_PROJECT_SOURCE_DIR}/compiler")
 set(MICRO_ARM_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}/../../../")
-#add_subdirectory(${ONE_COMPILER_SRC_DIR}/mio-circle04 ${CMAKE_CURRENT_BINARY_DIR}/mio-circle04)
 
 target_link_libraries(${LUCI_INTERPRETER_LOADER} PUBLIC "${MICRO_ARM_BUILD_DIR}/mio-circle04/libmio_circle04.a")
 target_link_libraries(${LUCI_INTERPRETER_LOADER} PUBLIC "${MICRO_ARM_BUILD_DIR}/mio-circle04/libmio_circle04_helper.a")

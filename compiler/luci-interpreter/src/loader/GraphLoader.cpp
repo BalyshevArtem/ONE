@@ -181,11 +181,8 @@ bool isSupportedCustomNode(const luci::CircleNode *node)
 //}
 
 GraphLoader::GraphLoader(std::vector<char> *model_data_raw, RuntimeGraph *runtime_graph,
-            const std::unordered_map<const loco::Graph *, RuntimeGraph *> &graph_to_runtime_graph,
-            std::unordered_map<Kernel *, Tensor *> &kernel_to_tensor,
-            IMemoryManager *memory_manager)
+                         IMemoryManager *memory_manager)
   : _model_data_raw(model_data_raw), _runtime_graph(runtime_graph),
-    _graph_to_runtime_graph(graph_to_runtime_graph), _kernel_to_tensor(kernel_to_tensor),
     _memory_manager(memory_manager)
 {
 }

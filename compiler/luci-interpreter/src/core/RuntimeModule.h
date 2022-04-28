@@ -48,7 +48,13 @@ public:
     return getMainGraph()->getOutputTensors();
   }
 
-  void execute() const { getMainGraph()->execute(); }
+  void execute() const { getMainGraph()->execute();
+
+   // auto &graph = const_cast<std::unique_ptr<RuntimeGraph>&>(_graphs.at(0));
+
+  //  printf("\nSize of RuntimeGraph = %lu\n", sizeof(RuntimeGraph));
+    //graph.reset();
+  }
 
 private:
   RuntimeGraph *getMainGraph() const { return _graphs[0].get(); }

@@ -33,6 +33,7 @@ void SimpleMemoryManager::allocate_memory(luci_interpreter::Tensor &tensor)
   const auto num_elements = tensor.shape().num_elements();
 
   auto *data = new uint8_t[num_elements * element_size];
+  //printf("\nallocate bytes = %d\n", num_elements * element_size);
   tensor.set_data_buffer(data);
 }
 

@@ -36,8 +36,8 @@ SET(CMAKE_CXX_LINK_FLAGS "-Wl,--gc-sections -Wl,--wrap,main -Wl,--wrap,_malloc_r
 SET(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} ${LD_SYS_LIBS} -T ${CMAKE_BINARY_DIR}/benchmark_pp.link_script.ld")
 
 ADD_DEFINITIONS(
-      #  -DMBED_HEAP_STATS_ENABLED
-      #  -DMBED_MEM_TRACING_ENABLED
+        -DMBED_HEAP_STATS_ENABLED
+        -DMBED_MEM_TRACING_ENABLED
         -DARM_MATH_CM7
         -DCOMPONENT_FLASHIAP=1
         -DDEVICE_ANALOGIN=1
@@ -120,7 +120,7 @@ target_include_directories_mbed(benchmark ${MbedOSSource_DIR})
 
 target_link_libraries(mbed_os "${MICRO_ARM_BUILD_DIR}/luci-interpreter/src/kernels/libluci_interpreter_kernels.a")
 target_link_libraries(mbed_os "${MICRO_ARM_BUILD_DIR}/luci-interpreter/src/kernels/libluci_interpreter_cmsisnn_pal.a")
-target_link_libraries(mbed_os "${MICRO_ARM_BUILD_DIR}/luci-interpreter/src/import/libluci_interpreter_import.a")
+#target_link_libraries(mbed_os "${MICRO_ARM_BUILD_DIR}/luci-interpreter/src/import/libluci_interpreter_import.a")
 target_link_libraries(mbed_os "${MICRO_ARM_BUILD_DIR}/loco/libloco.a")
 
 target_link_libraries(mbed_os "${MICRO_ARM_BUILD_DIR}/luci-interpreter/src/libluci_interpreter.a")
@@ -129,13 +129,13 @@ target_link_libraries(mbed_os "${MICRO_ARM_BUILD_DIR}/luci-interpreter/src/core/
 #target_link_libraries(mbed_os "${MICRO_ARM_BUILD_DIR}/locomotiv/liblocomotiv.a")
 target_link_libraries(mbed_os "${MICRO_ARM_BUILD_DIR}/logo/liblogo.a")
 target_link_libraries(mbed_os "${MICRO_ARM_BUILD_DIR}/logo-core/liblogo_core.a")
-target_link_libraries(mbed_os "${MICRO_ARM_BUILD_DIR}/luci/import/libluci_import.a")
-target_link_libraries(mbed_os "${MICRO_ARM_BUILD_DIR}/luci/lang/libluci_lang.a")
-target_link_libraries(mbed_os "${MICRO_ARM_BUILD_DIR}/luci/env/libluci_env.a")
+#target_link_libraries(mbed_os "${MICRO_ARM_BUILD_DIR}/luci/import/libluci_import.a")
+#target_link_libraries(mbed_os "${MICRO_ARM_BUILD_DIR}/luci/lang/libluci_lang.a")
+#target_link_libraries(mbed_os "${MICRO_ARM_BUILD_DIR}/luci/env/libluci_env.a")
 target_link_libraries(mbed_os "${MICRO_ARM_BUILD_DIR}/luci/log/libluci_log.a")
-target_link_libraries(mbed_os "${MICRO_ARM_BUILD_DIR}/luci/logex/libluci_logex.a")
-target_link_libraries(mbed_os "${MICRO_ARM_BUILD_DIR}/luci/plan/libluci_plan.a")
-target_link_libraries(mbed_os "${MICRO_ARM_BUILD_DIR}/luci/profile/libluci_profile.a")
+#target_link_libraries(mbed_os "${MICRO_ARM_BUILD_DIR}/luci/logex/libluci_logex.a")
+#target_link_libraries(mbed_os "${MICRO_ARM_BUILD_DIR}/luci/plan/libluci_plan.a")
+#target_link_libraries(mbed_os "${MICRO_ARM_BUILD_DIR}/luci/profile/libluci_profile.a")
 target_link_libraries(mbed_os "${MICRO_ARM_BUILD_DIR}/locop/liblocop.a")
 target_link_libraries(mbed_os "${MICRO_ARM_BUILD_DIR}/mio-circle04/libmio_circle04_helper.a")
 target_link_libraries(mbed_os "${MICRO_ARM_BUILD_DIR}/pp/libpp.a")

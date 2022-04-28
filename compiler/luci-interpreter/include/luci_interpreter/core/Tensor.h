@@ -89,7 +89,7 @@ struct AffineQuantization
 class Tensor
 {
 public:
-  Tensor(DataType element_type, Shape shape, AffineQuantization quantization, std::string name);
+  Tensor(DataType element_type, Shape shape, AffineQuantization quantization);
 
   DataType element_type() const { return _element_type; }
 
@@ -137,7 +137,7 @@ public:
     return _data;
   }
 
-  const std::string &name() const { return _name; }
+  //const std::string &name() const { return _name; }
 
   void readData(void *data_ptr, size_t data_size) const;
 
@@ -177,7 +177,7 @@ private:
   Shape _shape;
   AffineQuantization _quantization;
   uint8_t *_data;
-  std::string _name;
+  //std::string _name;
   bool _data_allocated;
   // Write of tensor is reported to registered Observers only if this tensor is observable
   // This is needed for tensors used in kernel implementation, but not present in original model.

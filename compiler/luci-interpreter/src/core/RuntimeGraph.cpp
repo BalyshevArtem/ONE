@@ -87,6 +87,7 @@ void RuntimeGraph::TensorAllocPlan::allocate(size_t kernel_index) const
   assert(_valid && kernel_index < _alloc_plan.size());
   for (Tensor *tensor : _alloc_plan[kernel_index])
   {
+    //printf("\nallocate for kenel kernel_index = %d\n", kernel_index);
     _memory_manager->allocate_memory(*tensor);
   }
 }
@@ -96,6 +97,7 @@ void RuntimeGraph::TensorAllocPlan::deallocate(size_t kernel_index) const
   assert(_valid && kernel_index < _dealloc_plan.size());
   for (Tensor *tensor : _dealloc_plan[kernel_index])
   {
+    //printf("\ndeallocate for kenel kernel_index = %d\n", kernel_index);
     _memory_manager->release_memory(*tensor);
   }
 }
@@ -158,8 +160,26 @@ void RuntimeGraph::addKernel(std::unique_ptr<Kernel> &&kernel)
   _tensor_alloc_plan->invalidate();
 }
 
+void RuntimeGraph::make_tensor_alloca_plan() const
+{
+  if (!_tensor_alloc_plan->isValid())
+    _tensor_alloc_plan->build(*this);
+}
+
+void RuntimeGraph::make_tensor_configure() const
+{
+  for (size_t index = 0; index < _kernels.size(); ++index)
+  {
+    const auto &kernel = _kernels[index];
+    kernel->configure();
+  }
+}
+
 void RuntimeGraph::execute() const
 {
+  /*
+   * Test ficha
+   */
   if (!_tensor_alloc_plan->isValid())
     _tensor_alloc_plan->build(*this);
 
@@ -185,7 +205,10 @@ void RuntimeGraph::execute() const
 
     // TODO The `configure` method should only be called if the outputs of an operator need to be
     //  resized.
-    kernel->configure();
+    /*
+     * Teset ficha
+     */
+//   kernel->configure();
 
     // Preallocate outputs in advance instead of relying on automatic allocation
     _tensor_alloc_plan->allocate(index);
@@ -206,6 +229,18 @@ void RuntimeGraph::execute() const
 //    }
     _tensor_alloc_plan->deallocate(index);
   }
+//
+//  for (size_t index = 0; index < _kernels.size(); ++index)
+//  {
+//    auto &kernel = const_cast<std::unique_ptr<Kernel>&>(_kernels[index]);
+//    kernel.reset();
+//  }
+//
+//  for (size_t index = 0; index < _tensors.size(); ++index)
+//  {
+//    auto &tensor = const_cast<std::unique_ptr<Tensor>&>(_tensors[index]);
+//    tensor.reset();
+//  }
 }
 
 } // namespace luci_interpreter

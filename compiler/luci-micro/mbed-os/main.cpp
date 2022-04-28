@@ -19,10 +19,10 @@
 #include <luci_interpreter/Interpreter.h>
 #include <luci_interpreter/GraphBuilderRegistry.h>
 #include <luci_interpreter/StaticMemoryManager.h>
-#include <luci/Importer.h>
-#include <luci/IR/Module.h>
+//#include <luci/Importer.h>
+//#include <luci/IR/Module.h>
 #include <loco/IR/DataTypeTraits.h>
-#include "rev5.h"
+#include "rev2.h"
 #include <cstdlib>
 #include <iostream>
 #include <luci/Log.h>
@@ -73,6 +73,7 @@ void print_memory_stats()
 
 int main()
 {
+  print_memory_stats();
   std::cout << "\nSystemCoreClock " << SystemCoreClock << "\n";
   flatbuffers::Verifier verifier{reinterpret_cast<const uint8_t *>(circle_model_raw), sizeof(circle_model_raw) / sizeof(circle_model_raw[0])};
 
@@ -83,51 +84,54 @@ int main()
   }
   std::cout << "OK\n";
   std::cout << "circle::GetModel(circle_model_raw)\n";
-  auto model = circle::GetModel(circle_model_raw);
+  //auto model = circle::GetModel(circle_model_raw);
   std::cout << "luci::Importer().importModule\n";
-  const auto optimized_source = luci_interpreter::source_without_constant_copying();
-  auto module = luci::Importer(optimized_source.get()).importModule(model);
+  //const auto optimized_source = luci_interpreter::source_without_constant_copying();
+  //auto module = luci::Importer(optimized_source.get()).importModule(model);
   //auto module = luci::Importer().importModule(model);
-
+  luci_interpreter::Interpreter interpreter(const_cast<char *>(circle_model_raw));
+ // print_memory_stats();
   std::cout << "OK\n";
   std::cout << "std::make_unique<luci_interpreter::Interpreter>(module.get())\n";
 
-  auto interpreter = std::make_unique<luci_interpreter::Interpreter>(module.get());
+  //auto interpreter = std::make_unique<luci_interpreter::Interpreter>(module.get());
 
   Timer t;
  // print_memory_stats();
   std::cout << "OK\n";
-  auto nodes = module->graph()->nodes();
-  auto nodes_count = nodes->size();
-  for (int i = 0; i < nodes_count; ++i)
+ // auto nodes = module->graph()->nodes();
+ // auto nodes_count = nodes->size();
+
+  const auto input_tensors = interpreter.getInputTensors();
+  for (int i = 0; i < input_tensors.size(); ++i)
   {
-    auto *node = dynamic_cast<luci::CircleNode *>(nodes->at(i));
-    assert(node);
-    if (node->opcode() == luci::CircleOpcode::CIRCLEINPUT)
+    //auto *node = dynamic_cast<luci::CircleNode *>(nodes->at(i));
+   // assert(node);
+   // if (node->opcode() == luci::CircleOpcode::CIRCLEINPUT)
+   // {
+    //  auto *input_node = static_cast<luci::CircleInput *>(node);
+    //  loco::GraphInput *g_input = module->graph()->inputs()->at(input_node->index());
+    const auto input_tensor = input_tensors.at(i);
+    const luci_interpreter::Shape shape = input_tensor->shape();//g_input->shape();
+    size_t data_size = 1;
+    for (int d = 0; d < shape.num_dims(); ++d)
     {
-      auto *input_node = static_cast<luci::CircleInput *>(node);
-      loco::GraphInput *g_input = module->graph()->inputs()->at(input_node->index());
-      const loco::TensorShape *shape = g_input->shape();
-      size_t data_size = 1;
-      for (int d = 0; d < shape->rank(); ++d)
-      {
-        assert(shape->dim(d).known());
-        data_size *= shape->dim(d).value();
-      }
-      data_size *= loco::size(g_input->dtype());
-
-      std::vector<char> data(data_size);
-      fill_in_tensor(data, g_input->dtype());
-
-      interpreter->writeInputTensor(static_cast<luci::CircleInput *>(node), data.data(),
-                                    data_size);
+     // assert(shape.dim(d).known());
+      data_size *= shape.dim(d);
     }
+    data_size *= loco::size(input_tensor->element_type());
+
+    std::vector<char> data(data_size);
+    fill_in_tensor(data, input_tensor->element_type());
+    interpreter.write_input_tensor(input_tensor, data.data(), data_size);
+      //interpreter->writeInputTensor(static_cast<luci::CircleInput *>(node), data.data(),
+      //                              data_size);
   }
 
-   // print_memory_stats();
-    t.start();
-    interpreter->interpret();
-    t.stop();
-   // print_memory_stats();
+    print_memory_stats();
+    //t.start();
+    interpreter.interpret();
+    //t.stop();
+    print_memory_stats();
     std::cout << "\nFinished in " << t.read_us() << "\n";
 }
