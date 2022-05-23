@@ -151,7 +151,8 @@ int entry(int argc, char **argv)
   }
 
   // Do inference.
-  interpreter.interpret();
+  for (int i = 0; i < 10; ++i)
+    interpreter.interpret();
 
   // Get output.
   //const auto output_nodes = loco::output_nodes(module->graph());

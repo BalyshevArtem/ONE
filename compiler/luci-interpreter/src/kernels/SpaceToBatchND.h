@@ -28,7 +28,7 @@ class SpaceToBatchND : public Kernel
 {
 public:
   SpaceToBatchND(const Tensor *input, const Tensor *block_shape, const Tensor *paddings,
-                 Tensor *output);
+                 Tensor *output, const Shape shape);
 
   const Tensor *input() const { return _inputs[0]; }
   const Tensor *block_shape() const { return _inputs[1]; }
@@ -37,6 +37,8 @@ public:
 
   void configure() override;
   void execute() const override;
+private:
+  Shape _own_shape;
 };
 
 } // namespace kernels

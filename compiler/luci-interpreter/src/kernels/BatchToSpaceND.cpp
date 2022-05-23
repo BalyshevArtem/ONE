@@ -35,14 +35,18 @@ const int kInputMaxDimensionNum = 4;
 } // namespace
 
 BatchToSpaceND::BatchToSpaceND(const Tensor *input, const Tensor *block_shape, const Tensor *crops,
-                               Tensor *output)
-  : Kernel({input, block_shape, crops}, {output})
+                               Tensor *output, const Shape &shape)
+  : Kernel({input, block_shape, crops}, {output}), _own_shape(shape)
 {
 }
 
 void BatchToSpaceND::configure()
 {
   if (input()->shape().num_dims() == 3)
+  {
+    output()->resize(_own_shape);
+    return;
+  }
     return;
   const auto *block_shape_data = block_shape()->data<int32_t>();
   const auto *crops_data = crops()->data<int32_t>();

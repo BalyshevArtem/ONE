@@ -35,7 +35,7 @@ void Logistic::configure()
     LUCI_INTERPRETER_CHECK(output()->scale() == 1. / 256);
     populateLookupTable();
   }
-  output()->resize(input()->shape());
+  //output()->resize(input()->shape());
 }
 
 void Logistic::execute() const

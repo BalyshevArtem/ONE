@@ -22,8 +22,8 @@
 namespace luci_interpreter
 {
 
-Tensor::Tensor(DataType element_type, Shape shape, AffineQuantization quantization)
-  : _element_type(element_type), _shape(std::move(shape)), _quantization(std::move(quantization)),
+Tensor::Tensor(DataType element_type, Shape shape, AffineQuantization *quantization)
+  : _element_type(element_type), _shape(std::move(shape)), _quantization(quantization),
     _data_allocated(false)
 {
 //  printf("\nAffineQuantization size = %lu\n", sizeof(AffineQuantization));

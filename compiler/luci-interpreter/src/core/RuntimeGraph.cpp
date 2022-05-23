@@ -62,8 +62,9 @@ void RuntimeGraph::TensorAllocPlan::build(const RuntimeGraph &graph)
     }
     for (Tensor *tensor : kernel->getOutputTensors())
     {
-      assert(lifetimes.count(tensor) == 0);
-      lifetimes[tensor] = Lifetime(index, index);
+      //assert(lifetimes.count(tensor) == 0);
+      if (lifetimes.count(tensor) == 0)
+        lifetimes[tensor] = Lifetime(index, index);
     }
   }
   for (const Tensor *tensor : graph.getOutputTensors())
@@ -208,7 +209,7 @@ void RuntimeGraph::execute() const
     /*
      * Teset ficha
      */
-//   kernel->configure();
+   kernel->configure();
 
     // Preallocate outputs in advance instead of relying on automatic allocation
     _tensor_alloc_plan->allocate(index);

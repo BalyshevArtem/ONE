@@ -76,12 +76,16 @@ void ExpandDims::configure()
 void ExpandDims::execute() const
 {
   // Just copy input to output
-  const auto *input_data = input()->data<void>();
-  auto *output_data = output()->data<void>();
+  if (output() != input())
+  {
+    const auto *input_data = input()->data<void>();
+    auto *output_data = output()->data<void>();
 
-  const size_t element_size = getDataTypeSize(input()->element_type());
-  const int32_t num_elements = input()->shape().num_elements();
-  std::memcpy(output_data, input_data, num_elements * element_size);
+    const size_t element_size = getDataTypeSize(input()->element_type());
+    const int32_t num_elements = input()->shape().num_elements();
+    std::memcpy(output_data, input_data, num_elements * element_size);
+  }
+
 }
 
 } // namespace kernels

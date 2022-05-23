@@ -89,7 +89,7 @@ struct AffineQuantization
 class Tensor
 {
 public:
-  Tensor(DataType element_type, Shape shape, AffineQuantization quantization);
+  Tensor(DataType element_type, Shape shape, AffineQuantization *quantization);
 
   DataType element_type() const { return _element_type; }
 
@@ -97,21 +97,21 @@ public:
 
   float scale() const
   {
-    assert(_quantization.scale.size() == 1);
-    return _quantization.scale[0];
+    assert(_quantization->scale.size() == 1);
+    return _quantization->scale[0];
   }
 
   int32_t zero_point() const
   {
-    assert(_quantization.zero_point.size() == 1);
-    return _quantization.zero_point[0];
+    assert(_quantization->zero_point.size() == 1);
+    return _quantization->zero_point[0];
   }
 
-  const std::vector<float> &scales() const { return _quantization.scale; }
+  const std::vector<float> &scales() const { return _quantization->scale; }
 
-  const std::vector<int32_t> &zero_points() const { return _quantization.zero_point; }
+  const std::vector<int32_t> &zero_points() const { return _quantization->zero_point; }
 
-  int32_t quantized_dimension() const { return _quantization.quantized_dimension; }
+  int32_t quantized_dimension() const { return _quantization->quantized_dimension; }
 
   template <typename T> const T *data() const
   {
@@ -175,7 +175,7 @@ public:
 private:
   DataType _element_type;
   Shape _shape;
-  AffineQuantization _quantization;
+  AffineQuantization *_quantization;
   uint8_t *_data;
   //std::string _name;
   bool _data_allocated;

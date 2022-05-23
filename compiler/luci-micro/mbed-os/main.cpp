@@ -22,7 +22,7 @@
 //#include <luci/Importer.h>
 //#include <luci/IR/Module.h>
 #include <loco/IR/DataTypeTraits.h>
-#include "rev2.h"
+#include "rev5.h"
 #include <cstdlib>
 #include <iostream>
 #include <luci/Log.h>
@@ -102,36 +102,50 @@ int main()
  // auto nodes = module->graph()->nodes();
  // auto nodes_count = nodes->size();
 
-  const auto input_tensors = interpreter.getInputTensors();
-  for (int i = 0; i < input_tensors.size(); ++i)
-  {
-    //auto *node = dynamic_cast<luci::CircleNode *>(nodes->at(i));
-   // assert(node);
-   // if (node->opcode() == luci::CircleOpcode::CIRCLEINPUT)
-   // {
-    //  auto *input_node = static_cast<luci::CircleInput *>(node);
-    //  loco::GraphInput *g_input = module->graph()->inputs()->at(input_node->index());
-    const auto input_tensor = input_tensors.at(i);
-    const luci_interpreter::Shape shape = input_tensor->shape();//g_input->shape();
-    size_t data_size = 1;
-    for (int d = 0; d < shape.num_dims(); ++d)
-    {
-     // assert(shape.dim(d).known());
-      data_size *= shape.dim(d);
-    }
-    data_size *= loco::size(input_tensor->element_type());
+//  const auto input_tensors = interpreter.getInputTensors();
+//  for (int i = 0; i < input_tensors.size(); ++i)
+//  {
+//    //auto *node = dynamic_cast<luci::CircleNode *>(nodes->at(i));
+//   // assert(node);
+//   // if (node->opcode() == luci::CircleOpcode::CIRCLEINPUT)
+//   // {
+//    //  auto *input_node = static_cast<luci::CircleInput *>(node);
+//    //  loco::GraphInput *g_input = module->graph()->inputs()->at(input_node->index());
+//    const auto input_tensor = input_tensors.at(i);
+//    const luci_interpreter::Shape shape = input_tensor->shape();//g_input->shape();
+//    size_t data_size = 1;
+//    for (int d = 0; d < shape.num_dims(); ++d)
+//    {
+//     // assert(shape.dim(d).known());
+//      data_size *= shape.dim(d);
+//    }
+//    data_size *= loco::size(input_tensor->element_type());
+//
+//    std::vector<char> data(data_size);
+//    fill_in_tensor(data, input_tensor->element_type());
+//    interpreter.write_input_tensor(input_tensor, data.data(), data_size);
+//      //interpreter->writeInputTensor(static_cast<luci::CircleInput *>(node), data.data(),
+//      //                              data_size);
+//  }
 
-    std::vector<char> data(data_size);
-    fill_in_tensor(data, input_tensor->element_type());
-    interpreter.write_input_tensor(input_tensor, data.data(), data_size);
-      //interpreter->writeInputTensor(static_cast<luci::CircleInput *>(node), data.data(),
-      //                              data_size);
-  }
-
-    print_memory_stats();
-    //t.start();
+    //print_memory_stats();
+    t.start();
     interpreter.interpret();
-    //t.stop();
-    print_memory_stats();
+    t.stop();
+    //print_memory_stats();
+//
+//    int *ptr = new int[100];
+//    print_memory_stats();
+//
+//  int *ptr2 = new int[1];
+//  print_memory_stats();
+//  std::vector<int> nice(1000, 0);
+//  print_memory_stats();
+//
+//  if (ptr[0] == ptr2[0])
+//  {
+//    printf("\nequal %s\n", nice[0]);
+//  }
+
     std::cout << "\nFinished in " << t.read_us() << "\n";
 }
