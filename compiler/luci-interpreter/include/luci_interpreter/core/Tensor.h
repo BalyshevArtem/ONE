@@ -158,9 +158,9 @@ public:
     _data = buffer;
   }
 
-  bool is_observable() const { return _is_observable; }
+ // bool is_observable() const { return _is_observable; }
 
-  void set_observable(bool value) { _is_observable = value; }
+ // void set_observable(bool value) { _is_observable = value; }
 
   bool is_allocatable() const { return _is_allocatable; }
 
@@ -181,7 +181,7 @@ private:
   bool _data_allocated;
   // Write of tensor is reported to registered Observers only if this tensor is observable
   // This is needed for tensors used in kernel implementation, but not present in original model.
-  bool _is_observable = true;
+ // bool _is_observable = true;
   // Memory manager is called for tensor only if it is "allocatable".
   // Kernel configuration could disable allocation of some tensors if they are not needed for
   // particular operation.

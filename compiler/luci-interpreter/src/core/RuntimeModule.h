@@ -38,7 +38,7 @@ public:
 
   RuntimeGraph *addGraph(IMemoryManager *memory_manager)
   {
-    _graphs.push_back(std::make_unique<RuntimeGraph>(this, memory_manager));
+    _graphs.push_back(std::make_unique<RuntimeGraph>(memory_manager));
     return _graphs.back().get();
   }
 

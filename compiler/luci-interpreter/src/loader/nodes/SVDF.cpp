@@ -37,14 +37,14 @@ std::unique_ptr<Kernel> build_kernel_CircleSVDF(const luci::CircleNode *circle_n
 
   auto scratchpad_tensor = std::make_unique<Tensor>(input_activation_state->element_type(),
                                                     Shape({}), AffineQuantization{}, "");
-  scratchpad_tensor->set_observable(false);
+ // scratchpad_tensor->set_observable(false);
   scratchpad_tensor->set_data_buffer(nullptr);
   Tensor *tmp = helper.getRuntimeGraph(node->graph())->addTensor(std::move(scratchpad_tensor));
 
   DataType data_type = input->element_type() == DataType::S8 ? DataType::S32 : DataType::FLOAT32;
 
   scratchpad_tensor = std::make_unique<Tensor>(data_type, Shape({}), AffineQuantization{}, "");
-  scratchpad_tensor->set_observable(false);
+  //scratchpad_tensor->set_observable(false);
   scratchpad_tensor->set_data_buffer(nullptr);
   Tensor *tmp_1 = helper.getRuntimeGraph(node->graph())->addTensor(std::move(scratchpad_tensor));
 
@@ -55,29 +55,29 @@ std::unique_ptr<Kernel> build_kernel_CircleSVDF(const luci::CircleNode *circle_n
   }
 
   scratchpad_tensor = std::make_unique<Tensor>(data_type, Shape({}), AffineQuantization{}, "");
-  scratchpad_tensor->set_observable(false);
+  //scratchpad_tensor->set_observable(false);
   scratchpad_tensor->set_data_buffer(nullptr);
   Tensor *tmp_2 = helper.getRuntimeGraph(node->graph())->addTensor(std::move(scratchpad_tensor));
 
   data_type = DataType::FLOAT32;
 
   scratchpad_tensor = std::make_unique<Tensor>(data_type, Shape({}), AffineQuantization{}, "");
-  scratchpad_tensor->set_observable(false);
+  //scratchpad_tensor->set_observable(false);
   scratchpad_tensor->set_data_buffer(nullptr);
   Tensor *tmp_3 = helper.getRuntimeGraph(node->graph())->addTensor(std::move(scratchpad_tensor));
 
   scratchpad_tensor = std::make_unique<Tensor>(data_type, Shape({}), AffineQuantization{}, "");
-  scratchpad_tensor->set_observable(false);
+  //scratchpad_tensor->set_observable(false);
   scratchpad_tensor->set_data_buffer(nullptr);
   Tensor *tmp_4 = helper.getRuntimeGraph(node->graph())->addTensor(std::move(scratchpad_tensor));
 
   scratchpad_tensor = std::make_unique<Tensor>(data_type, Shape({}), AffineQuantization{}, "");
-  scratchpad_tensor->set_observable(false);
+  //scratchpad_tensor->set_observable(false);
   scratchpad_tensor->set_data_buffer(nullptr);
   Tensor *tmp_5 = helper.getRuntimeGraph(node->graph())->addTensor(std::move(scratchpad_tensor));
 
   scratchpad_tensor = std::make_unique<Tensor>(data_type, Shape({}), AffineQuantization{}, "");
-  scratchpad_tensor->set_observable(false);
+  //scratchpad_tensor->set_observable(false);
   scratchpad_tensor->set_data_buffer(nullptr);
   Tensor *tmp_6 = helper.getRuntimeGraph(node->graph())->addTensor(std::move(scratchpad_tensor));
 

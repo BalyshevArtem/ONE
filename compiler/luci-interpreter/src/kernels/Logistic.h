@@ -24,6 +24,17 @@ namespace luci_interpreter
 namespace kernels
 {
 
+namespace
+{
+struct OpDataLogistic
+{
+  int32_t input_zero_point;
+  int32_t input_range_radius;
+  int32_t input_multiplier;
+  int input_left_shift;
+};
+} // namespace
+
 class Logistic : public Kernel
 {
 public:
@@ -38,12 +49,12 @@ public:
 private:
   void evalFloat() const;
   void evalQuantized() const;
-  void populateLookupTable();
-  void setTableValue(uint8_t value, uint8_t idx) { _table[idx] = value; };
-  uint8_t getTableValue(uint8_t idx) const { return _table[idx]; };
+
+  void calculateOpDataLogistic();
 
 private:
-  uint8_t _table[256]{};
+  OpDataLogistic _op_data_logistic;
+
 };
 
 } // namespace kernels

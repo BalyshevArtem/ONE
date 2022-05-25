@@ -36,11 +36,11 @@ std::unique_ptr<Kernel> build_kernel_CircleBatchMatMul(const luci::CircleNode *c
 
   auto lhs_scratchpad =
     std::make_unique<Tensor>(lhs->element_type(), Shape({}), AffineQuantization{}, "");
-  lhs_scratchpad->set_observable(false);
+ // lhs_scratchpad->set_observable(false);
   lhs_scratchpad->set_data_buffer(nullptr);
   auto rhs_scratchpad =
     std::make_unique<Tensor>(rhs->element_type(), Shape({}), AffineQuantization{}, "");
-  rhs_scratchpad->set_observable(false);
+ // rhs_scratchpad->set_observable(false);
   rhs_scratchpad->set_data_buffer(nullptr);
   // If node has execution plan then read memory offsets for scratchpad temporary tensor
   // from the beginning of shared memory buffer.

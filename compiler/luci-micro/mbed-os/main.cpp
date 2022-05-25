@@ -22,7 +22,7 @@
 //#include <luci/Importer.h>
 //#include <luci/IR/Module.h>
 #include <loco/IR/DataTypeTraits.h>
-#include "rev5.h"
+#include "rev3_wavenet.h"
 #include <cstdlib>
 #include <iostream>
 #include <luci/Log.h>
@@ -97,7 +97,7 @@ int main()
   //auto interpreter = std::make_unique<luci_interpreter::Interpreter>(module.get());
 
   Timer t;
- // print_memory_stats();
+  print_memory_stats();
   std::cout << "OK\n";
  // auto nodes = module->graph()->nodes();
  // auto nodes_count = nodes->size();
@@ -128,24 +128,12 @@ int main()
 //      //                              data_size);
 //  }
 
-    //print_memory_stats();
-    t.start();
+    print_memory_stats();
+   // t.start();
     interpreter.interpret();
-    t.stop();
-    //print_memory_stats();
-//
-//    int *ptr = new int[100];
-//    print_memory_stats();
-//
-//  int *ptr2 = new int[1];
-//  print_memory_stats();
-//  std::vector<int> nice(1000, 0);
-//  print_memory_stats();
-//
-//  if (ptr[0] == ptr2[0])
-//  {
-//    printf("\nequal %s\n", nice[0]);
-//  }
+    //t.stop();
+    print_memory_stats();
+
 
     std::cout << "\nFinished in " << t.read_us() << "\n";
 }

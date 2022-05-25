@@ -96,7 +96,7 @@ std::unique_ptr<Kernel> build_kernel_micro_CircleConv2d(const circle::OperatorT 
     bias = inputs[2];
 
   auto scratchpad = std::make_unique<Tensor>(DataType::U8, Shape({}), nullptr);
-  scratchpad->set_observable(false);
+  //scratchpad->set_observable(false);
   scratchpad->set_data_buffer(nullptr);
 
   Tensor *tmp = runtime_graph->addTensor(std::move(scratchpad));
@@ -214,31 +214,8 @@ void ModuleLoader::load()
     if (!reader.select_subgraph(g))
       throw std::runtime_error("Error during select subgraph");
 
-  //  const auto operators = reader.operators();
-  //  const auto tensors = reader.tensors();
     assert(!reader.tensors().null());
 
-    //auto circle_metadata = std::make_unique<luci::CircleImportMetadata>(reader);
-
-//    auto nodefinder = std::make_unique<luci::IndexNodeFinder>();
-//    auto tensoroutputs = std::make_unique<luci::IndexTensorOutputs>();
-//
-//    for (uint32_t i = 0; i < operators.size(); ++i)
-//    {
-//      const auto op = operators[i];
-//      assert(op != nullptr);
-//      const auto outputs = luci::wrap(op->outputs());
-//
-//      for (uint32_t j = 0; j < outputs.size(); ++j)
-//      {
-//        auto tidx = outputs[j];
-//        tensoroutputs->enroll(tidx);
-//      }
-//    }
-
-    //auto result = reader.inputs();
-   // std::vector<int> inputs_index_tensor(reader.inputs().size());
-   // int ind = 0;
     for (const auto input : reader.inputs())
     {
       const auto tensor = reader.tensors()[input];
@@ -538,6 +515,7 @@ void ModuleLoader::load()
         default:
           throw std::runtime_error("not supported kernel");
       }
+
     }
 
     _graph_to_runtime_graph.back()->make_tensor_alloca_plan();
@@ -586,25 +564,9 @@ void ModuleLoader::load()
 //
 //      _graph_to_runtime_graph.back()->addTensor(std::move(tensor_interpreter));
 //    }
+
   }
 
-
-  // Runtime graphs have to be created in advance, because they will be needed during the loading
-  // process for control flow nodes.
-//  for (size_t i = 0; i < _module->size(); ++i)
-//  {
-//    _graph_to_runtime_graph.emplace(_module->graph(i), _runtime_module->addGraph(_memory_manager));
-//  }
-//  for (size_t i = 0; i < _module->size(); ++i)
-//  {
-//    const loco::Graph *graph = _module->graph(i);
-//    RuntimeGraph *runtime_graph = _graph_to_runtime_graph.at(graph);
-//    GraphLoader loader(graph, runtime_graph, _runtime_to_ir, _graph_to_runtime_graph,
-//                       _node_to_tensor, _memory_manager);
-//    loader.loadTensors();
-//    loader.initInputOutputTensors();
-//    loader.loadOperators();
-//  }
 }
 
 } // namespace luci_interpreter

@@ -19,6 +19,8 @@
 #include "kernels/Utils.h"
 
 #include <tensorflow/lite/kernels/internal/reference/logistic.h>
+#include "tensorflow/lite/kernels/internal/reference/integer_ops/logistic.h"
+#include <tensorflow/lite/kernels/internal/quantization_util.h>
 
 namespace luci_interpreter
 {
@@ -27,13 +29,28 @@ namespace kernels
 
 Logistic::Logistic(const Tensor *input, Tensor *output) : Kernel({input}, {output}) {}
 
+void Logistic::calculateOpDataLogistic()
+{
+  const int kInputIntegerBits = 4;
+
+  const double input_real_multiplier = static_cast<double>(input()->scale()) * static_cast<double>(1 << (31 - kInputIntegerBits));
+
+  int input_left_shift;
+  const double q = std::frexp(input_real_multiplier, &input_left_shift);
+
+  int32_t input_multiplier = static_cast<int32_t>(tflite::TfLiteRound(q * (1ll << 31)));
+
+  int32_t input_range_radius = tflite::CalculateInputRadius(kInputIntegerBits, input_left_shift, 31);
+
+  _op_data_logistic = OpDataLogistic{input()->zero_point(), input_range_radius, input_multiplier, input_left_shift};
+}
+
 void Logistic::configure()
 {
   LUCI_INTERPRETER_CHECK(input()->element_type() == output()->element_type());
   if (input()->element_type() == DataType::U8)
   {
-    LUCI_INTERPRETER_CHECK(output()->scale() == 1. / 256);
-    populateLookupTable();
+    calculateOpDataLogistic();
   }
   //output()->resize(input()->shape());
 }
@@ -61,33 +78,10 @@ void Logistic::evalFloat() const
 
 void Logistic::evalQuantized() const
 {
-  const int size = tflite::MatchingFlatSize(getTensorShape(input()), getTensorShape(output()));
-  uint8_t *output_data = getTensorData<uint8_t>(output());
-  const uint8_t *input_data = getTensorData<uint8_t>(input());
-  for (int i = 0; i < size; ++i)
-  {
-    output_data[i] = getTableValue(input_data[i]);
-  }
-}
-
-void Logistic::populateLookupTable()
-{
-  const auto input_scale = static_cast<double>(input()->scale());
-  const auto input_zero_point = static_cast<int32_t>(input()->zero_point());
-  const auto output_scale = static_cast<double>(output()->scale());
-  const auto output_zero_point = static_cast<int32_t>(output()->zero_point());
-  const float inverse_scale = 1 / output_scale;
-  int32_t maxval = std::numeric_limits<uint8_t>::max();
-  int32_t minval = std::numeric_limits<uint8_t>::min();
-  for (int32_t val = minval; val <= maxval; ++val)
-  {
-    const float dequantized = input_scale * (val - input_zero_point);
-    const float transformed = 1.0f / (1.0f + std::exp(-dequantized));
-    const float rescaled = std::round(transformed * inverse_scale);
-    const int32_t quantized = static_cast<int32_t>(rescaled + output_zero_point);
-    setTableValue(static_cast<uint8_t>(std::max(std::min(maxval, quantized), minval)),
-                  static_cast<uint8_t>(val));
-  }
+  tflite::reference_integer_ops::Logistic(_op_data_logistic.input_zero_point, _op_data_logistic.input_range_radius,
+                                  _op_data_logistic.input_multiplier, _op_data_logistic.input_left_shift,
+                                  input()->shape().num_elements(),
+                                  getTensorData<int8_t>(input()), getTensorData<int8_t>(output()));
 }
 
 } // namespace kernels
