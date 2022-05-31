@@ -64,65 +64,65 @@ static void calculateActivationRangeQuantizedImpl(Activation activation, int32_t
                                                   const Tensor *output, int32_t *activation_min,
                                                   int32_t *activation_max)
 {
-  const float scale = output->scale();
-  const int32_t zero_point = output->zero_point();
-
-  auto quantize = [scale, zero_point](float x) {
-    return zero_point + static_cast<int32_t>(std::round(x / scale));
-  };
-
-  switch (activation)
-  {
-    case Activation::NONE:
-    case Activation::TANH:
-      *activation_min = qmin;
-      *activation_max = qmax;
-      break;
-    case Activation::RELU:
-      *activation_min = std::max(qmin, quantize(0.0f));
-      *activation_max = qmax;
-      break;
-    case Activation::RELU_N1_TO_1:
-      *activation_min = std::max(qmin, quantize(-1.0f));
-      *activation_max = std::min(qmax, quantize(1.0f));
-      break;
-    case Activation::RELU6:
-      *activation_min = std::max(qmin, quantize(0.0f));
-      *activation_max = std::min(qmax, quantize(6.0f));
-      break;
-    default:
-      throw std::runtime_error("Unsupported activation.");
-  }
+//  const float scale = output->scale();
+//  const int32_t zero_point = output->zero_point();
+//
+//  auto quantize = [scale, zero_point](float x) {
+//    return zero_point + static_cast<int32_t>(std::round(x / scale));
+//  };
+//
+//  switch (activation)
+//  {
+//    case Activation::NONE:
+//    case Activation::TANH:
+//      *activation_min = qmin;
+//      *activation_max = qmax;
+//      break;
+//    case Activation::RELU:
+//      *activation_min = std::max(qmin, quantize(0.0f));
+//      *activation_max = qmax;
+//      break;
+//    case Activation::RELU_N1_TO_1:
+//      *activation_min = std::max(qmin, quantize(-1.0f));
+//      *activation_max = std::min(qmax, quantize(1.0f));
+//      break;
+//    case Activation::RELU6:
+//      *activation_min = std::max(qmin, quantize(0.0f));
+//      *activation_max = std::min(qmax, quantize(6.0f));
+//      break;
+//    default:
+//      throw std::runtime_error("Unsupported activation.");
+//  }
 }
 
 void calculateActivationRangeQuantized(Activation activation, const Tensor *output,
                                        int32_t *activation_min, int32_t *activation_max)
 {
-  assert(output->zero_points().size() == 1);
-  int32_t qmin{};
-  int32_t qmax{};
-  switch (output->element_type())
-  {
-    case DataType::U8:
-      qmin = 0;
-      qmax = std::numeric_limits<uint8_t>::max();
-      break;
-    case DataType::S8:
-      qmin = -std::numeric_limits<int8_t>::max();
-      qmax = std::numeric_limits<int8_t>::max();
-      break;
-    case DataType::S16:
-      // For now, assume that signed int16 type implies signed symmetric quantization.
-      assert(output->zero_point() == 0);
-      qmin = -std::numeric_limits<int16_t>::max();
-      qmax = std::numeric_limits<int16_t>::max();
-      break;
-    default:
-      throw std::runtime_error("Unsupported type.");
-  }
-
-  calculateActivationRangeQuantizedImpl(activation, qmin, qmax, output, activation_min,
-                                        activation_max);
+//  assert(output->zero_points().size() == 1);
+//  int32_t qmin{};
+//  int32_t qmax{};
+//  switch (output->element_type())
+//  {
+//    case DataType::U8:
+//      qmin = 0;
+//      qmax = std::numeric_limits<uint8_t>::max();
+//      break;
+//    case DataType::S8:
+//      qmin = -std::numeric_limits<int8_t>::max();
+//      qmax = std::numeric_limits<int8_t>::max();
+//      break;
+//    case DataType::S16:
+//      // For now, assume that signed int16 type implies signed symmetric quantization.
+//      assert(output->zero_point() == 0);
+//      qmin = -std::numeric_limits<int16_t>::max();
+//      qmax = std::numeric_limits<int16_t>::max();
+//      break;
+//    default:
+//      throw std::runtime_error("Unsupported type.");
+//  }
+//
+//  calculateActivationRangeQuantizedImpl(activation, qmin, qmax, output, activation_min,
+//                                        activation_max);
 }
 
 void quantizeMultiplier(double double_multiplier, int32_t *quantized_multiplier, int *shift)

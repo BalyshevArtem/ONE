@@ -25,24 +25,27 @@ namespace luci_interpreter
 namespace kernels
 {
 
-class FullyConnected : public KernelWithParams<FullyConnectedParams>
+class FullyConnected : public Kernel
 {
 public:
-  FullyConnected(const Tensor *input, const Tensor *weights, const Tensor *bias, Tensor *output,
-                 const FullyConnectedParams &params);
+  FullyConnected(std::vector<std::pair<const Tensor *, int32_t>> &&inputs, std::vector<std::pair<Tensor *, int32_t>> &&outputs);
 
-  const Tensor *input() const { return _inputs[0]; }
-  const Tensor *weights() const { return _inputs[1]; }
-  const Tensor *bias() const { return _inputs[2]; }
-  Tensor *output() const { return _outputs[0]; }
+  const Tensor *input() const { return _inputs[0].first; }
+  int32_t input_ind() const { return _inputs[0].second; }
+  const Tensor *weights() const { return _inputs[1].first; }
+  int32_t weights_ind() const { return _inputs[1].second; }
+  const Tensor *bias() const { return _inputs.size() == 3 ? _inputs[2].first : nullptr; }
+  int32_t bias_ind() const { return _inputs.size() == 3 ? _inputs[2].second : -1; }
+  Tensor *output() const { return _outputs[0].first; }
+  int32_t outputs_ind() const { return _outputs[0].second; }
 
-  void configure() override;
-  void execute() const override;
+  void configure(luci::CircleReader *circle_reader, int32_t index) override;
+  void execute(luci::CircleReader *circle_reader, int32_t index) const override;
 
 private:
-  void evalFloat() const;
-  void evalQuantized() const;
-  void evalQuantizedS8() const;
+  void evalFloat(luci::CircleReader *circle_reader, int32_t index) const;
+  void evalQuantized(const circle::OperatorT &op) const;
+  void evalQuantizedS8(const circle::OperatorT &op) const;
 };
 
 } // namespace kernels

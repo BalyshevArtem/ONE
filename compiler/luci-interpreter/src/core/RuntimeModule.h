@@ -20,6 +20,7 @@
 #include "core/RuntimeGraph.h"
 #include "core/EventNotifier.h"
 #include "luci_interpreter/MemoryManager.h"
+#include "luci_interpreter/core/CircleReader.h"
 
 #include <memory>
 #include <vector>
@@ -32,13 +33,14 @@ class RuntimeModule
 public:
   //explicit RuntimeModule(EventNotifier *event_notifier) : _event_notifier(event_notifier) {}
 
-  explicit RuntimeModule() = default;
+  explicit RuntimeModule(): _circle_reader(std::make_unique<luci::CircleReader>())
+  {}
 
   //EventNotifier *getEventNotifier() const { return _event_notifier; }
 
   RuntimeGraph *addGraph(IMemoryManager *memory_manager)
   {
-    _graphs.push_back(std::make_unique<RuntimeGraph>(memory_manager));
+    _graphs.push_back(std::make_unique<RuntimeGraph>(this, memory_manager));
     return _graphs.back().get();
   }
 
@@ -48,6 +50,11 @@ public:
     return getMainGraph()->getOutputTensors();
   }
 
+//  void add_circle_reader(std::unique_ptr<luci::CircleReader> reader)
+//  {
+//    _circle_reader = std::move(reader);
+//  }
+
   void execute() const { getMainGraph()->execute();
 
    // auto &graph = const_cast<std::unique_ptr<RuntimeGraph>&>(_graphs.at(0));
@@ -56,11 +63,18 @@ public:
     //graph.reset();
   }
 
+  luci::CircleReader *get_circle_reader()
+  {
+    return _circle_reader.get();
+  }
+
 private:
   RuntimeGraph *getMainGraph() const { return _graphs[0].get(); }
 
  // EventNotifier *const _event_notifier;
   std::vector<std::unique_ptr<RuntimeGraph>> _graphs;
+
+  std::unique_ptr<luci::CircleReader> _circle_reader;
 };
 
 } // namespace luci_interpreter

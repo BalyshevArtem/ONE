@@ -25,21 +25,22 @@ namespace luci_interpreter
 namespace kernels
 {
 
-class Concatenation : public KernelWithParams<ConcatenationParams>
+class Concatenation : public Kernel
 {
 public:
-  Concatenation(std::vector<const Tensor *> inputs, Tensor *output,
-                const ConcatenationParams &params);
+  Concatenation(std::vector<std::pair<const Tensor *, int32_t>> &&inputs, std::vector<std::pair<Tensor *, int32_t>> &&outputs);
 
-  const Tensor *input(int index) const { return _inputs[index]; }
-  Tensor *output() const { return _outputs[0]; }
+  const Tensor *input(int index) const { return _inputs[index].first; }
+  int32_t input_ind() const { return _inputs[0].second; }
+  Tensor *output() const { return _outputs[0].first; }
+  int32_t output_ind() const { return _outputs[0].second; }
 
-  void configure() override;
-  void execute() const override;
+  void configure(luci::CircleReader *circle_reader, int32_t index) override;
+  void execute(luci::CircleReader *circle_reader, int32_t index) const override;
 
 private:
-  template <typename T> void evalGeneric() const;
-  void evalQuantized() const;
+  template <typename T> void evalGeneric(luci::CircleReader *circle_reader, int32_t index) const;
+//  void evalQuantized() const;
 };
 
 } // namespace kernels

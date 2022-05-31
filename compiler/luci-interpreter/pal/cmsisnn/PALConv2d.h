@@ -186,7 +186,7 @@ static inline void SetupScratchpadTensor(luci_interpreter::Tensor *scratchpad,
                                                                      &filter_dims, &output_dims);
 
     luci_interpreter::Shape scratchpad_shape{buf_size};
-    scratchpad->resize(scratchpad_shape);
+    //scratchpad->resize(scratchpad_shape);
   }
   else
   {

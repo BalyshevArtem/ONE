@@ -21,20 +21,20 @@ namespace luci_interpreter
 
 void TestMemoryManager::allocate_memory(luci_interpreter::Tensor &tensor)
 {
-  if (!tensor.is_allocatable())
-  {
-    return;
-  }
-  if (tensor.is_data_allocated())
-  {
-    release_memory(tensor);
-  }
-  const auto element_size = getDataTypeSize(tensor.element_type());
-  const auto num_elements = tensor.shape().num_elements();
-
-  auto *data = new uint8_t[num_elements * element_size];
-  allocations.push_back(data);
-  tensor.set_data_buffer(data);
+//  if (!tensor.is_allocatable())
+//  {
+//    return;
+//  }
+//  if (tensor.is_data_allocated())
+//  {
+//    release_memory(tensor);
+//  }
+//  const auto element_size = getDataTypeSize(tensor.element_type());
+//  const auto num_elements = tensor.shape().num_elements();
+//
+//  auto *data = new uint8_t[num_elements * element_size];
+//  allocations.push_back(data);
+//  tensor.set_data_buffer(data);
 }
 
 void TestMemoryManager::release_memory(luci_interpreter::Tensor &tensor)

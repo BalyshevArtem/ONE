@@ -33,18 +33,18 @@ class RuntimeModule;
 
 class RuntimeGraph
 {
-private:
-  class TensorAllocPlan;
-  friend class TensorAllocPlan;
+//private:
+  //class TensorAllocPlan;
+ // friend class TensorAllocPlan;
 
 public:
-  explicit RuntimeGraph(IMemoryManager *memory_manager);
+  explicit RuntimeGraph(RuntimeModule *runtime_module, IMemoryManager *memory_manager);
   ~RuntimeGraph();
 
   Tensor *addTensor(std::unique_ptr<Tensor> &&tensor);
 
-  void make_tensor_alloca_plan() const;
-  void make_tensor_configure() const;
+  void make_tensor_alloca_plan();
+  //void make_tensor_configure() const;
 
   void setInputTensors(const std::vector<Tensor *> &input_tensors);
 
@@ -60,11 +60,19 @@ public:
 
   void addKernel(std::unique_ptr<Kernel> &&kernel);
 
-  void execute() const;
+  void execute();
+
+  void invalidate() { _valid = false; }
+  bool isValid() const { return _valid; }
+
+  void build();
+
+  void allocate(Kernel *kernel, size_t kernel_index) const;
+  void deallocate(Kernel *kernel, size_t kernel_index) const;
 
 private:
   IMemoryManager *_memory_manager;
- // RuntimeModule *_owning_module;
+  RuntimeModule *_owning_module;
   std::vector<std::unique_ptr<Tensor>> _tensors;
   std::vector<Tensor *> _input_tensors;
   std::vector<Tensor *> _output_tensors;
@@ -72,7 +80,8 @@ private:
   // Kernels in execution order.
   std::vector<std::unique_ptr<Kernel>> _kernels;
   // Tensors that are not used anymore after given op
-  std::unique_ptr<TensorAllocPlan> _tensor_alloc_plan;
+  //std::unique_ptr<TensorAllocPlan> _tensor_alloc_plan;
+  bool _valid = false;
 };
 
 } // namespace luci_interpreter

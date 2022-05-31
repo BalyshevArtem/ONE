@@ -27,14 +27,17 @@ namespace kernels
 class Reshape : public Kernel
 {
 public:
-  Reshape(const Tensor *input, const Tensor *shape, Tensor *output);
+  Reshape(std::vector<std::pair<const Tensor *, int32_t>> &&inputs, std::vector<std::pair<Tensor *, int32_t>> &&outputs);
 
-  const Tensor *input() const { return _inputs[0]; }
-  const Tensor *shape() const { return _inputs[1]; }
-  Tensor *output() const { return _outputs[0]; }
+  const Tensor *input() const { return _inputs[0].first; }
+  int32_t input_ind() const { return _inputs[0].second; }
+  const Tensor *shape() const { return _inputs[1].first; }
+  int32_t shape_ind() const { return _inputs[1].second; }
+  Tensor *output() const { return _outputs[0].first; }
+  int32_t output_ind() const { return _outputs[0].second; }
 
-  void configure() override;
-  void execute() const override;
+  void configure(luci::CircleReader *circle_reader, int32_t index) override;
+  void execute(luci::CircleReader *circle_reader, int32_t index) const override;
 };
 
 } // namespace kernels

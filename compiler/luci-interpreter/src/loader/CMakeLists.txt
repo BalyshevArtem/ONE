@@ -8,9 +8,9 @@ set(SOURCES
     ModuleLoader.h
     ModuleLoader.cpp
     RuntimeToIR.h
-    nodes/Builders.h
-        CircleReader.h
-        CircleReader.cpp)
+    nodes/Builders.h)
+#        CircleReader.h
+#        CircleReader.cpp)
         #${NNAS_PROJECT_SOURCE_DIR}/compiler/luci/import/include/luci/Import/CircleReader.h
         #${NNAS_PROJECT_SOURCE_DIR}/compiler/luci/import/src/CircleReader.cpp  )
 
@@ -31,11 +31,11 @@ target_include_directories(${LUCI_INTERPRETER_LOADER} PUBLIC "${LUCI_INTERPRETER
 set(ONE_COMPILER_SRC_DIR "${NNAS_PROJECT_SOURCE_DIR}/compiler")
 set(MICRO_ARM_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}/../../../")
 
-target_link_libraries(${LUCI_INTERPRETER_LOADER} PUBLIC "${MICRO_ARM_BUILD_DIR}/mio-circle04/libmio_circle04.a")
-target_link_libraries(${LUCI_INTERPRETER_LOADER} PUBLIC "${MICRO_ARM_BUILD_DIR}/mio-circle04/libmio_circle04_helper.a")
-
-target_link_libraries(${LUCI_INTERPRETER_LOADER} PUBLIC mio_circle04)
-target_link_libraries(${LUCI_INTERPRETER_LOADER} PUBLIC mio_circle04_helper)
+#target_link_libraries(${LUCI_INTERPRETER_LOADER} PUBLIC "${MICRO_ARM_BUILD_DIR}/mio-circle04/libmio_circle04.a")
+#target_link_libraries(${LUCI_INTERPRETER_LOADER} PUBLIC "${MICRO_ARM_BUILD_DIR}/mio-circle04/libmio_circle04_helper.a")
+#
+#target_link_libraries(${LUCI_INTERPRETER_LOADER} PUBLIC mio_circle04)
+#target_link_libraries(${LUCI_INTERPRETER_LOADER} PUBLIC mio_circle04_helper)
 
 target_link_libraries(${LUCI_INTERPRETER_LOADER}
         PUBLIC luci_lang ${LUCI_INTERPRETER_CORE}

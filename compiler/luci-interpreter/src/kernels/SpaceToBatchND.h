@@ -27,18 +27,21 @@ namespace kernels
 class SpaceToBatchND : public Kernel
 {
 public:
-  SpaceToBatchND(const Tensor *input, const Tensor *block_shape, const Tensor *paddings,
-                 Tensor *output, const Shape shape);
+  SpaceToBatchND(std::vector<std::pair<const Tensor *, int32_t>> &&inputs, std::vector<std::pair<Tensor *, int32_t>> &&outputs);
 
-  const Tensor *input() const { return _inputs[0]; }
-  const Tensor *block_shape() const { return _inputs[1]; }
-  const Tensor *paddings() const { return _inputs[2]; }
-  Tensor *output() const { return _outputs[0]; }
+  const Tensor *input() const { return _inputs[0].first; }
+  int32_t input_ind() const { return _inputs[0].second; }
+  const Tensor *block_shape() const { return _inputs[1].first; }
+  int32_t block_ind() const { return _inputs[1].second; }
+  const Tensor *paddings() const { return _inputs[2].first; }
+  int32_t paddings_ind() const { return _inputs[2].second; }
+  Tensor *output() const { return _outputs[0].first; }
+  int32_t output_ind() const { return _outputs[0].second; }
 
-  void configure() override;
-  void execute() const override;
+  void configure(luci::CircleReader *circle_reader, int32_t index) override;
+  void execute(luci::CircleReader *circle_reader, int32_t index) const override;
 private:
-  Shape _own_shape;
+ // Shape _own_shape;
 };
 
 } // namespace kernels

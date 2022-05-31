@@ -22,58 +22,58 @@ namespace luci_interpreter
 namespace kernels
 {
 
-ExpandDims::ExpandDims(const Tensor *input, const Tensor *axis, Tensor *output)
-  : Kernel({input, axis}, {output})
+ExpandDims::ExpandDims(std::vector<std::pair<const Tensor *, int32_t>> &&inputs, std::vector<std::pair<Tensor *, int32_t>> &&outputs)
+  : Kernel(std::move(inputs), std::move(outputs))
 {
 }
 
-void ExpandDims::configure()
+void ExpandDims::configure(luci::CircleReader *circle_reader, int32_t index)
 {
-  int32_t axis_value;
-
-  switch (axis()->element_type())
-  {
-    case loco::DataType::S32:
-      axis_value = *getTensorData<int32_t>(axis());
-      break;
-    case loco::DataType::S64:
-      axis_value = static_cast<int32_t>(*getTensorData<int64_t>(axis()));
-      break;
-    default:
-      throw std::runtime_error("Unsupported type.");
-  }
-
-  const auto input_shape = input()->shape();
-
-  if (axis_value < 0)
-  {
-    axis_value += input_shape.num_dims() + 1;
-  }
-
-  LUCI_INTERPRETER_CHECK(axis_value <= input_shape.num_dims() and axis_value >= 0);
-
-  Shape output_shape(input_shape.num_dims() + 1);
-  for (int32_t i = 0; i < output_shape.num_dims(); ++i)
-  {
-    if (i < axis_value)
-    {
-      output_shape.dim(i) = input_shape.dim(i);
-    }
-    else if (i == axis_value)
-    {
-      output_shape.dim(i) = 1;
-    }
-    else
-    {
-      LUCI_INTERPRETER_CHECK(i >= 1);
-      output_shape.dim(i) = input_shape.dim(i - 1);
-    }
-  }
-
-  output()->resize(output_shape);
+//  int32_t axis_value;
+//
+//  switch (axis()->element_type())
+//  {
+//    case loco::DataType::S32:
+//      axis_value = *getTensorData<int32_t>(axis());
+//      break;
+//    case loco::DataType::S64:
+//      axis_value = static_cast<int32_t>(*getTensorData<int64_t>(axis()));
+//      break;
+//    default:
+//      throw std::runtime_error("Unsupported type.");
+//  }
+//
+//  const auto input_shape = input()->shape();
+//
+//  if (axis_value < 0)
+//  {
+//    axis_value += input_shape.num_dims() + 1;
+//  }
+//
+//  LUCI_INTERPRETER_CHECK(axis_value <= input_shape.num_dims() and axis_value >= 0);
+//
+//  Shape output_shape(input_shape.num_dims() + 1);
+//  for (int32_t i = 0; i < output_shape.num_dims(); ++i)
+//  {
+//    if (i < axis_value)
+//    {
+//      output_shape.dim(i) = input_shape.dim(i);
+//    }
+//    else if (i == axis_value)
+//    {
+//      output_shape.dim(i) = 1;
+//    }
+//    else
+//    {
+//      LUCI_INTERPRETER_CHECK(i >= 1);
+//      output_shape.dim(i) = input_shape.dim(i - 1);
+//    }
+//  }
+//
+//  output()->resize(output_shape);
 }
 
-void ExpandDims::execute() const
+void ExpandDims::execute(luci::CircleReader *circle_reader, int32_t index) const
 {
   // Just copy input to output
   if (output() != input())
@@ -81,9 +81,9 @@ void ExpandDims::execute() const
     const auto *input_data = input()->data<void>();
     auto *output_data = output()->data<void>();
 
-    const size_t element_size = getDataTypeSize(input()->element_type());
-    const int32_t num_elements = input()->shape().num_elements();
-    std::memcpy(output_data, input_data, num_elements * element_size);
+    //const size_t element_size = getDataTypeSize(input()->element_type());
+    //const int32_t num_elements = input()->shape().num_elements();
+    std::memcpy(output_data, input_data, input()->get_alloc_size());
   }
 
 }

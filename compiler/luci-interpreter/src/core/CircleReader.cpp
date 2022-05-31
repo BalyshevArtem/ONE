@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "CircleReader.h"
+#include "luci_interpreter/core/CircleReader.h"
 
 #include <mio_circle/Helper.h>
 

@@ -34,72 +34,102 @@ const int kInputMinDimensionNum = 3;
 const int kInputMaxDimensionNum = 4;
 } // namespace
 
-BatchToSpaceND::BatchToSpaceND(const Tensor *input, const Tensor *block_shape, const Tensor *crops,
-                               Tensor *output, const Shape &shape)
-  : Kernel({input, block_shape, crops}, {output}), _own_shape(shape)
+BatchToSpaceND::BatchToSpaceND(std::vector<std::pair<const Tensor *, int32_t>> &&inputs, std::vector<std::pair<Tensor *, int32_t>> &&outputs)
+  : Kernel(std::move(inputs), std::move(outputs))
 {
 }
 
-void BatchToSpaceND::configure()
+void BatchToSpaceND::configure(luci::CircleReader *circle_reader, int32_t index)
 {
-  if (input()->shape().num_dims() == 3)
-  {
-    output()->resize(_own_shape);
-    return;
-  }
-    return;
-  const auto *block_shape_data = block_shape()->data<int32_t>();
-  const auto *crops_data = crops()->data<int32_t>();
-  LUCI_INTERPRETER_CHECK(input()->shape().num_dims() >= kInputMinDimensionNum);
-  LUCI_INTERPRETER_CHECK(input()->shape().num_dims() <= kInputMaxDimensionNum);
-  LUCI_INTERPRETER_CHECK(input()->element_type() == output()->element_type());
-
-  int spatial_dims_num = input()->shape().num_dims() - 2;
-
-  LUCI_INTERPRETER_CHECK(block_shape()->shape().num_dims() == 1);
-  LUCI_INTERPRETER_CHECK(block_shape()->shape().dim(0) == spatial_dims_num);
-
-  LUCI_INTERPRETER_CHECK(crops()->shape().num_dims() == 2);
-  LUCI_INTERPRETER_CHECK(crops()->shape().dim(0) == spatial_dims_num);
-  LUCI_INTERPRETER_CHECK(crops()->shape().dim(1) == 2);
-  for (int i = 0; i < spatial_dims_num * 2; ++i)
-  {
-    LUCI_INTERPRETER_CHECK(crops_data[i] >= 0);
-  }
-
-  Shape output_shape = Shape(input()->shape().num_dims());
-  int output_batch_size = input()->shape().dim(0);
-  for (int i = 0; i < spatial_dims_num; ++i)
-  {
-    LUCI_INTERPRETER_CHECK(output_batch_size % block_shape_data[i] == 0);
-    output_batch_size = output_batch_size / block_shape_data[i];
-    output_shape.dim(i + 1) =
-      input()->shape().dim(i + 1) * block_shape_data[i] - crops_data[i * 2] - crops_data[i * 2 + 1];
-  }
-
-  output_shape.dim(0) = output_batch_size;
-  output_shape.dim(input()->shape().num_dims() - 1) =
-    input()->shape().dim(input()->shape().num_dims() - 1);
-  output()->resize(output_shape);
+//  if (input()->shape().num_dims() == 3)
+//  {
+//    output()->resize(_own_shape);
+//    return;
+//  }
+//    return;
+//  const auto *block_shape_data = block_shape()->data<int32_t>();
+//  const auto *crops_data = crops()->data<int32_t>();
+//  LUCI_INTERPRETER_CHECK(input()->shape().num_dims() >= kInputMinDimensionNum);
+//  LUCI_INTERPRETER_CHECK(input()->shape().num_dims() <= kInputMaxDimensionNum);
+//  LUCI_INTERPRETER_CHECK(input()->element_type() == output()->element_type());
+//
+//  int spatial_dims_num = input()->shape().num_dims() - 2;
+//
+//  LUCI_INTERPRETER_CHECK(block_shape()->shape().num_dims() == 1);
+//  LUCI_INTERPRETER_CHECK(block_shape()->shape().dim(0) == spatial_dims_num);
+//
+//  LUCI_INTERPRETER_CHECK(crops()->shape().num_dims() == 2);
+//  LUCI_INTERPRETER_CHECK(crops()->shape().dim(0) == spatial_dims_num);
+//  LUCI_INTERPRETER_CHECK(crops()->shape().dim(1) == 2);
+//  for (int i = 0; i < spatial_dims_num * 2; ++i)
+//  {
+//    LUCI_INTERPRETER_CHECK(crops_data[i] >= 0);
+//  }
+//
+//  Shape output_shape = Shape(input()->shape().num_dims());
+//  int output_batch_size = input()->shape().dim(0);
+//  for (int i = 0; i < spatial_dims_num; ++i)
+//  {
+//    LUCI_INTERPRETER_CHECK(output_batch_size % block_shape_data[i] == 0);
+//    output_batch_size = output_batch_size / block_shape_data[i];
+//    output_shape.dim(i + 1) =
+//      input()->shape().dim(i + 1) * block_shape_data[i] - crops_data[i * 2] - crops_data[i * 2 + 1];
+//  }
+//
+//  output_shape.dim(0) = output_batch_size;
+//  output_shape.dim(input()->shape().num_dims() - 1) =
+//    input()->shape().dim(input()->shape().num_dims() - 1);
+//  output()->resize(output_shape);
 }
 
-void BatchToSpaceND::execute() const
+void BatchToSpaceND::execute(luci::CircleReader *circle_reader, int32_t index) const
 {
-  switch (input()->element_type())
+  auto input_dtype = luci::luci_datatype(circle_reader->tensors()[input_ind()]->type());
+  switch (input_dtype)
   {
     case DataType::FLOAT32:
+    {
+      const auto input_tensor_shape = luci::wrap(circle_reader->tensors()[input_ind()]->shape());
+      tflite::RuntimeShape input_runtime_shape(input_tensor_shape.size());
+      for (int i = 0; i < input_tensor_shape.size(); ++i)
+      {
+        input_runtime_shape.SetDim(i, input_tensor_shape[i]);
+      }
+
+      const auto output_tensor_shape = luci::wrap(circle_reader->tensors()[output_ind()]->shape());
+      tflite::RuntimeShape output_runtime_shape(output_tensor_shape.size());
+      for (int i = 0; i < output_tensor_shape.size(); ++i)
+      {
+        output_runtime_shape.SetDim(i, output_tensor_shape[i]);
+      }
+
+      const auto block_tensor_shape = luci::wrap(circle_reader->tensors()[block_ind()]->shape());
+      tflite::RuntimeShape block_runtime_shape(block_tensor_shape.size());
+      for (int i = 0; i < block_tensor_shape.size(); ++i)
+      {
+        block_runtime_shape.SetDim(i, block_tensor_shape[i]);
+      }
+
+      const auto pad_tensor_shape = luci::wrap(circle_reader->tensors()[crops_ind()]->shape());
+      tflite::RuntimeShape pad_runtime_shape(pad_tensor_shape.size());
+      for (int i = 0; i < pad_tensor_shape.size(); ++i)
+      {
+        pad_runtime_shape.SetDim(i, pad_tensor_shape[i]);
+      }
+
       luci_interpreter_pal::BatchToSpaceND(
-        getTensorShape(input()), getTensorData<float>(input()), getTensorShape(block_shape()),
-        getTensorData<int32_t>(block_shape()), getTensorShape(crops()),
-        getTensorData<int32_t>(crops()), getTensorShape(output()), getTensorData<float>(output()));
+        input_runtime_shape, getTensorData<float>(input()), block_runtime_shape,
+        getTensorData<int32_t>(block_shape()), pad_runtime_shape,
+        getTensorData<int32_t>(crops()), output_runtime_shape, getTensorData<float>(output()));
       break;
-    case DataType::U8:
-      luci_interpreter_pal::BatchToSpaceND(
-        getTensorShape(input()), getTensorData<uint8_t>(input()), getTensorShape(block_shape()),
-        getTensorData<int32_t>(block_shape()), getTensorShape(crops()),
-        getTensorData<int32_t>(crops()), getTensorShape(output()),
-        getTensorData<uint8_t>(output()));
-      break;
+    }
+//    case DataType::U8:
+//      luci_interpreter_pal::BatchToSpaceND(
+//        getTensorShape(input()), getTensorData<uint8_t>(input()), getTensorShape(block_shape()),
+//        getTensorData<int32_t>(block_shape()), getTensorShape(crops()),
+//        getTensorData<int32_t>(crops()), getTensorShape(output()),
+//        getTensorData<uint8_t>(output()));
+//      break;
     default:
       throw std::runtime_error("Unsupported type.");
   }

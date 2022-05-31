@@ -22,40 +22,44 @@
 namespace luci_interpreter
 {
 
-Tensor::Tensor(DataType element_type, Shape shape, AffineQuantization *quantization)
-  : _element_type(element_type), _shape(std::move(shape)), _quantization(quantization),
-    _data_allocated(false)
+//Tensor::Tensor(DataType element_type, Shape shape, AffineQuantization *quantization)
+//  : _element_type(element_type), _shape(std::move(shape)), _quantization(quantization),
+//    _data_allocated(false)
+//{
+////  printf("\nAffineQuantization size = %lu\n", sizeof(AffineQuantization));
+////  printf("\nShape size = %lu\n", sizeof(Shape));
+////  printf("\nDataType size = %lu\n", sizeof(DataType));
+////  printf("\nString size = %lu\n", sizeof(std::string));
+//}
+
+Tensor::Tensor(int32_t allocate_size): _alloc_size(allocate_size)
 {
-//  printf("\nAffineQuantization size = %lu\n", sizeof(AffineQuantization));
-//  printf("\nShape size = %lu\n", sizeof(Shape));
-//  printf("\nDataType size = %lu\n", sizeof(DataType));
-//  printf("\nString size = %lu\n", sizeof(std::string));
 }
 
 void Tensor::readData(void *data_ptr, size_t data_size) const
 {
-  const size_t element_size = getDataTypeSize(element_type());
-  const int32_t num_elements = shape().num_elements();
-  if (data_size != num_elements * element_size)
-  {
-    throw std::invalid_argument("Invalid data size.");
-  }
+//  const size_t element_size = getDataTypeSize(element_type());
+//  const int32_t num_elements = shape().num_elements();
+//  if (data_size != num_elements * element_size)
+//  {
+//    throw std::invalid_argument("Invalid data size.");
+//  }
   assert(data_ptr != nullptr);
   std::memcpy(data_ptr, data<void>(), data_size);
 }
 
 void Tensor::writeData(const void *data_ptr, size_t data_size)
 {
-  const size_t element_size = getDataTypeSize(element_type());
-  const int32_t num_elements = shape().num_elements();
-  if (data_size != num_elements * element_size)
-  {
-    throw std::invalid_argument("Invalid data size.");
-  }
+//  const size_t element_size = getDataTypeSize(element_type());
+//  const int32_t num_elements = shape().num_elements();
+//  if (data_size != num_elements * element_size)
+//  {
+//    throw std::invalid_argument("Invalid data size.");
+//  }
   assert(data_ptr != nullptr);
   std::memcpy(data<void>(), data_ptr, data_size);
 }
 
-void Tensor::resize(const Shape &new_shape) { _shape = new_shape; }
+//void Tensor::resize(const Shape &new_shape) { _shape = new_shape; }
 
 } // namespace luci_interpreter

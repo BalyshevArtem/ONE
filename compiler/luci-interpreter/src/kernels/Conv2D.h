@@ -27,26 +27,29 @@ namespace luci_interpreter
 namespace kernels
 {
 
-class Conv2D : public KernelWithParams<Conv2DParams>
+class Conv2D : public Kernel
 {
 public:
-  Conv2D(const Tensor *input, const Tensor *filter, const Tensor *bias, Tensor *output,
-         Tensor *scratchpad, const Conv2DParams &params);
+  Conv2D(std::vector<std::pair<const Tensor *, int32_t>> &&inputs, std::vector<std::pair<Tensor *, int32_t>> &&outputs);
 
-  const Tensor *input() const { return _inputs[0]; }
-  const Tensor *filter() const { return _inputs[1]; }
-  const Tensor *bias() const { return _inputs[2]; }
-  Tensor *output() const { return _outputs[0]; }
+  const Tensor *input() const { return _inputs[0].first; }
+  int32_t input_ind() const { return _inputs[0].second; }
+  const Tensor *filter() const { return _inputs[1].first; }
+  int32_t filter_ind() const { return _inputs[1].second; }
+  const Tensor *bias() const { return _inputs.size() == 3 ? _inputs[2].first : nullptr; }
+  int32_t bias_ind() const { return _inputs.size() == 3 ? _inputs[2].second : -1; }
+  Tensor *output() const { return _outputs[0].first; }
+  int32_t outputs_ind() const { return _outputs[0].second; }
 
-  void configure() override;
-  void execute() const override;
+  void configure(luci::CircleReader *circle_reader, int32_t index) override;
+  void execute(luci::CircleReader *circle_reader, int32_t index) const override;
 
 private:
-  void evalFloat() const;
-  void evalQuantized() const;
-  void evalQuantizedPerChannel() const;
-  void evalQuantizedS8PerChannel() const;
-  void evalQuantizedS16() const;
+  void evalFloat(luci::CircleReader *circle_reader, int32_t index) const;
+  //void evalQuantized() const;
+  //void evalQuantizedPerChannel() const;
+  //void evalQuantizedS8PerChannel() const;
+  //void evalQuantizedS16() const;
 
 private:
   int32_t _padding_height{};

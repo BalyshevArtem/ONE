@@ -24,88 +24,117 @@
 namespace luci_interpreter
 {
 
-class RuntimeGraph::TensorAllocPlan
-{
-  std::vector<std::vector<Tensor *>> _alloc_plan;
-  std::vector<std::vector<Tensor *>> _dealloc_plan;
-  bool _valid = false;
-  IMemoryManager *_memory_manager;
+//class RuntimeGraph::TensorAllocPlan
+//{
+//  //std::vector<std::vector<Tensor *>> _alloc_plan;
+//  //std::vector<std::vector<Tensor *>> _dealloc_plan;
+//  bool _valid = false;
+//  IMemoryManager *_memory_manager;
+//
+//public:
+//  explicit TensorAllocPlan(IMemoryManager *memory_manager);
+//  void invalidate() { _valid = false; }
+//  bool isValid() const { return _valid; }
+//  void build(const RuntimeGraph &graph);
+//  void allocate(Kernel *kernel, size_t kernel_index) const;
+//  void deallocate(Kernel *kernel, size_t kernel_index) const;
+//};
+//
+//RuntimeGraph::TensorAllocPlan::TensorAllocPlan(IMemoryManager *memory_manager)
+//  : _memory_manager(memory_manager)
+//{
+//}
 
-public:
-  explicit TensorAllocPlan(IMemoryManager *memory_manager);
-  void invalidate() { _valid = false; }
-  bool isValid() const { return _valid; }
-  void build(const RuntimeGraph &graph);
-  void allocate(size_t kernel_index) const;
-  void deallocate(size_t kernel_index) const;
-};
-
-RuntimeGraph::TensorAllocPlan::TensorAllocPlan(IMemoryManager *memory_manager)
-  : _memory_manager(memory_manager)
-{
-}
-
-void RuntimeGraph::TensorAllocPlan::build(const RuntimeGraph &graph)
+void RuntimeGraph::build()
 {
   invalidate();
   using Lifetime = std::pair<size_t, size_t>;
   std::unordered_map<Tensor *, Lifetime> lifetimes;
-  const size_t num_kernels = graph._kernels.size();
+  const size_t num_kernels = _kernels.size();
   for (size_t index = 0; index < num_kernels; ++index)
   {
-    const auto &kernel = graph._kernels[index];
-    for (const Tensor *tensor : kernel->getInputTensors())
+    const auto &kernel = _kernels[index];
+    for (auto &pair : kernel->getInputTensors())
     {
+      const Tensor *tensor = pair.first;
       auto nc_tensor = const_cast<Tensor *>(tensor);
       if (lifetimes.count(nc_tensor) > 0)
         lifetimes.at(nc_tensor).second = index;
     }
-    for (Tensor *tensor : kernel->getOutputTensors())
+    for (auto &pair : kernel->getOutputTensors())
     {
-      //assert(lifetimes.count(tensor) == 0);
+      Tensor *tensor = pair.first;
       if (lifetimes.count(tensor) == 0)
         lifetimes[tensor] = Lifetime(index, index);
     }
   }
-  for (const Tensor *tensor : graph.getOutputTensors())
+  for (const Tensor *tensor : getOutputTensors())
   {
     auto nc_tensor = const_cast<Tensor *>(tensor);
     if (lifetimes.count(nc_tensor) > 0)
       lifetimes.at(nc_tensor).second = num_kernels;
   }
-  _alloc_plan.assign(num_kernels, std::vector<Tensor *>());
-  _dealloc_plan.assign(num_kernels + 1, std::vector<Tensor *>());
+  //_alloc_plan.assign(num_kernels, std::vector<Tensor *>());
+  //_dealloc_plan.assign(num_kernels + 1, std::vector<Tensor *>());
   for (const auto &item : lifetimes)
   {
-    _alloc_plan[item.second.first].push_back(item.first);
-    _dealloc_plan[item.second.second].push_back(item.first);
+    item.first->alloc_kernel = item.second.first;
+    item.first->dealloc_kernel = item.second.second;
+
+    //_alloc_plan[item.second.first].push_back(item.first);
+    //_dealloc_plan[item.second.second].push_back(item.first);
   }
   _valid = true;
 }
 
-void RuntimeGraph::TensorAllocPlan::allocate(size_t kernel_index) const
+void RuntimeGraph::allocate(Kernel *kernel, size_t kernel_index) const
 {
-  assert(_valid && kernel_index < _alloc_plan.size());
-  for (Tensor *tensor : _alloc_plan[kernel_index])
+  auto input_tensors = kernel->getInputTensors();
+
+  for (auto &pair : input_tensors)
   {
-    //printf("\nallocate for kenel kernel_index = %d\n", kernel_index);
-    _memory_manager->allocate_memory(*tensor);
+    Tensor *tensor = const_cast<Tensor *>(pair.first);
+
+    if (kernel_index == tensor->alloc_kernel)
+      _memory_manager->allocate_memory(*tensor);
+  }
+
+  auto output_tensors = kernel->getOutputTensors();
+
+  for (auto &pair : output_tensors)
+  {
+    Tensor *tensor = const_cast<Tensor *>(pair.first);
+
+    if (kernel_index == tensor->alloc_kernel)
+      _memory_manager->allocate_memory(*tensor);
   }
 }
 
-void RuntimeGraph::TensorAllocPlan::deallocate(size_t kernel_index) const
+void RuntimeGraph::deallocate(Kernel *kernel, size_t kernel_index) const
 {
-  assert(_valid && kernel_index < _dealloc_plan.size());
-  for (Tensor *tensor : _dealloc_plan[kernel_index])
+  auto input_tensors = kernel->getInputTensors();
+
+  for (auto &pair : input_tensors)
   {
-    //printf("\ndeallocate for kenel kernel_index = %d\n", kernel_index);
-    _memory_manager->release_memory(*tensor);
+    Tensor *tensor = const_cast<Tensor *>(pair.first);
+
+    if (kernel_index == tensor->dealloc_kernel)
+      _memory_manager->release_memory(*tensor);
+  }
+
+  auto output_tensors = kernel->getOutputTensors();
+
+  for (auto &pair : output_tensors)
+  {
+    Tensor *tensor = const_cast<Tensor *>(pair.first);
+
+    if (kernel_index == tensor->dealloc_kernel)
+      _memory_manager->release_memory(*tensor);
   }
 }
 
-RuntimeGraph::RuntimeGraph(IMemoryManager *memory_manager)
-  : _memory_manager(memory_manager),
-    _tensor_alloc_plan(std::make_unique<TensorAllocPlan>(memory_manager))
+RuntimeGraph::RuntimeGraph(RuntimeModule *runtime_module, IMemoryManager *memory_manager)
+  : _memory_manager(memory_manager), _owning_module(runtime_module)
 {
 }
 
@@ -149,40 +178,40 @@ void RuntimeGraph::setOutputTensors(const std::vector<Tensor *> &output_tensors)
   _output_tensors = output_tensors;
 }
 
-void RuntimeGraph::configureAllocations(Tensor *tensor)
-{
-  _memory_manager->allocate_memory(*tensor);
-}
+//void RuntimeGraph::configureAllocations(Tensor *tensor)
+//{
+//  _memory_manager->allocate_memory(*tensor);
+//}
 
 void RuntimeGraph::addKernel(std::unique_ptr<Kernel> &&kernel)
 {
   assert(kernel != nullptr);
   _kernels.push_back(std::move(kernel));
-  _tensor_alloc_plan->invalidate();
+  invalidate();
 }
 
-void RuntimeGraph::make_tensor_alloca_plan() const
+void RuntimeGraph::make_tensor_alloca_plan()
 {
-  if (!_tensor_alloc_plan->isValid())
-    _tensor_alloc_plan->build(*this);
+  if (!isValid())
+    build();
 }
 
-void RuntimeGraph::make_tensor_configure() const
-{
-  for (size_t index = 0; index < _kernels.size(); ++index)
-  {
-    const auto &kernel = _kernels[index];
-    kernel->configure();
-  }
-}
+//void RuntimeGraph::make_tensor_configure() const
+//{
+//  for (size_t index = 0; index < _kernels.size(); ++index)
+//  {
+//    const auto &kernel = _kernels[index];
+//    kernel->configure();
+//  }
+//}
 
-void RuntimeGraph::execute() const
+void RuntimeGraph::execute()
 {
   /*
    * Test ficha
    */
-  if (!_tensor_alloc_plan->isValid())
-    _tensor_alloc_plan->build(*this);
+  if (!isValid())
+    build();
 
   //EventNotifier *event_notifier = _owning_module->getEventNotifier();
 
@@ -209,12 +238,16 @@ void RuntimeGraph::execute() const
     /*
      * Teset ficha
      */
-   kernel->configure();
+
+    circle::OperatorT oper_t;
+    _owning_module->get_circle_reader()->operators()[index]->UnPackTo(&oper_t);
+
+    kernel->configure(_owning_module->get_circle_reader(), index);
 
     // Preallocate outputs in advance instead of relying on automatic allocation
-    _tensor_alloc_plan->allocate(index);
+    allocate(kernel.get(), index);
 
-    kernel->execute();
+    kernel->execute(_owning_module->get_circle_reader(), index);
 
 //    if (event_notifier != nullptr)
 //    {
@@ -228,7 +261,7 @@ void RuntimeGraph::execute() const
 //        event_notifier->postTensorWrite(tensor);
 //      }
 //    }
-    _tensor_alloc_plan->deallocate(index);
+    deallocate(kernel.get(), index);
   }
 //
 //  for (size_t index = 0; index < _kernels.size(); ++index)

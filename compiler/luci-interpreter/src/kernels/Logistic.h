@@ -38,22 +38,24 @@ struct OpDataLogistic
 class Logistic : public Kernel
 {
 public:
-  Logistic(const Tensor *input, Tensor *output);
+  Logistic(std::vector<std::pair<const Tensor *, int32_t>> &&inputs, std::vector<std::pair<Tensor *, int32_t>> &&outputs);
 
-  const Tensor *input() const { return _inputs[0]; }
-  Tensor *output() const { return _outputs[0]; }
+  const Tensor *input() const { return _inputs[0].first; }
+  int32_t input_ind() const { return _inputs[0].second; }
+  Tensor *output() const { return _outputs[0].first; }
+  int32_t output_ind() const { return _outputs[0].second; }
 
-  void configure() override;
-  void execute() const override;
+  void configure(luci::CircleReader *circle_reader, int32_t index) override;
+  void execute(luci::CircleReader *circle_reader, int32_t index) const override;
 
 private:
-  void evalFloat() const;
+  void evalFloat(luci::CircleReader *circle_reader) const;
   void evalQuantized() const;
 
   void calculateOpDataLogistic();
 
-private:
-  OpDataLogistic _op_data_logistic;
+//private:
+  //OpDataLogistic _op_data_logistic;
 
 };
 

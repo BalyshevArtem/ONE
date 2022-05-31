@@ -33,7 +33,7 @@
 //#include "../../../luci-micro/mbed-os/mio/circle/schema_generated.h"
 //#include "../../../luci/import/include/luci/Import/CircleReader.h"
 
-#include "CircleReader.h"
+
 //#include "../../../luci/import/include/luci/Import/GraphBuilderContext.h"
 
 namespace luci_interpreter
@@ -57,143 +57,66 @@ ModuleLoader::ModuleLoader(char *model_data_raw, RuntimeModule *runtime_module,
 
 namespace
 {
-std::unique_ptr<Kernel> build_kernel_micro_CircleFullyConnected(const circle::OperatorT &op, std::vector<Tensor *> &inputs, Tensor *output)
+std::unique_ptr<Kernel> build_kernel_micro_CircleFullyConnected(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
 {
-  const Tensor *input = inputs[0];
-  const Tensor *weights = inputs[1];
-  const Tensor *bias = nullptr;
-  if (inputs.size() == 3)
-    bias = inputs[2];
-
-  FullyConnectedParams params{};
-
-  const auto *options = op.builtin_options.AsFullyConnectedOptions();
-  params.activation= luci::luci_actfunc(options->fused_activation_function);
-  params.keep_num_dims = options->keep_num_dims;
-
-  return std::make_unique<kernels::FullyConnected>(input, weights, bias, output, params);
+  return std::make_unique<kernels::FullyConnected>(std::move(inputs), std::move(output));
 }
 
-std::unique_ptr<Kernel> build_kernel_micro_CircleLogistic(const circle::OperatorT &op, std::vector<Tensor *> &inputs, Tensor *output)
+std::unique_ptr<Kernel> build_kernel_micro_CircleLogistic(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
 {
-  return std::make_unique<kernels::Logistic>(inputs[0], output);
+  return std::make_unique<kernels::Logistic>(std::move(inputs), std::move(output));
 }
 
-std::unique_ptr<Kernel> build_kernel_micro_CircleExpandDims(const circle::OperatorT &op, std::vector<Tensor *> &inputs, Tensor *output)
+std::unique_ptr<Kernel> build_kernel_micro_CircleExpandDims(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
 {
-  const Tensor *input = inputs[0];
-  const Tensor *axis = inputs[1];
-
-  return std::make_unique<kernels::ExpandDims>(input, axis, output);
+  return std::make_unique<kernels::ExpandDims>(std::move(inputs), std::move(output));
 }
 
-std::unique_ptr<Kernel> build_kernel_micro_CircleConv2d(const circle::OperatorT &op, std::vector<Tensor *> &inputs, Tensor *output, RuntimeGraph *runtime_graph)
+std::unique_ptr<Kernel> build_kernel_micro_CircleConv2d(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output, RuntimeGraph *runtime_graph)
 {
-  const Tensor *input = inputs[0];
-  const Tensor *filter = inputs[1];
-  const Tensor *bias = nullptr;
-  if (inputs.size() == 3)
-    bias = inputs[2];
-
-  auto scratchpad = std::make_unique<Tensor>(DataType::U8, Shape({}), nullptr);
-  //scratchpad->set_observable(false);
+  auto scratchpad = std::make_unique<Tensor>(0);
   scratchpad->set_data_buffer(nullptr);
+  scratchpad->set_allocatable(false);
 
   Tensor *tmp = runtime_graph->addTensor(std::move(scratchpad));
+  output.emplace_back(tmp, -1);
 
-  Conv2DParams params{};
-
-  const auto *options = op.builtin_options.AsConv2DOptions();
-  params.padding = luci::luci_padding(options->padding);
-  params.stride_height = options->stride_h;
-  params.stride_width = options->stride_w;
-  params.dilation_height_factor = options->dilation_h_factor;
-  params.dilation_width_factor = options->dilation_w_factor;
-  params.activation = luci::luci_actfunc(options->fused_activation_function);
-
-  return std::make_unique<kernels::Conv2D>(input, filter, bias, output, tmp, params);
+  return std::make_unique<kernels::Conv2D>(std::move(inputs), std::move(output));
 }
 
-std::unique_ptr<Kernel> build_kernel_micro_CircleReshape(const circle::OperatorT &op, std::vector<Tensor *> &inputs, Tensor *output)
+std::unique_ptr<Kernel> build_kernel_micro_CircleReshape(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
 {
-  const Tensor *input = inputs[0];
-  const Tensor *shape = inputs[1];
-
-  return std::make_unique<kernels::Reshape>(input, shape, output);
+  return std::make_unique<kernels::Reshape>(std::move(inputs), std::move(output));
 }
 
-std::unique_ptr<Kernel> build_kernel_micro_CircleMaxPool2D(const circle::OperatorT &op, std::vector<Tensor *> &inputs, Tensor *output)
+std::unique_ptr<Kernel> build_kernel_micro_CircleMaxPool2D(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
 {
-  const Tensor *input = inputs[0];
-
-  Pool2DParams params{};
-
-  const auto *options = op.builtin_options.AsPool2DOptions();
-  params.padding = luci::luci_padding(options->padding);
-  params.filter_height = options->filter_height;
-  params.filter_width = options->filter_width;
-  params.stride_height = options->stride_h;
-  params.stride_width = options->stride_w;
-  params.activation= luci::luci_actfunc(options->fused_activation_function);
-
-  return std::make_unique<kernels::MaxPool2D>(input, output, params);
+  return std::make_unique<kernels::MaxPool2D>(std::move(inputs), std::move(output));
 }
 
-std::unique_ptr<Kernel> build_kernel_micro_CirclePad(const circle::OperatorT &op, std::vector<Tensor *> &inputs, Tensor *output)
+std::unique_ptr<Kernel> build_kernel_micro_CirclePad(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
 {
-  const Tensor *input = inputs[0];
-  const Tensor *paddings = inputs[1];
-
-  return std::make_unique<kernels::Pad>(input, paddings, output);
+  return std::make_unique<kernels::Pad>(std::move(inputs), std::move(output));
 }
 
-std::unique_ptr<Kernel> build_kernel_micro_CircleSpaceToBatchNd(const circle::OperatorT &op, std::vector<Tensor *> &inputs, Tensor *output, const Shape shape)
+std::unique_ptr<Kernel> build_kernel_micro_CircleSpaceToBatchNd(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
 {
-  const Tensor *input = inputs[0];
-  const Tensor *block_shape = inputs[1];
-  const Tensor *paddings = inputs[2];
-
-  return std::make_unique<kernels::SpaceToBatchND>(input, block_shape, paddings, output, shape);
+  return std::make_unique<kernels::SpaceToBatchND>(std::move(inputs), std::move(output));
 }
 
-std::unique_ptr<Kernel> build_kernel_micro_CircleBatchToSpaceNd(const circle::OperatorT &op, std::vector<Tensor *> &inputs, Tensor *output, const Shape shape)
+std::unique_ptr<Kernel> build_kernel_micro_CircleBatchToSpaceNd(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
 {
-  const Tensor *input = inputs[0];
-  const Tensor *block_shape = inputs[1];
-  const Tensor *crops = inputs[2];
-
-  return std::make_unique<kernels::BatchToSpaceND>(input, block_shape, crops, output, shape);
+  return std::make_unique<kernels::BatchToSpaceND>(std::move(inputs), std::move(output));
 }
 
-std::unique_ptr<Kernel> build_kernel_micro_CircleAdd(const circle::OperatorT &op, std::vector<Tensor *> &inputs, Tensor *output)
+std::unique_ptr<Kernel> build_kernel_micro_CircleAdd(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
 {
-  const Tensor *input_1 = inputs[0];
-  const Tensor *input_2 = inputs[1];
-
-  AddParams params{};
-
-  const auto *options = op.builtin_options.AsAddOptions();
-  params.activation = luci::luci_actfunc(options->fused_activation_function);
-
-  return std::make_unique<kernels::Add>(input_1, input_2, output, params);
+  return std::make_unique<kernels::Add>(std::move(inputs), std::move(output));
 }
 
-std::unique_ptr<Kernel> build_kernel_micro_CircleConcatenation(const circle::OperatorT &op, std::vector<Tensor *> &inputs, Tensor *output)
+std::unique_ptr<Kernel> build_kernel_micro_CircleConcatenation(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
 {
-  std::vector<const Tensor *> tensors_inputs(inputs.size());
-
-  for (uint32_t i = 0; i < inputs.size(); ++i)
-  {
-    tensors_inputs[i] = inputs[i];
-  }
-
-  ConcatenationParams params{};
-
-  const auto *options = op.builtin_options.AsConcatenationOptions();
-  params.activation = luci::luci_actfunc(options->fused_activation_function);
-  params.axis = options->axis;
-
-  return std::make_unique<kernels::Concatenation>(std::move(tensors_inputs), output, params);
+  return std::make_unique<kernels::Concatenation>(std::move(inputs), std::move(output));
 }
 
 
@@ -201,73 +124,87 @@ std::unique_ptr<Kernel> build_kernel_micro_CircleConcatenation(const circle::Ope
 
 void ModuleLoader::load()
 {
+ // printf("\nload\n");
   const circle::Model *model = circle::GetModel(_model_data_raw);
 
-  luci::CircleReader reader;
-  if (!reader.parse(model))
+  luci::CircleReader *reader = _runtime_module->get_circle_reader();
+//  printf("\newade\n");
+
+  //_circle_reader = std::make_unique<luci::CircleReader>();
+  if (!reader->parse(model))
     throw std::runtime_error("Error during parse");
 
-  for (uint32_t g = 0; g < reader.num_subgraph(); ++g)
+ // printf("\nparse\n");
+  for (uint32_t g = 0; g < reader->num_subgraph(); ++g)
   {
     _graph_to_runtime_graph.emplace_back(_runtime_module->addGraph(_memory_manager));
 
-    if (!reader.select_subgraph(g))
+    if (!reader->select_subgraph(g))
       throw std::runtime_error("Error during select subgraph");
 
-    assert(!reader.tensors().null());
+    assert(!reader->tensors().null());
 
-    for (const auto input : reader.inputs())
+    for (const auto input : reader->inputs())
     {
-      const auto tensor = reader.tensors()[input];
+     // printf("\ninput\n");
+      const auto tensor = reader->tensors()[input];
 
-      // Create dtype
+     // printf("\n1\n");
+     //  Create dtype
       const auto dtype = luci::luci_datatype(tensor->type());
-
+     // printf("\n2\n");
       // Create Shape
       const auto tensor_shape = luci::wrap(tensor->shape());
-
-      const auto dims = tensor_shape; // in NHWC
-      Shape shape(static_cast<int>(dims.size()));
-      for (uint32_t r = 0; r < dims.size(); ++r)
+     // printf("\n3\n");
+      //const auto dims = tensor_shape; // in NHWC
+      //Shape shape(static_cast<int>(dims.size()));
+      auto size = 1;
+      for (uint32_t r = 0; r < tensor_shape.size(); ++r)
       {
-        shape.dim(r) = dims[r];
+        //shape.dim(r) = dims[r];
+        size *= tensor_shape[r];
       }
-
+     // printf("\n4\n");
+      size *= getDataTypeSize(dtype);
+     // printf("\n5\n");
       // Create quantization;
-      AffineQuantization quantization;
-      const auto quantization_tensor = tensor->quantization();
-      if (quantization_tensor != nullptr)
-      {
-        auto quantparam = luci::luci_quantparam(quantization_tensor);
-        if (quantparam)
-        {
-          quantization.scale.assign(quantparam->scale.cbegin(), quantparam->scale.cend());
-          quantization.zero_point.assign(quantparam->zerop.cbegin(), quantparam->zerop.cend());
-          quantization.quantized_dimension = quantparam->quantized_dimension;
-        }
-      }
+//      AffineQuantization quantization;
+//      const auto quantization_tensor = tensor->quantization();
+//      if (quantization_tensor != nullptr)
+//      {
+//        auto quantparam = luci::luci_quantparam(quantization_tensor);
+//        if (quantparam)
+//        {
+//          quantization.scale.assign(quantparam->scale.cbegin(), quantparam->scale.cend());
+//          quantization.zero_point.assign(quantparam->zerop.cbegin(), quantparam->zerop.cend());
+//          quantization.quantized_dimension = quantparam->quantized_dimension;
+//        }
+//      }
 
-      auto tensor_interpreter = std::make_unique<Tensor>(dtype, std::move(shape), nullptr);
+      //auto tensor_interpreter = std::make_unique<Tensor>(dtype, std::move(shape), nullptr);
+      auto tensor_interpreter = std::make_unique<Tensor>(size);
 
       _memory_manager->allocate_memory(*tensor_interpreter);
-
+     // printf("\n7\n");
       _graph_to_runtime_graph.back()->add_input_tensor(tensor_interpreter.get());
-
+     // printf("\n8\n");
       _index_to_tensor.emplace(input, tensor_interpreter.get());
-
+    //  printf("\n9\n");
       //inputs_index_tensor.at(ind) = input;
       //ind++;
 
       _graph_to_runtime_graph.back()->addTensor(std::move(tensor_interpreter));
+   //   printf("\nafter input\n");
     }
 
-    for (uint32_t i = 0; i < reader.tensors().size(); ++i)
+    for (uint32_t i = 0; i < reader->tensors().size(); ++i)
     {
-      auto const const_tensor = reader.tensors()[i];
+   //   printf("\nten i = %d\n", i);
+      auto const const_tensor = reader->tensors()[i];
       if (const_tensor->is_variable())
         continue;
 
-      auto const buffer = luci::wrap(reader.buffers()[const_tensor->buffer()]->data());
+      auto const buffer = luci::wrap(reader->buffers()[const_tensor->buffer()]->data());
       auto const const_dims = luci::wrap(const_tensor->shape()); // in NHWC
       if (const_dims.empty() && buffer.empty())
       {
@@ -287,36 +224,25 @@ void ModuleLoader::load()
         continue;
       }
 
-      // Create dtype
+
+      //  Create dtype
       const auto dtype = luci::luci_datatype(const_tensor->type());
 
       // Create Shape
       const auto tensor_shape = luci::wrap(const_tensor->shape());
 
-      const auto dims = tensor_shape; // in NHWC
-      Shape shape(static_cast<int>(dims.size()));
-      for (uint32_t r = 0; r < dims.size(); ++r)
+      //const auto dims = tensor_shape; // in NHWC
+      //Shape shape(static_cast<int>(dims.size()));
+      auto size = 1;
+      for (uint32_t r = 0; r < tensor_shape.size(); ++r)
       {
-        shape.dim(r) = dims[r];
+        //shape.dim(r) = dims[r];
+        size *= tensor_shape[r];
       }
 
-      // Create quantization;
-      AffineQuantization quantization;
-      const auto quantization_tensor = const_tensor->quantization();
-      if (quantization_tensor != nullptr)
-      {
-        auto quantparam = luci::luci_quantparam(quantization_tensor);
-        if (quantparam)
-        {
-          quantization.scale.assign(quantparam->scale.cbegin(), quantparam->scale.cend());
-          quantization.zero_point.assign(quantparam->zerop.cbegin(), quantparam->zerop.cend());
-          quantization.quantized_dimension = quantparam->quantized_dimension;
-        }
-      }
+      size *= getDataTypeSize(dtype);
 
-      //printf("\n Tensor size = %lu\n", sizeof(Tensor));
-
-      auto tensor_interpreter = std::make_unique<Tensor>(dtype, std::move(shape), nullptr);
+      auto tensor_interpreter = std::make_unique<Tensor>(size);
 
       //_memory_manager->allocate_memory(*tensor_interpreter);
 
@@ -328,187 +254,144 @@ void ModuleLoader::load()
 
     }
 
-    for (uint32_t i = 0; i < reader.operators().size(); ++i)
+    for (uint32_t i = 0; i < reader->operators().size(); ++i)
     {
      // printf("\nSize of kernel = %lu\n", sizeof(Kernel));
      // printf("\nSize of kernel params for conv2d = %lu\n", sizeof(KernelWithParams<Conv2DParams>));
-      const auto op = reader.operators()[i];
+      const auto op = reader->operators()[i];
       assert(op != nullptr);
 
       circle::OperatorT oper_t;
       op->UnPackTo(&oper_t);
+   //   printf("\nop i = %d\n", i);
 
      // std::vector<int32_t> &inputs = oper_t.inputs;
      // std::vector<int32_t> &outputs = oper_t.outputs;
 
      // const auto opcodes = reader.opcodes();
 
-      std::vector<Tensor *> input_tensors;
+      std::vector<std::pair<const Tensor *, int32_t>> input_tensors;
       for (const int32_t input_tensor_index : oper_t.inputs)
       {
         if (_index_to_tensor.find(input_tensor_index) != _index_to_tensor.end())
-          input_tensors.push_back(_index_to_tensor.at(input_tensor_index));
+          input_tensors.emplace_back(const_cast<const Tensor *>(_index_to_tensor.at(input_tensor_index)), input_tensor_index);
       }
 
 
       /*
        * Output tensor for current Op
        */
-      auto output_tensor = reader.tensors()[oper_t.outputs[0]];
+      auto output_tensor = reader->tensors()[oper_t.outputs[0]];
 
-      // Create dtype
-      const auto dtype = luci::luci_datatype(output_tensor->type());
-
-      // Create Shape
-      const auto tensor_shape = luci::wrap(output_tensor->shape());
-
-      const auto dims = tensor_shape; // in NHWC
-      Shape shape(static_cast<int>(dims.size()));
-      for (uint32_t r = 0; r < dims.size(); ++r)
-      {
-        shape.dim(r) = dims[r];
-      }
-
-      // Create quantization;
-      AffineQuantization quantization;
-      const auto quantization_tensor = output_tensor->quantization();
-      if (quantization_tensor != nullptr)
-      {
-        auto quantparam = luci::luci_quantparam(quantization_tensor);
-        if (quantparam)
-        {
-          quantization.scale.assign(quantparam->scale.cbegin(), quantparam->scale.cend());
-          quantization.zero_point.assign(quantparam->zerop.cbegin(), quantparam->zerop.cend());
-          quantization.quantized_dimension = quantparam->quantized_dimension;
-        }
-      }
-
-      circle::BuiltinOperator builtincode = reader.builtin_code(op);
+      circle::BuiltinOperator builtincode = reader->builtin_code(op);
 
       Tensor *output = nullptr;
 
-      if (std::find(reader.inputs().begin(), reader.inputs().end(), oper_t.inputs.at(0)) == reader.inputs().end() and
+      if (std::find(reader->inputs().begin(), reader->inputs().end(), oper_t.inputs.at(0)) == reader->inputs().end() and
           (builtincode == circle::BuiltinOperator_LOGISTIC or builtincode == circle::BuiltinOperator_EXPAND_DIMS or builtincode == circle::BuiltinOperator_RESHAPE))
       {
-        auto input_tensor = input_tensors.at(0);
-        output = input_tensor;
+        auto input_tensor = input_tensors.at(0).first;
+        output = const_cast<Tensor *>(input_tensor);
       } else
       {
-        auto tensor_interpreter = std::make_unique<Tensor>(dtype, (shape), nullptr);
+
+        //  Create dtype
+        const auto dtype = luci::luci_datatype(output_tensor->type());
+
+        // Create Shape
+        const auto tensor_shape = luci::wrap(output_tensor->shape());
+
+        //const auto dims = tensor_shape; // in NHWC
+        //Shape shape(static_cast<int>(dims.size()));
+        auto size = 1;
+        for (uint32_t r = 0; r < tensor_shape.size(); ++r)
+        {
+          //shape.dim(r) = dims[r];
+          size *= tensor_shape[r];
+        }
+
+        size *= getDataTypeSize(dtype);
+
+        auto tensor_interpreter = std::make_unique<Tensor>(size);
+
         output = tensor_interpreter.get();
 
         _graph_to_runtime_graph.back()->addTensor(std::move(tensor_interpreter));
       }
 
-
-
-      //_memory_manager->allocate_memory(*tensor_interpreter);
-
-     // _graph_to_runtime_graph.back()->add_input_tensor(tensor_interpreter.get());
-
       _index_to_tensor.emplace(oper_t.outputs[0], output);
 
-      if (i == reader.operators().size() - 1)
+      if (i == reader->operators().size() - 1)
         _graph_to_runtime_graph.back()->add_output_tensor(output);
+
+      std::vector<std::pair<Tensor *, int32_t>> output_tensors;
+      output_tensors.emplace_back(output, oper_t.outputs[0]);
 
       switch (builtincode)
       {
         case circle::BuiltinOperator_FULLY_CONNECTED:
         {
-          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleFullyConnected(oper_t, input_tensors, output);
-
-         // _kernel_to_tensor.emplace(kernel.get(), output);
-
+          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleFullyConnected(input_tensors, output_tensors);
           _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
           break;
         }
         case circle::BuiltinOperator_LOGISTIC:
         {
-          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleLogistic(oper_t, input_tensors, output);
-
-         // _kernel_to_tensor.emplace(kernel.get(), output);
-
+          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleLogistic(input_tensors, output_tensors);
           _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
           break;
         }
         case circle::BuiltinOperator_EXPAND_DIMS:
         {
-          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleExpandDims(oper_t, input_tensors, output);
-
-         // _kernel_to_tensor.emplace(kernel.get(), output);
-
+          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleExpandDims(input_tensors, output_tensors);
           _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
           break;
         }
         case circle::BuiltinOperator_CONV_2D:
         {
-          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleConv2d(oper_t, input_tensors, output, _graph_to_runtime_graph.back());
-
-         // _kernel_to_tensor.emplace(kernel.get(), output);
-
+          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleConv2d(input_tensors, output_tensors, _graph_to_runtime_graph.back());
           _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
           break;
         }
         case circle::BuiltinOperator_RESHAPE:
         {
-          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleReshape(oper_t, input_tensors, output);
-
-         // _kernel_to_tensor.emplace(kernel.get(), output);
-
+          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleReshape(input_tensors, output_tensors);
           _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
           break;
         }
         case circle::BuiltinOperator_MAX_POOL_2D:
         {
-          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleMaxPool2D(oper_t, input_tensors, output);
-
-          //_kernel_to_tensor.emplace(kernel.get(), output);
-
+          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleMaxPool2D(input_tensors, output_tensors);
           _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
           break;
         }
         case circle::BuiltinOperator_PAD:
         {
-          std::unique_ptr<Kernel> kernel = build_kernel_micro_CirclePad(oper_t, input_tensors, output);
-
-         // _kernel_to_tensor.emplace(kernel.get(), output);
-
+          std::unique_ptr<Kernel> kernel = build_kernel_micro_CirclePad(input_tensors, output_tensors);
           _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
           break;
         }
         case circle::BuiltinOperator_SPACE_TO_BATCH_ND:
         {
-          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleSpaceToBatchNd(oper_t, input_tensors, output, shape);
-
-         // _kernel_to_tensor.emplace(kernel.get(), output);
-
+          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleSpaceToBatchNd(input_tensors, output_tensors);
           _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
           break;
         }
         case circle::BuiltinOperator_BATCH_TO_SPACE_ND:
         {
-          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleBatchToSpaceNd(oper_t, input_tensors, output, shape);
-
-          //_kernel_to_tensor.emplace(kernel.get(), output);
-
+          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleBatchToSpaceNd(input_tensors, output_tensors);
           _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
           break;
         }
         case circle::BuiltinOperator_ADD:
         {
-          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleAdd(oper_t, input_tensors, output);
-
-         // _kernel_to_tensor.emplace(kernel.get(), output);
-
+          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleAdd(input_tensors, output_tensors);
           _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
           break;
         }
         case circle::BuiltinOperator_CONCATENATION:
         {
-          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleConcatenation(oper_t, input_tensors, output);
-
-          // _kernel_to_tensor.emplace(kernel.get(), output);
-
+          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleConcatenation(input_tensors, output_tensors);
           _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
           break;
         }

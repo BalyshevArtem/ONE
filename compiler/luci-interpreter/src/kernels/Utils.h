@@ -190,16 +190,16 @@ private:
 
 inline tflite::RuntimeShape getTensorShape(const Tensor *tensor)
 {
-  if (tensor == nullptr)
-    return tflite::RuntimeShape();
-
-  const Shape &shape = tensor->shape();
-  tflite::RuntimeShape runtime_shape(shape.num_dims());
-  for (int i = 0; i < shape.num_dims(); ++i)
-  {
-    runtime_shape.SetDim(i, shape.dim(i));
-  }
-  return runtime_shape;
+//  if (tensor == nullptr)
+//    return tflite::RuntimeShape();
+//
+//  const Shape &shape = tensor->shape();
+//  tflite::RuntimeShape runtime_shape(shape.num_dims());
+//  for (int i = 0; i < shape.num_dims(); ++i)
+//  {
+//    runtime_shape.SetDim(i, shape.dim(i));
+//  }
+//  return runtime_shape;
 }
 
 template <typename T> const T *getTensorData(const Tensor *tensor)

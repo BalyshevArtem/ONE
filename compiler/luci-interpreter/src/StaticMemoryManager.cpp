@@ -21,14 +21,14 @@ namespace luci_interpreter
 
 void StaticMemoryManager::allocate_memory(luci_interpreter::Tensor &tensor)
 {
-  if (!tensor.is_allocatable())
-  {
-    return;
-  }
-  int32_t offset = tensor.get_offset();
-  assert(offset >= 0);
-  auto tensor_ptr = _buffer_ptr + offset;
-  tensor.set_data_buffer(tensor_ptr);
+//  if (!tensor.is_allocatable())
+//  {
+//    return;
+//  }
+//  int32_t offset = tensor.get_offset();
+//  assert(offset >= 0);
+//  auto tensor_ptr = _buffer_ptr + offset;
+//  tensor.set_data_buffer(tensor_ptr);
 }
 
 void StaticMemoryManager::release_memory(luci_interpreter::Tensor &tensor)

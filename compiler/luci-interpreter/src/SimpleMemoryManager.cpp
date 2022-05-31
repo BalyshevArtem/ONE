@@ -21,6 +21,8 @@ namespace luci_interpreter
 
 void SimpleMemoryManager::allocate_memory(luci_interpreter::Tensor &tensor)
 {
+  //printf("\n%d\n", tensor.is_allocatable());
+ // printf("\n%d\n", tensor.is_data_allocated());
   if (!tensor.is_allocatable())
   {
     return;
@@ -29,11 +31,14 @@ void SimpleMemoryManager::allocate_memory(luci_interpreter::Tensor &tensor)
   {
     release_memory(tensor);
   }
-  const auto element_size = getDataTypeSize(tensor.element_type());
-  const auto num_elements = tensor.shape().num_elements();
+ // printf("\ndf;\n");
 
-  auto *data = new uint8_t[num_elements * element_size];
-  //printf("\nallocate bytes = %d\n", num_elements * element_size);
+ // const auto element_size = getDataTypeSize(tensor.element_type());
+ // const auto num_elements = tensor.shape().num_elements();
+
+  //auto *data = new uint8_t[num_elements * element_size];
+  //printf("\n alloc_size = %d\n", tensor.get_alloc_size());
+  auto *data = new uint8_t[tensor.get_alloc_size()];
   tensor.set_data_buffer(data);
 }
 

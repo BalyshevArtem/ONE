@@ -28,14 +28,14 @@ namespace kernels
 
 static Shape extractShapeFromTensor(const Tensor *tensor)
 {
-  assert(tensor->element_type() == DataType::S32);
-  Shape shape(tensor->shape().num_elements());
-  const auto *shape_data = tensor->data<int32_t>();
-  for (int i = 0; i < tensor->shape().num_elements(); ++i)
-  {
-    shape.dim(i) = shape_data[i];
-  }
-  return shape;
+//  assert(tensor->element_type() == DataType::S32);
+//  Shape shape(tensor->shape().num_elements());
+//  const auto *shape_data = tensor->data<int32_t>();
+//  for (int i = 0; i < tensor->shape().num_elements(); ++i)
+//  {
+//    shape.dim(i) = shape_data[i];
+//  }
+//  return shape;
 }
 
 static void resolveUnknownDimension(const Shape &input_shape, Shape *output_shape)
@@ -64,28 +64,28 @@ static void resolveUnknownDimension(const Shape &input_shape, Shape *output_shap
   assert(num_output_elements == num_input_elements);
 }
 
-Reshape::Reshape(const Tensor *input, const Tensor *shape, Tensor *output)
-  : Kernel({input, shape}, {output})
+Reshape::Reshape(std::vector<std::pair<const Tensor *, int32_t>> &&inputs, std::vector<std::pair<Tensor *, int32_t>> &&outputs)
+  : Kernel(std::move(inputs), std::move(outputs))
 {
 }
 
-void Reshape::configure()
+void Reshape::configure(luci::CircleReader *circle_reader, int32_t index)
 {
-  Shape output_shape = extractShapeFromTensor(shape());
-  resolveUnknownDimension(input()->shape(), &output_shape);
-  output()->resize(output_shape);
+//  Shape output_shape = extractShapeFromTensor(shape());
+//  resolveUnknownDimension(input()->shape(), &output_shape);
+//  output()->resize(output_shape);
 }
 
-void Reshape::execute() const
+void Reshape::execute(luci::CircleReader *circle_reader, int32_t index) const
 {
   if (input() != output())
   {
     const auto *input_data = input()->data<void>();
     auto *output_data = output()->data<void>();
 
-    const size_t element_size = getDataTypeSize(input()->element_type());
-    const int32_t num_elements = input()->shape().num_elements();
-    std::memcpy(output_data, input_data, num_elements * element_size);
+    //const size_t element_size = getDataTypeSize(input()->element_type());
+    //const int32_t num_elements = input()->shape().num_elements();
+    std::memcpy(output_data, input_data, input()->get_alloc_size());
   }
 
 }

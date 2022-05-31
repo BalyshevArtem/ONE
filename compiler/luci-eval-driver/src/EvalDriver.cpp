@@ -82,9 +82,9 @@ std::unique_ptr<luci::Module> importModel(const std::string &filename)
 
 size_t get_tensor_size(const luci_interpreter::Tensor *tensor)
 {
-  uint32_t tensor_size = loco::size(tensor->element_type());
+  //uint32_t tensor_size = loco::size(tensor->element_type());
 
-  return loco::size(tensor->element_type()) * tensor->shape().num_elements();
+ // return loco::size(tensor->element_type()) * tensor->shape().num_elements();
 }
 
 } // namespace
@@ -143,15 +143,15 @@ int entry(int argc, char **argv)
   for (int32_t i = 0; i < num_inputs; i++)
   {
     const auto input_tensor = input_tensors.at(i);
-    std::vector<char> input_data(get_tensor_size(input_tensor));
+    std::vector<char> input_data(input_tensor->get_alloc_size());
     readDataFromFile(std::string(input_prefix) + std::to_string(i), input_data.data(),
                      input_data.size());
-    //interpreter.writeInputTensor(input_node, input_data.data(), input_data.size());
+//    //interpreter.writeInputTensor(input_node, input_data.data(), input_data.size());
     interpreter.write_input_tensor(input_tensor, input_data.data(), input_data.size());
   }
 
   // Do inference.
-  for (int i = 0; i < 10; ++i)
+  for (int i = 0; i < 1; ++i)
     interpreter.interpret();
 
   // Get output.
@@ -162,7 +162,7 @@ int entry(int argc, char **argv)
   for (int i = 0; i < output_tensors.size(); i++)
   {
     const auto output_tensor = output_tensors.at(i);
-    std::vector<char> output_data(get_tensor_size(output_tensor));
+    std::vector<char> output_data(output_tensor->get_alloc_size());
 
     interpreter.read_output_tensor(output_tensor, output_data.data(), output_data.size());
 
@@ -174,21 +174,21 @@ int entry(int argc, char **argv)
                     output_data.size());
     // In case of Tensor output is Scalar value.
     // The output tensor with rank 0 is treated as a scalar with shape (1)
-    if (output_tensor->shape().num_dims() == 0)
-    {
-      writeDataToFile(std::string(output_file) + std::to_string(i) + ".shape", "1", 1);
-    }
-    else
-    {
-      auto shape_str = std::to_string(output_tensor->shape().dim(0));
-      for (int j = 1; j < output_tensor->shape().num_dims(); j++)
-      {
-        shape_str += ",";
-        shape_str += std::to_string(output_tensor->shape().dim(j));
-      }
-      writeDataToFile(std::string(output_file) + std::to_string(i) + ".shape", shape_str.c_str(),
-                      shape_str.size());
-    }
+//    if (output_tensor->shape().num_dims() == 0)
+//    {
+//      writeDataToFile(std::string(output_file) + std::to_string(i) + ".shape", "1", 1);
+//    }
+//    else
+//    {
+//      auto shape_str = std::to_string(output_tensor->shape().dim(0));
+//      for (int j = 1; j < output_tensor->shape().num_dims(); j++)
+//      {
+//        shape_str += ",";
+//        shape_str += std::to_string(output_tensor->shape().dim(j));
+//      }
+//      writeDataToFile(std::string(output_file) + std::to_string(i) + ".shape", shape_str.c_str(),
+//                      shape_str.size());
+//    }
   }
   return EXIT_SUCCESS;
 }

@@ -18,6 +18,7 @@
 #define LUCI_INTERPRETER_CORE_KERNEL_1_H
 
 #include "Tensor.h"
+#include "CircleReader.h"
 
 #include <vector>
 
@@ -28,7 +29,7 @@ namespace luci_interpreter
 class Kernel
 {
 protected:
-  Kernel(std::vector<const Tensor *> inputs, std::vector<Tensor *> outputs)
+  Kernel(std::vector<std::pair<const Tensor *, int32_t>> &&inputs, std::vector<std::pair<Tensor *, int32_t>> &&outputs)
     : _inputs(std::move(inputs)), _outputs(std::move(outputs))
   {
   }
@@ -36,39 +37,39 @@ protected:
 public:
   virtual ~Kernel() = default;
 
-  const std::vector<const Tensor *> &getInputTensors() const { return _inputs; }
-  const std::vector<Tensor *> &getOutputTensors() const { return _outputs; }
+  const std::vector<std::pair<const Tensor *, int32_t>> &getInputTensors() const { return _inputs; }
+  const std::vector<std::pair<Tensor *, int32_t>> &getOutputTensors() const { return _outputs; }
 
   // Configures the kernel.
   // This function is currently called once for each kernel during interpreter construction,
   // which makes it a convenient place for preparing (resizing) output tensors.
-  virtual void configure() = 0;
+  virtual void configure(luci::CircleReader *circle_reader, int32_t index) = 0;
 
   // Executes the kernel.
-  virtual void execute() const = 0;
+  virtual void execute(luci::CircleReader *circle_reader, int32_t index) const = 0;
 
 protected:
   // NOTE Prefer not to use these in derived classes.
-  const std::vector<const Tensor *> _inputs;
-  const std::vector<Tensor *> _outputs;
+  const std::vector<std::pair<const Tensor *, int32_t>> _inputs;
+  const std::vector<std::pair<Tensor *, int32_t>> _outputs;
 };
-
-// Base class for kernels with parameters.
-template <typename Params> class KernelWithParams : public Kernel
-{
-protected:
-  KernelWithParams(std::vector<const Tensor *> inputs, std::vector<Tensor *> outputs,
-                   const Params &params)
-    : Kernel(std::move(inputs), std::move(outputs)), _params(params)
-  {
-  }
-
-public:
-  const Params &params() const { return _params; }
-
-protected:
-  const Params _params;
-};
+//
+//// Base class for kernels with parameters.
+//template <typename Params> class KernelWithParams : public Kernel
+//{
+//protected:
+//  KernelWithParams(std::vector<const Tensor *> inputs, std::vector<Tensor *> outputs,
+//                   const Params &params)
+//    : Kernel(std::move(inputs), std::move(outputs)), _params(params)
+//  {
+//  }
+//
+//public:
+//  const Params &params() const { return _params; }
+//
+//protected:
+//  const Params _params;
+//};
 
 } // namespace luci_interpreter
 

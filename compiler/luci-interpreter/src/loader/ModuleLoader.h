@@ -21,7 +21,7 @@
 #include "loader/RuntimeToIR.h"
 #include "luci_interpreter/MemoryManager.h"
 #include "luci_interpreter/core/Kernel.h"
-
+#include "luci_interpreter/core/CircleReader.h"
 #include <luci/IR/Module.h>
 
 #include <unordered_map>
@@ -56,6 +56,7 @@ private:
   std::vector<RuntimeGraph *> _graph_to_runtime_graph;
 
   std::unordered_map<int32_t, Tensor *> _index_to_tensor;
+  std::unique_ptr<luci::CircleReader *> _circle_reader;
 };
 
 } // namespace luci_interpreter

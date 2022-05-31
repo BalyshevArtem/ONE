@@ -128,11 +128,11 @@ int main()
 //      //                              data_size);
 //  }
 
-    print_memory_stats();
-   // t.start();
+   // print_memory_stats();
+    t.start();
     interpreter.interpret();
-    //t.stop();
-    print_memory_stats();
+    t.stop();
+    //print_memory_stats();
 
 
     std::cout << "\nFinished in " << t.read_us() << "\n";

@@ -42,35 +42,35 @@ BuddyMemoryManager::BuddyMemoryManager(uint8_t *memory_start, int32_t memSize)
 
 void BuddyMemoryManager::allocate_memory(luci_interpreter::Tensor &tensor)
 {
-  const size_t element_size = getDataTypeSize(tensor.element_type());
-  const int32_t num_elements = tensor.shape().num_elements();
-  auto size = num_elements * element_size;
-  auto footprint = size + sizeof(Block);
-  auto l = (footprint & (footprint - 1)) == 0
-             ? lowerLog2(footprint)
-             : lowerLog2(footprint) + 1; // check footprint is pow_of_2
-
-  while (l < 32 && !_free_blocks[l])
-    l++;
-
-  assert(l < 32);
-
-  Block *tmp;
-  tmp = _free_blocks[l];
-  removeFromBlocks(tmp, l);
-
-  while ((tmp->size + sizeof(Block)) / 2 >= size + sizeof(Block))
-  {
-    divideBlock(tmp, l);
-    l--;
-  }
-
-  tmp->is_free = false;
-  tmp->self = tmp;
-  _num_blocks++;
-
-  auto *data = (uint8_t *)(tmp + 1);
-  tensor.set_data_buffer(data);
+//  const size_t element_size = getDataTypeSize(tensor.element_type());
+//  const int32_t num_elements = tensor.shape().num_elements();
+//  auto size = num_elements * element_size;
+//  auto footprint = size + sizeof(Block);
+//  auto l = (footprint & (footprint - 1)) == 0
+//             ? lowerLog2(footprint)
+//             : lowerLog2(footprint) + 1; // check footprint is pow_of_2
+//
+//  while (l < 32 && !_free_blocks[l])
+//    l++;
+//
+//  assert(l < 32);
+//
+//  Block *tmp;
+//  tmp = _free_blocks[l];
+//  removeFromBlocks(tmp, l);
+//
+//  while ((tmp->size + sizeof(Block)) / 2 >= size + sizeof(Block))
+//  {
+//    divideBlock(tmp, l);
+//    l--;
+//  }
+//
+//  tmp->is_free = false;
+//  tmp->self = tmp;
+//  _num_blocks++;
+//
+//  auto *data = (uint8_t *)(tmp + 1);
+//  tensor.set_data_buffer(data);
 }
 
 void BuddyMemoryManager::release_memory(luci_interpreter::Tensor &tensor)
