@@ -22,7 +22,7 @@
 //#include <luci/Importer.h>
 //#include <luci/IR/Module.h>
 #include <loco/IR/DataTypeTraits.h>
-#include "rev3_wavenet.h"
+#include "lstm_without_softmax.h"
 #include <cstdlib>
 #include <iostream>
 #include <luci/Log.h>
@@ -128,7 +128,7 @@ int main()
 //      //                              data_size);
 //  }
 
-   // print_memory_stats();
+    //print_memory_stats();
     t.start();
     interpreter.interpret();
     t.stop();

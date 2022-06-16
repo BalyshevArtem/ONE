@@ -156,8 +156,9 @@ template <typename T> void Concatenation::evalGeneric(luci::CircleReader *circle
   tflite::ConcatenationParams params{};
   params.axis = axis;
   params.inputs_count = _inputs.size();
-  tflite::reference_ops::Concatenation(params, inputs_shapes, all_data.data(),
-                                       output_runtime_shape, getTensorData<T>(output()));
+  throw std::runtime_error("FIX Concta here\n");
+ // tflite::reference_ops::Concatenation(params, inputs_shapes, all_data.data(),
+ //                                      output_runtime_shape, getTensorData<T>(output()));
 }
 //
 //void Concatenation::evalQuantized() const

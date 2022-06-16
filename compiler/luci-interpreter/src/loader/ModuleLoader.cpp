@@ -29,7 +29,7 @@
 #include "kernels/BatchToSpaceND.h"
 #include "kernels/Add.h"
 #include "kernels/Concatenation.h"
-
+#include "kernels/UnidirectionalSequenceLSTM.h"
 //#include "../../../luci-micro/mbed-os/mio/circle/schema_generated.h"
 //#include "../../../luci/import/include/luci/Import/CircleReader.h"
 
@@ -82,6 +82,19 @@ std::unique_ptr<Kernel> build_kernel_micro_CircleConv2d(std::vector<std::pair<co
   output.emplace_back(tmp, -1);
 
   return std::make_unique<kernels::Conv2D>(std::move(inputs), std::move(output));
+}
+
+std::unique_ptr<Kernel> build_kernel_micro_CircleUnidirectionalSequenceLSTM(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output, RuntimeGraph *runtime_graph)
+{
+  auto scratch_buffer_tensor = std::make_unique<Tensor>(0);
+  scratch_buffer_tensor->set_data_buffer(nullptr);
+  scratch_buffer_tensor->set_allocatable(false);
+
+  output.emplace_back(runtime_graph->addTensor(std::move(scratch_buffer_tensor)), -1);
+
+  // TODO: add scratchpads for hybrid
+
+  return std::make_unique<kernels::UnidirectionalSequenceLSTM>(std::move(inputs), std::move(output));
 }
 
 std::unique_ptr<Kernel> build_kernel_micro_CircleReshape(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
@@ -196,6 +209,40 @@ void ModuleLoader::load()
       _graph_to_runtime_graph.back()->addTensor(std::move(tensor_interpreter));
    //   printf("\nafter input\n");
     }
+    for (uint32_t i = 0; i < reader->tensors().size(); ++i)
+    {
+      auto const variable_tensor = reader->tensors()[i];
+      if (not variable_tensor->is_variable())
+        continue;
+
+      //  Create dtype
+      const auto dtype = luci::luci_datatype(variable_tensor->type());
+
+      // Create Shape
+      const auto tensor_shape = luci::wrap(variable_tensor->shape());
+
+      //const auto dims = tensor_shape; // in NHWC
+      //Shape shape(static_cast<int>(dims.size()));
+      auto num_elem = 1;
+      for (uint32_t r = 0; r < tensor_shape.size(); ++r)
+      {
+        //shape.dim(r) = dims[r];
+        num_elem *= tensor_shape[r];
+      }
+
+      auto size = num_elem * getDataTypeSize(dtype);
+
+      auto tensor_interpreter = std::make_unique<Tensor>(size);
+
+      _memory_manager->allocate_memory(*tensor_interpreter);
+
+      auto variable_data = tensor_interpreter->data<float>();
+      std::fill_n(variable_data, num_elem, 0);
+
+      _index_to_tensor.emplace(i, tensor_interpreter.get());
+
+      _graph_to_runtime_graph.back()->addTensor(std::move(tensor_interpreter));
+    }
 
     for (uint32_t i = 0; i < reader->tensors().size(); ++i)
     {
@@ -275,8 +322,12 @@ void ModuleLoader::load()
       {
         if (_index_to_tensor.find(input_tensor_index) != _index_to_tensor.end())
           input_tensors.emplace_back(const_cast<const Tensor *>(_index_to_tensor.at(input_tensor_index)), input_tensor_index);
+        else
+        {
+        //  printf("input_not_find = %d\n", input_tensor_index);
+          input_tensors.emplace_back(nullptr, input_tensor_index);
+        }
       }
-
 
       /*
        * Output tensor for current Op
@@ -395,10 +446,15 @@ void ModuleLoader::load()
           _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
           break;
         }
+        case circle::BuiltinOperator_UNIDIRECTIONAL_SEQUENCE_LSTM:
+        {
+          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleUnidirectionalSequenceLSTM(input_tensors, output_tensors, _graph_to_runtime_graph.back());
+          _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
+          break;
+        }
         default:
           throw std::runtime_error("not supported kernel");
       }
-
     }
 
     _graph_to_runtime_graph.back()->make_tensor_alloca_plan();

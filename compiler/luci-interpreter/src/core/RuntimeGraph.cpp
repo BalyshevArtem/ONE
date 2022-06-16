@@ -95,6 +95,9 @@ void RuntimeGraph::allocate(Kernel *kernel, size_t kernel_index) const
   {
     Tensor *tensor = const_cast<Tensor *>(pair.first);
 
+    if (tensor == nullptr)
+      continue;
+
     if (kernel_index == tensor->alloc_kernel)
       _memory_manager->allocate_memory(*tensor);
   }
@@ -117,6 +120,8 @@ void RuntimeGraph::deallocate(Kernel *kernel, size_t kernel_index) const
   for (auto &pair : input_tensors)
   {
     Tensor *tensor = const_cast<Tensor *>(pair.first);
+    if (tensor == nullptr)
+      continue;
 
     if (kernel_index == tensor->dealloc_kernel)
       _memory_manager->release_memory(*tensor);

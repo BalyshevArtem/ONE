@@ -179,6 +179,11 @@ public:
     return _alloc_size;
   }
 
+  void set_alloc_size(int32_t alloc_size)
+  {
+    _alloc_size = alloc_size;
+  }
+
 public:
   size_t alloc_kernel = -1;
   size_t dealloc_kernel = -1;

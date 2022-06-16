@@ -36,8 +36,8 @@ public:
   int32_t input_ind() const { return _inputs[0].second; }
   const Tensor *filter() const { return _inputs[1].first; }
   int32_t filter_ind() const { return _inputs[1].second; }
-  const Tensor *bias() const { return _inputs.size() == 3 ? _inputs[2].first : nullptr; }
-  int32_t bias_ind() const { return _inputs.size() == 3 ? _inputs[2].second : -1; }
+  const Tensor *bias() const { return _inputs[2].first; }
+  int32_t bias_ind() const { return _inputs[2].second; }
   Tensor *output() const { return _outputs[0].first; }
   int32_t outputs_ind() const { return _outputs[0].second; }
 
