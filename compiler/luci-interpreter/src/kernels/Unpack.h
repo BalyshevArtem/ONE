@@ -25,19 +25,22 @@ namespace luci_interpreter
 namespace kernels
 {
 
-class Unpack : public KernelWithParams<UnpackParams>
+class Unpack : public Kernel
 {
 public:
-  Unpack(const Tensor *input, std::vector<Tensor *> outputs, const UnpackParams &params);
+  Unpack(std::vector<std::pair<const Tensor *, int32_t>> &&inputs, std::vector<std::pair<Tensor *, int32_t>> &&outputs);
 
-  const Tensor *input() const { return _inputs[0]; }
-  Tensor *output(int index) const { return _outputs[index]; }
+  const Tensor *input() const { return _inputs[0].first; }
+  int32_t input_ind() const { return _inputs[0].second; }
 
-  void configure() override;
-  void execute() const override;
+  Tensor *output(int index) const { return _outputs[index].first; }
+  int32_t output_ind(int index) const { return _outputs[index].second; }
+
+  void configure(luci::CircleReader *circle_reader, int32_t index) override;
+  void execute(luci::CircleReader *circle_reader, int32_t index) const override;
 
 private:
-  template <typename T> void executeImpl() const;
+  template <typename T> void executeImpl(luci::CircleReader *circle_reader, int32_t index) const;
 };
 
 } // namespace kernels

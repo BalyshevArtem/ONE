@@ -28,19 +28,27 @@ namespace kernels
 class SplitV : public Kernel
 {
 public:
-  SplitV(const Tensor *input, const Tensor *size_splits, const Tensor *axis,
-         std::vector<Tensor *> outputs);
+  SplitV(std::vector<std::pair<const Tensor *, int32_t>> &&inputs, std::vector<std::pair<Tensor *, int32_t>> &&outputs);
 
-  const Tensor *input() const { return _inputs[0]; }
-  const Tensor *size_splits() const { return _inputs[1]; }
-  const Tensor *axis() const { return _inputs[2]; }
-  Tensor *output(int index) const { return _outputs[index]; }
+  const Tensor *input() const { return _inputs[0].first; }
+  int32_t input_ind() const { return _inputs[0].second; }
 
-  void configure() override;
-  void execute() const override;
+  const Tensor *size_splits() const { return _inputs[1].first; }
+  int32_t size_splits_ind() const { return _inputs[1].second; }
+
+  const Tensor *axis() const { return _inputs[2].first; }
+  int32_t axis_ind() const { return _inputs[2].second; }
+
+  Tensor *output(int index) const { return _outputs[index].first; }
+  int32_t output_ind(int index) const { return _outputs[index].second; }
+
+  void configure(luci::CircleReader *circle_reader, int32_t index) override;
+  void execute(luci::CircleReader *circle_reader, int32_t index) const override;
 
 private:
-  int32_t _axis_value{};
+  template <typename T> void executeImpl(luci::CircleReader *circle_reader, int32_t index) const;
+
+  // int32_t _axis_value{};
 };
 
 } // namespace kernels

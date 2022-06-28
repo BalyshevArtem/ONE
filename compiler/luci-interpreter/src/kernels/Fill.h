@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Samsung Electronics Co., Ltd. All Rights Reserved
+ * Copyright (c) 2022 Samsung Electronics Co., Ltd. All Rights Reserved
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,41 +14,41 @@
  * limitations under the License.
  */
 
-#ifndef LUCI_INTERPRETER_KERNELS_SUB_H
-#define LUCI_INTERPRETER_KERNELS_SUB_H
+#ifndef LUCI_INTERPRETER_KERNELS_FILL_H
+#define LUCI_INTERPRETER_KERNELS_FILL_H
 
 #include "core/Kernel.h"
 #include "core/KernelParams.h"
 #include "luci_interpreter/core/Kernel.h"
+
 namespace luci_interpreter
 {
 namespace kernels
 {
 
-class Sub : public Kernel
+class Fill : public Kernel
 {
 public:
-  Sub(std::vector<std::pair<const Tensor *, int32_t>> &&inputs, std::vector<std::pair<Tensor *, int32_t>> &&outputs);
+  Fill(std::vector<std::pair<const Tensor *, int32_t>> &&inputs, std::vector<std::pair<Tensor *, int32_t>> &&outputs);
 
-  const Tensor *input1() const { return _inputs[0].first; }
-  int32_t input1_ind() const { return _inputs[0].second; }
+  const Tensor *dims() const { return _inputs[0].first; }
+  int32_t dims_ind() const { return _inputs[0].second; }
 
-  const Tensor *input2() const { return _inputs[1].first; }
-  int32_t input2_ind() const { return _inputs[1].second; }
+  const Tensor *value() const { return _inputs[1].first; }
+  int32_t value_ind() const { return _inputs[1].second; }
 
   Tensor *output() const { return _outputs[0].first; }
   int32_t output_ind() const { return _outputs[0].second; }
+
 
   void configure(luci::CircleReader *circle_reader, int32_t index) override;
   void execute(luci::CircleReader *circle_reader, int32_t index) const override;
 
 private:
-  void evalFloat(luci::CircleReader *circle_reader, int32_t index) const;
-//  template <typename T> void evalInteger() const;
-//  void evalQuantized() const;
+  template <typename T> void configureShape(luci::CircleReader *circle_reader, int32_t index);
 };
 
 } // namespace kernels
 } // namespace luci_interpreter
 
-#endif // LUCI_INTERPRETER_KERNELS_SUB_H
+#endif // LUCI_INTERPRETER_KERNELS_FILL_H

@@ -20,16 +20,27 @@
 #include "luci_interpreter/core/KernelParams.h"
 #include "kernels/FullyConnected.h"
 #include "kernels/Logistic.h"
-#include "kernels/ExpandDims.h"
-#include "kernels/Conv2D.h"
-#include "kernels/Reshape.h"
-#include "kernels/MaxPool2D.h"
-#include "kernels/Pad.h"
-#include "kernels/SpaceToBatchND.h"
-#include "kernels/BatchToSpaceND.h"
+//#include "kernels/ExpandDims.h"
+//#include "kernels/Conv2D.h"
+//#include "kernels/Reshape.h"
+//#include "kernels/MaxPool2D.h"
+//#include "kernels/Pad.h"
+//#include "kernels/SpaceToBatchND.h"
+//#include "kernels/BatchToSpaceND.h"
 #include "kernels/Add.h"
-#include "kernels/Concatenation.h"
-#include "kernels/UnidirectionalSequenceLSTM.h"
+//#include "kernels/Concatenation.h"
+//#include "kernels/UnidirectionalSequenceLSTM.h"
+#include "kernels/Transpose.h"
+#include "kernels/Shape.h"
+#include "kernels/StridedSlice.h"
+#include "kernels/Pack.h"
+#include "kernels/Fill.h"
+#include "kernels/Unpack.h"
+#include "kernels/Split.h"
+#include "kernels/SplitV.h"
+#include "kernels/Mul.h"
+#include "kernels/Sub.h"
+#include "kernels/Tanh.h"
 //#include "../../../luci-micro/mbed-os/mio/circle/schema_generated.h"
 //#include "../../../luci/import/include/luci/Import/CircleReader.h"
 
@@ -67,71 +78,125 @@ std::unique_ptr<Kernel> build_kernel_micro_CircleLogistic(std::vector<std::pair<
   return std::make_unique<kernels::Logistic>(std::move(inputs), std::move(output));
 }
 
-std::unique_ptr<Kernel> build_kernel_micro_CircleExpandDims(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
-{
-  return std::make_unique<kernels::ExpandDims>(std::move(inputs), std::move(output));
-}
-
-std::unique_ptr<Kernel> build_kernel_micro_CircleConv2d(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output, RuntimeGraph *runtime_graph)
-{
-  auto scratchpad = std::make_unique<Tensor>(0);
-  scratchpad->set_data_buffer(nullptr);
-  scratchpad->set_allocatable(false);
-
-  Tensor *tmp = runtime_graph->addTensor(std::move(scratchpad));
-  output.emplace_back(tmp, -1);
-
-  return std::make_unique<kernels::Conv2D>(std::move(inputs), std::move(output));
-}
-
-std::unique_ptr<Kernel> build_kernel_micro_CircleUnidirectionalSequenceLSTM(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output, RuntimeGraph *runtime_graph)
-{
-  auto scratch_buffer_tensor = std::make_unique<Tensor>(0);
-  scratch_buffer_tensor->set_data_buffer(nullptr);
-  scratch_buffer_tensor->set_allocatable(false);
-
-  output.emplace_back(runtime_graph->addTensor(std::move(scratch_buffer_tensor)), -1);
-
-  // TODO: add scratchpads for hybrid
-
-  return std::make_unique<kernels::UnidirectionalSequenceLSTM>(std::move(inputs), std::move(output));
-}
-
-std::unique_ptr<Kernel> build_kernel_micro_CircleReshape(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
-{
-  return std::make_unique<kernels::Reshape>(std::move(inputs), std::move(output));
-}
-
-std::unique_ptr<Kernel> build_kernel_micro_CircleMaxPool2D(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
-{
-  return std::make_unique<kernels::MaxPool2D>(std::move(inputs), std::move(output));
-}
-
-std::unique_ptr<Kernel> build_kernel_micro_CirclePad(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
-{
-  return std::make_unique<kernels::Pad>(std::move(inputs), std::move(output));
-}
-
-std::unique_ptr<Kernel> build_kernel_micro_CircleSpaceToBatchNd(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
-{
-  return std::make_unique<kernels::SpaceToBatchND>(std::move(inputs), std::move(output));
-}
-
-std::unique_ptr<Kernel> build_kernel_micro_CircleBatchToSpaceNd(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
-{
-  return std::make_unique<kernels::BatchToSpaceND>(std::move(inputs), std::move(output));
-}
+//std::unique_ptr<Kernel> build_kernel_micro_CircleExpandDims(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
+//{
+//  return std::make_unique<kernels::ExpandDims>(std::move(inputs), std::move(output));
+//}
+//
+//std::unique_ptr<Kernel> build_kernel_micro_CircleConv2d(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output, RuntimeGraph *runtime_graph)
+//{
+//  auto scratchpad = std::make_unique<Tensor>(0);
+//  scratchpad->set_data_buffer(nullptr);
+//  scratchpad->set_allocatable(false);
+//
+//  Tensor *tmp = runtime_graph->addTensor(std::move(scratchpad));
+//  output.emplace_back(tmp, -1);
+//
+//  return std::make_unique<kernels::Conv2D>(std::move(inputs), std::move(output));
+//}
+//
+//std::unique_ptr<Kernel> build_kernel_micro_CircleUnidirectionalSequenceLSTM(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output, RuntimeGraph *runtime_graph)
+//{
+//  auto scratch_buffer_tensor = std::make_unique<Tensor>(0);
+//  scratch_buffer_tensor->set_data_buffer(nullptr);
+//  scratch_buffer_tensor->set_allocatable(false);
+//
+//  output.emplace_back(runtime_graph->addTensor(std::move(scratch_buffer_tensor)), -1);
+//
+//  // TODO: add scratchpads for hybrid
+//
+//  return std::make_unique<kernels::UnidirectionalSequenceLSTM>(std::move(inputs), std::move(output));
+//}
+//
+//std::unique_ptr<Kernel> build_kernel_micro_CircleReshape(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
+//{
+//  return std::make_unique<kernels::Reshape>(std::move(inputs), std::move(output));
+//}
+//
+//std::unique_ptr<Kernel> build_kernel_micro_CircleMaxPool2D(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
+//{
+//  return std::make_unique<kernels::MaxPool2D>(std::move(inputs), std::move(output));
+//}
+//
+//std::unique_ptr<Kernel> build_kernel_micro_CirclePad(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
+//{
+//  return std::make_unique<kernels::Pad>(std::move(inputs), std::move(output));
+//}
+//
+//std::unique_ptr<Kernel> build_kernel_micro_CircleSpaceToBatchNd(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
+//{
+//  return std::make_unique<kernels::SpaceToBatchND>(std::move(inputs), std::move(output));
+//}
+//
+//std::unique_ptr<Kernel> build_kernel_micro_CircleBatchToSpaceNd(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
+//{
+//  return std::make_unique<kernels::BatchToSpaceND>(std::move(inputs), std::move(output));
+//}
 
 std::unique_ptr<Kernel> build_kernel_micro_CircleAdd(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
 {
   return std::make_unique<kernels::Add>(std::move(inputs), std::move(output));
 }
+//
+//std::unique_ptr<Kernel> build_kernel_micro_CircleConcatenation(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
+//{
+//  return std::make_unique<kernels::Concatenation>(std::move(inputs), std::move(output));
+//}
 
-std::unique_ptr<Kernel> build_kernel_micro_CircleConcatenation(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
+std::unique_ptr<Kernel> build_kernel_micro_CircleTranspose(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
 {
-  return std::make_unique<kernels::Concatenation>(std::move(inputs), std::move(output));
+  return std::make_unique<kernels::Transpose>(std::move(inputs), std::move(output));
 }
 
+std::unique_ptr<Kernel> build_kernel_micro_CircleShape(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
+{
+  return std::make_unique<kernels::ShapeKernel>(std::move(inputs), std::move(output));
+}
+
+std::unique_ptr<Kernel> build_kernel_micro_CircleStridedSlice(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
+{
+  return std::make_unique<kernels::StridedSlice>(std::move(inputs), std::move(output));
+}
+
+std::unique_ptr<Kernel> build_kernel_micro_CirclePack(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
+{
+  return std::make_unique<kernels::Pack>(std::move(inputs), std::move(output));
+}
+
+std::unique_ptr<Kernel> build_kernel_micro_CircleFill(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
+{
+  return std::make_unique<kernels::Fill>(std::move(inputs), std::move(output));
+}
+
+std::unique_ptr<Kernel> build_kernel_micro_CircleUnpack(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
+{
+  return std::make_unique<kernels::Unpack>(std::move(inputs), std::move(output));
+}
+
+std::unique_ptr<Kernel> build_kernel_micro_CircleSplit(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
+{
+  return std::make_unique<kernels::Split>(std::move(inputs), std::move(output));
+}
+
+std::unique_ptr<Kernel> build_kernel_micro_CircleSplitV(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
+{
+  return std::make_unique<kernels::SplitV>(std::move(inputs), std::move(output));
+}
+
+std::unique_ptr<Kernel> build_kernel_micro_CircleMul(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
+{
+  return std::make_unique<kernels::Mul>(std::move(inputs), std::move(output));
+}
+
+std::unique_ptr<Kernel> build_kernel_micro_CircleSub(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
+{
+  return std::make_unique<kernels::Sub>(std::move(inputs), std::move(output));
+}
+
+std::unique_ptr<Kernel> build_kernel_micro_CircleTanh(std::vector<std::pair<const Tensor *, int32_t>> &inputs, std::vector<std::pair<Tensor *, int32_t>> &output)
+{
+  return std::make_unique<kernels::Tanh>(std::move(inputs), std::move(output));
+}
 
 } // namespace
 
@@ -310,6 +375,11 @@ void ModuleLoader::load()
 
       circle::OperatorT oper_t;
       op->UnPackTo(&oper_t);
+      //const auto *options = oper_t.builtin_options.AsUnpackOptions();
+     // options->axis
+//      options->axis
+      //options->begin_mask;
+
    //   printf("\nop i = %d\n", i);
 
      // std::vector<int32_t> &inputs = oper_t.inputs;
@@ -332,51 +402,60 @@ void ModuleLoader::load()
       /*
        * Output tensor for current Op
        */
-      auto output_tensor = reader->tensors()[oper_t.outputs[0]];
-
       circle::BuiltinOperator builtincode = reader->builtin_code(op);
+      std::vector<std::pair<Tensor *, int32_t>> output_tensors;
 
-      Tensor *output = nullptr;
-
-      if (std::find(reader->inputs().begin(), reader->inputs().end(), oper_t.inputs.at(0)) == reader->inputs().end() and
-          (builtincode == circle::BuiltinOperator_LOGISTIC or builtincode == circle::BuiltinOperator_EXPAND_DIMS or builtincode == circle::BuiltinOperator_RESHAPE))
+      int output_size = oper_t.outputs.size();
+      for (int j = 0; j < oper_t.outputs.size(); ++j)
       {
-        auto input_tensor = input_tensors.at(0).first;
-        output = const_cast<Tensor *>(input_tensor);
-      } else
-      {
+        auto output_tensor = reader->tensors()[oper_t.outputs[j]];
 
-        //  Create dtype
-        const auto dtype = luci::luci_datatype(output_tensor->type());
+        Tensor *output = nullptr;
 
-        // Create Shape
-        const auto tensor_shape = luci::wrap(output_tensor->shape());
-
-        //const auto dims = tensor_shape; // in NHWC
-        //Shape shape(static_cast<int>(dims.size()));
-        auto size = 1;
-        for (uint32_t r = 0; r < tensor_shape.size(); ++r)
+        if (std::find(reader->inputs().begin(), reader->inputs().end(), oper_t.inputs.at(0)) == reader->inputs().end() and
+            ((builtincode == circle::BuiltinOperator_LOGISTIC and output_size == 1) or (builtincode == circle::BuiltinOperator_EXPAND_DIMS and output_size == 1)
+             or (builtincode == circle::BuiltinOperator_RESHAPE and output_size == 1) or
+              (builtincode == circle::BuiltinOperator_TANH and output_size == 1) or (builtincode == circle::BuiltinOperator_MUL and output_size == 1) or
+              (builtincode == circle::BuiltinOperator_ADD and output_size == 1)))
         {
-          //shape.dim(r) = dims[r];
-          size *= tensor_shape[r];
+          auto input_tensor = input_tensors.at(0).first;
+          output = const_cast<Tensor *>(input_tensor);
+        } else
+        {
+          //  Create dtype
+          const auto dtype = luci::luci_datatype(output_tensor->type());
+
+          // Create Shape
+          const auto tensor_shape = luci::wrap(output_tensor->shape());
+
+          //const auto dims = tensor_shape; // in NHWC
+          //Shape shape(static_cast<int>(dims.size()));
+          auto size = 1;
+          for (uint32_t r = 0; r < tensor_shape.size(); ++r)
+          {
+            //shape.dim(r) = dims[r];
+            size *= tensor_shape[r];
+          }
+
+          size *= getDataTypeSize(dtype);
+
+          auto tensor_interpreter = std::make_unique<Tensor>(size);
+
+          output = tensor_interpreter.get();
+
+          _graph_to_runtime_graph.back()->addTensor(std::move(tensor_interpreter));
         }
 
-        size *= getDataTypeSize(dtype);
+        _index_to_tensor.emplace(oper_t.outputs[j], output);
 
-        auto tensor_interpreter = std::make_unique<Tensor>(size);
+        if (i == reader->operators().size() - 1)
+          _graph_to_runtime_graph.back()->add_output_tensor(output);
 
-        output = tensor_interpreter.get();
 
-        _graph_to_runtime_graph.back()->addTensor(std::move(tensor_interpreter));
+        output_tensors.emplace_back(output, oper_t.outputs[j]);
+
       }
 
-      _index_to_tensor.emplace(oper_t.outputs[0], output);
-
-      if (i == reader->operators().size() - 1)
-        _graph_to_runtime_graph.back()->add_output_tensor(output);
-
-      std::vector<std::pair<Tensor *, int32_t>> output_tensors;
-      output_tensors.emplace_back(output, oper_t.outputs[0]);
 
       switch (builtincode)
       {
@@ -392,63 +471,135 @@ void ModuleLoader::load()
           _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
           break;
         }
-        case circle::BuiltinOperator_EXPAND_DIMS:
-        {
-          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleExpandDims(input_tensors, output_tensors);
-          _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
-          break;
-        }
-        case circle::BuiltinOperator_CONV_2D:
-        {
-          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleConv2d(input_tensors, output_tensors, _graph_to_runtime_graph.back());
-          _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
-          break;
-        }
-        case circle::BuiltinOperator_RESHAPE:
-        {
-          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleReshape(input_tensors, output_tensors);
-          _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
-          break;
-        }
-        case circle::BuiltinOperator_MAX_POOL_2D:
-        {
-          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleMaxPool2D(input_tensors, output_tensors);
-          _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
-          break;
-        }
-        case circle::BuiltinOperator_PAD:
-        {
-          std::unique_ptr<Kernel> kernel = build_kernel_micro_CirclePad(input_tensors, output_tensors);
-          _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
-          break;
-        }
-        case circle::BuiltinOperator_SPACE_TO_BATCH_ND:
-        {
-          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleSpaceToBatchNd(input_tensors, output_tensors);
-          _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
-          break;
-        }
-        case circle::BuiltinOperator_BATCH_TO_SPACE_ND:
-        {
-          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleBatchToSpaceNd(input_tensors, output_tensors);
-          _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
-          break;
-        }
+//        case circle::BuiltinOperator_EXPAND_DIMS:
+//        {
+//          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleExpandDims(input_tensors, output_tensors);
+//          _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
+//          break;
+//        }
+//        case circle::BuiltinOperator_CONV_2D:
+//        {
+//          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleConv2d(input_tensors, output_tensors, _graph_to_runtime_graph.back());
+//          _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
+//          break;
+//        }
+//        case circle::BuiltinOperator_RESHAPE:
+//        {
+//          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleReshape(input_tensors, output_tensors);
+//          _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
+//          break;
+//        }
+//        case circle::BuiltinOperator_MAX_POOL_2D:
+//        {
+//          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleMaxPool2D(input_tensors, output_tensors);
+//          _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
+//          break;
+//        }
+//        case circle::BuiltinOperator_PAD:
+//        {
+//          std::unique_ptr<Kernel> kernel = build_kernel_micro_CirclePad(input_tensors, output_tensors);
+//          _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
+//          break;
+//        }
+//        case circle::BuiltinOperator_SPACE_TO_BATCH_ND:
+//        {
+//          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleSpaceToBatchNd(input_tensors, output_tensors);
+//          _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
+//          break;
+//        }
+//        case circle::BuiltinOperator_BATCH_TO_SPACE_ND:
+//        {
+//          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleBatchToSpaceNd(input_tensors, output_tensors);
+//          _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
+//          break;
+//        }
         case circle::BuiltinOperator_ADD:
         {
           std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleAdd(input_tensors, output_tensors);
           _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
           break;
         }
-        case circle::BuiltinOperator_CONCATENATION:
+//        case circle::BuiltinOperator_CONCATENATION:
+//        {
+//          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleConcatenation(input_tensors, output_tensors);
+//          _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
+//          break;
+//        }
+//        case circle::BuiltinOperator_UNIDIRECTIONAL_SEQUENCE_LSTM:
+//        {
+//          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleUnidirectionalSequenceLSTM(input_tensors, output_tensors, _graph_to_runtime_graph.back());
+//          _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
+//          break;
+//        }
+        case circle::BuiltinOperator_TRANSPOSE:
         {
-          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleConcatenation(input_tensors, output_tensors);
+          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleTranspose(input_tensors, output_tensors);
           _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
           break;
         }
-        case circle::BuiltinOperator_UNIDIRECTIONAL_SEQUENCE_LSTM:
+        case circle::BuiltinOperator_SHAPE:
         {
-          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleUnidirectionalSequenceLSTM(input_tensors, output_tensors, _graph_to_runtime_graph.back());
+          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleShape(input_tensors, output_tensors);
+          _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
+          break;
+        }
+        case circle::BuiltinOperator_STRIDED_SLICE:
+        {
+          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleStridedSlice(input_tensors, output_tensors);
+          _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
+          break;
+        }
+        case circle::BuiltinOperator_PACK:
+        {
+          std::unique_ptr<Kernel> kernel = build_kernel_micro_CirclePack(input_tensors, output_tensors);
+          _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
+          break;
+        }
+        case circle::BuiltinOperator_FILL:
+        {
+          std::unique_ptr<Kernel> kernel = build_kernel_micro_CircleFill(input_tensors, output_tensors);
+          _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
+          break;
+        }
+        case circle::BuiltinOperator_UNPACK:
+        {
+          std::unique_ptr<Kernel> kernel =
+            build_kernel_micro_CircleUnpack(input_tensors, output_tensors);
+          _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
+          break;
+        }
+        case circle::BuiltinOperator_SPLIT:
+        {
+          std::unique_ptr<Kernel> kernel =
+            build_kernel_micro_CircleSplit(input_tensors, output_tensors);
+          _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
+          break;
+        }
+        case circle::BuiltinOperator_SPLIT_V:
+        {
+          std::unique_ptr<Kernel> kernel =
+            build_kernel_micro_CircleSplitV(input_tensors, output_tensors);
+          _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
+          break;
+        }
+        case circle::BuiltinOperator_MUL:
+        {
+          std::unique_ptr<Kernel> kernel =
+            build_kernel_micro_CircleMul(input_tensors, output_tensors);
+          _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
+          break;
+        }
+        case circle::BuiltinOperator_SUB:
+        {
+          std::unique_ptr<Kernel> kernel =
+            build_kernel_micro_CircleSub(input_tensors, output_tensors);
+          _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
+          break;
+        }
+        case circle::BuiltinOperator_TANH:
+        {
+          std::unique_ptr<Kernel> kernel =
+            build_kernel_micro_CircleTanh(input_tensors, output_tensors);
           _graph_to_runtime_graph.back()->addKernel(std::move(kernel));
           break;
         }

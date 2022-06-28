@@ -22,7 +22,7 @@
 //#include <luci/Importer.h>
 //#include <luci/IR/Module.h>
 #include <loco/IR/DataTypeTraits.h>
-#include "lstm_without_softmax.h"
+#include "gru_float_model_small.h"
 #include <cstdlib>
 #include <iostream>
 #include <luci/Log.h>
@@ -128,11 +128,11 @@ int main()
 //      //                              data_size);
 //  }
 
-    //print_memory_stats();
-    t.start();
+    print_memory_stats();
+    //t.start();
     interpreter.interpret();
-    t.stop();
-    //print_memory_stats();
+    //t.stop();
+    print_memory_stats();
 
 
     std::cout << "\nFinished in " << t.read_us() << "\n";

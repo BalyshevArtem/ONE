@@ -28,22 +28,27 @@ namespace luci_interpreter
 namespace kernels
 {
 
-class Mul : public KernelWithParams<MulParams>
+class Mul : public Kernel
 {
 public:
-  Mul(const Tensor *input1, const Tensor *input2, Tensor *output, const MulParams &params);
+  Mul(std::vector<std::pair<const Tensor *, int32_t>> &&inputs, std::vector<std::pair<Tensor *, int32_t>> &&outputs);
 
-  const Tensor *input1() const { return _inputs[0]; }
-  const Tensor *input2() const { return _inputs[1]; }
-  Tensor *output() const { return _outputs[0]; }
+  const Tensor *input1() const { return _inputs[0].first; }
+  int32_t input1_ind() const { return _inputs[0].second; }
 
-  void configure() override;
-  void execute() const override;
+  const Tensor *input2() const { return _inputs[1].first; }
+  int32_t input2_ind() const { return _inputs[1].second; }
+
+  Tensor *output() const { return _outputs[0].first; }
+  int32_t output_ind() const { return _outputs[0].second; }
+
+  void configure(luci::CircleReader *circle_reader, int32_t index) override;
+  void execute(luci::CircleReader *circle_reader, int32_t index) const override;
 
 private:
-  void evalFloat() const;
-  template <typename T> void evalInteger() const;
-  void evalQuantizedS16() const;
+  void evalFloat(luci::CircleReader *circle_reader, int32_t index) const;
+  template <typename T> void evalInteger(luci::CircleReader *circle_reader, int32_t index) const;
+  void evalQuantizedS16(luci::CircleReader *circle_reader, int32_t index) const;
 };
 
 } // namespace kernels
