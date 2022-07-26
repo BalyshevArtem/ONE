@@ -14,6 +14,7 @@ set(CMAKE_ARM_OPTIONS
   -DLUCI_INTERPRETER_STATIC=ON
   -DLUCI_STATIC=ON
   -DBUILD_CMSIS_NN_FUNCTIONS=ON
+  -DTARGET_ARCH=armv7em
   -DTARGET_CPU=cortex-m7
   "-DCMAKE_TOOLCHAIN_FILE=${NNAS_PROJECT_SOURCE_DIR}/infra/nncc/cmake/buildtool/config/arm-none-eabi-gcc.cmake"
   "-DLUCI_INTERPRETER_PAL_DIR=${CMAKE_CURRENT_SOURCE_DIR}/../luci-interpreter/pal/mcu"
