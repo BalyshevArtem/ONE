@@ -36,7 +36,12 @@ public:
 
   void initialize(const std::string &input_model_path);
 
+  void initialize_with_parallel_record(const std::string &input_model_path);
+
   void profileData(const std::string &mode, const std::string &input_data_path,
+                   float min_percentile, float max_percentile);
+
+  void profileData_with_parallel_record(const std::string &mode, const std::string &input_data_path,
                    float min_percentile, float max_percentile);
 
   void profileRawData(const std::string &mode, const std::string &input_data_path,
@@ -54,6 +59,10 @@ private:
   std::unique_ptr<luci::Module> _module;
   std::unique_ptr<luci_interpreter::Interpreter> _interpreter;
   std::unique_ptr<MinMaxObserver> _observer;
+
+  // Used in parallel execution
+  std::vector<std::unique_ptr<luci_interpreter::Interpreter>> _vector_interpreters;
+  std::vector<std::unique_ptr<MinMaxObserver>> _vector_observers;
 };
 
 } // namespace record_minmax

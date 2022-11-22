@@ -32,6 +32,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <random>
+#include <omp.h>
 
 using Shape = std::vector<loco::Dimension>;
 using DataType = loco::DataType;
@@ -207,6 +208,56 @@ void RecordMinMax::initialize(const std::string &input_model_path)
   _observer = std::make_unique<MinMaxObserver>();
 
   _interpreter->attachObserver(_observer.get());
+}
+
+void RecordMinMax::initialize_with_parallel_record(const std::string &input_model_path)
+{
+  // Load model from the file
+  std::ifstream fs(input_model_path, std::ifstream::binary);
+  if (fs.fail())
+  {
+    throw std::runtime_error("Cannot open model file \"" + input_model_path + "\".\n");
+  }
+  std::vector<char> model_data((std::istreambuf_iterator<char>(fs)),
+                               std::istreambuf_iterator<char>());
+
+  // Verify flatbuffers
+  flatbuffers::Verifier verifier{reinterpret_cast<const uint8_t *>(model_data.data()),
+                                 model_data.size()};
+  if (!circle::VerifyModelBuffer(verifier))
+  {
+    throw std::runtime_error("Failed to verify circle '" + input_model_path + "'");
+  }
+
+  const circle::Model *circle_model = circle::GetModel(model_data.data());
+  if (circle_model == nullptr)
+  {
+    throw std::runtime_error("Failed to load '" + input_model_path + "'");
+  }
+
+  _module = luci::Importer().importModule(circle_model);
+
+  if (_module == nullptr)
+  {
+    throw std::runtime_error("Failed to load '" + input_model_path + "'");
+  }
+
+  // Create and initialize interpreters
+  const auto threads_size = omp_get_max_threads();
+
+  _vector_interpreters.resize(threads_size);
+  _vector_observers.resize(threads_size);
+
+  for (int t = 0; t < threads_size; ++t)
+  {
+    auto interpreter = std::make_unique<luci_interpreter::Interpreter>(_module.get());
+    auto observer = std::make_unique<MinMaxObserver>();
+
+    interpreter->attachObserver(observer.get());
+
+    _vector_observers[t] = std::move(observer);
+    _vector_interpreters[t] = std::move(interpreter);
+  }
 }
 
 // input_data_path is a path to the directory
@@ -398,6 +449,108 @@ void RecordMinMax::profileData(const std::string &mode, const std::string &input
   {
     H5::Exception::printErrorStack();
     throw std::runtime_error("HDF5 error occurred.");
+  }
+
+  update_quantparam(_observer.get(), mode, min_percentile, max_percentile);
+}
+
+void RecordMinMax::profileData_with_parallel_record(const std::string &mode, const std::string &input_data_path,
+                               float min_percentile, float max_percentile)
+{
+  const auto threads_size = omp_get_max_threads();
+  assert(_vector_interpreters.size() == threads_size);
+  assert(_vector_observers.size() == threads_size);
+  try
+  {
+    dio::hdf5::HDF5Importer importer(input_data_path);
+    importer.importGroup("value");
+
+    bool is_raw_data = importer.isRawData();
+
+    const auto num_records = importer.numData();
+    if (num_records == 0)
+      throw std::runtime_error("The input data file does not contain any record.");
+
+    const auto input_nodes = loco::input_nodes(_module->graph());
+    const auto num_inputs = input_nodes.size();
+
+    std::vector<std::vector<std::vector<char>>> vector_input_data(num_records);
+
+    // Read inputs to vector_input_data
+    for (int i = 0; i < num_records; ++i)
+    {
+      if (num_inputs != importer.numInputs(i))
+        throw std::runtime_error("Wrong number of inputs.");
+
+      for (int32_t input_idx = 0; input_idx < num_inputs; input_idx++)
+      {
+        const auto *input_node =
+          loco::must_cast<const luci::CircleInput *>(input_nodes[input_idx]);
+        assert(input_node->index() == input_idx);
+        checkInputDimension(input_node);
+        std::vector<char> input_data(getTensorSize(input_node));
+
+        if (!is_raw_data)
+        {
+          DataType dtype;
+          Shape shape;
+          importer.readTensor(i, input_idx, &dtype, &shape, input_data.data());
+
+          // Check the type and the shape of the input data is valid
+          verifyTypeShape(input_node, dtype, shape);
+        }
+        else
+        {
+          // Skip type/shape check for raw data
+          importer.readTensor(i, input_idx, input_data.data());
+        }
+        vector_input_data[i].emplace_back(std::move(input_data));
+      }
+    }
+
+#pragma omp parallel shared(num_records, num_inputs, input_nodes, vector_input_data) default(none)
+    {
+#pragma omp for
+      for (int32_t record_idx = 0; record_idx < num_records; record_idx++)
+      {
+        const auto current_thread_num = omp_get_thread_num();
+        for (int32_t input_idx = 0; input_idx < num_inputs; input_idx++)
+        {
+          const auto *input_node = loco::must_cast<const luci::CircleInput *>(input_nodes[input_idx]);
+
+          // TODO: Input data is copied twice (file -> buffer (input_data) -> interpreter inputs)
+          //       We can reduce the copy by directly writing data from file to interpreter inputs
+
+          const auto &cur_input_data = vector_input_data[record_idx][input_idx];
+          _vector_interpreters[current_thread_num]->writeInputTensor(input_node, cur_input_data.data(),
+                                                             cur_input_data.size());
+        }
+        _vector_interpreters[current_thread_num]->interpret();
+      }
+    }
+
+  std::cout << "Recording finished. Number of recorded data: " << num_records << std::endl;
+  }
+  catch (const H5::Exception &e)
+  {
+    H5::Exception::printErrorStack();
+    throw std::runtime_error("HDF5 error occurred.");
+  }
+
+  // Copy all min, max values to one observer
+  _observer = std::make_unique<MinMaxObserver>();
+  auto main_min_max_map = const_cast<MinMaxMap *>(_observer->minMaxData());
+
+  for (const auto &obs : _vector_observers)
+  {
+    const auto cur_minmax_map = obs->minMaxData()->getMap();
+    for (auto &iter : *cur_minmax_map)
+    {
+      const auto node = iter.first;
+      const auto &minmax = iter.second;
+
+      main_min_max_map->recordMinMaxVector(node, minmax);
+    }
   }
 
   update_quantparam(_observer.get(), mode, min_percentile, max_percentile);
