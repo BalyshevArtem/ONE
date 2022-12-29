@@ -124,6 +124,12 @@ unset(GENERATE_KERNELS_LIST_FROM CACHE)
 unset(KERNELS CACHE)
 
 set(MICRO_ARM_BINARY "${MICRO_ARM_BUILD_DIR}/luci-interpreter/src/libluci_interpreter_micro.a")
+set(MEMORY_LIB "${MICRO_ARM_BUILD_DIR}/luci-interpreter/src/memory_managers/libluci_interpreter_micro_memory_manager.a")
+set(LOADER_LIB "${MICRO_ARM_BUILD_DIR}/luci-interpreter/src/loader/libluci_interpreter_loader_micro.a")
+set(KERNELS_LIB "${MICRO_ARM_BUILD_DIR}/luci-interpreter/src/kernels/libluci_interpreter_kernels_micro.a")
+set(MCU_LIB "${MICRO_ARM_BUILD_DIR}/luci-interpreter/src/kernels/libluci_interpreter_mcu_pal.a")
+set(CORE_LIB "${MICRO_ARM_BUILD_DIR}/luci-interpreter/src/core/libluci_interpreter_core_micro.a")
+set(READER_LIB "${MICRO_ARM_BUILD_DIR}/luci-interpreter/src/core/reader/libluci_micro_circle_reader.a")
 
 add_custom_command(
         OUTPUT "${MICRO_ARM_BINARY}"
@@ -134,6 +140,45 @@ add_custom_command(
 )
 
 add_custom_target(luci_interpreter_micro_arm DEPENDS "${MICRO_ARM_BINARY}")
+
+set(output_archive result_micro)
+#
+#function(combine_archives output_archive list_of_input_archives)
+set(mri_file ${CMAKE_CURRENT_SOURCE_DIR}/${output_archive}.mri)
+set(FULL_OUTPUT_PATH ${MICRO_ARM_BINARY})
+file(WRITE ${mri_file} "create ${FULL_OUTPUT_PATH}\n")
+#FOREACH(in_archive ${list_of_input_archives})
+    file(APPEND ${mri_file} "addlib ${MICRO_ARM_BINARY}\n")
+    file(APPEND ${mri_file} "addlib ${MEMORY_LIB}\n")
+    file(APPEND ${mri_file} "addlib ${LOADER_LIB}\n")
+    file(APPEND ${mri_file} "addlib ${KERNELS_LIB}\n")
+    file(APPEND ${mri_file} "addlib ${MCU_LIB}\n")
+    file(APPEND ${mri_file} "addlib ${CORE_LIB}\n")
+    file(APPEND ${mri_file} "addlib ${READER_LIB}\n")
+#ENDFOREACH()
+file(APPEND ${mri_file} "save\n")
+file(APPEND ${mri_file} "end\n")
+#
+    set(output_archive_dummy_file "${CMAKE_CURRENT_SOURCE_DIR}/${output_archive}.dummy.cpp")
+    add_custom_command(OUTPUT ${output_archive_dummy_file}
+            COMMAND touch ${output_archive_dummy_file}
+            DEPENDS ${list_of_input_archives})
+#
+    add_library(${output_archive} STATIC ${output_archive_dummy_file})
+    add_custom_command(TARGET ${output_archive}
+            POST_BUILD
+            COMMAND ar -M < ${mri_file})
+    add_dependencies(${output_archive} luci_interpreter_micro_arm)
+#endfunction(combine_archives)
+#
+#set(arch_list
+#        ${LUCI_INTERPRETER_BINARY}
+#        )
+#
+#message("HEYYYY!!!!")
+#combine_archives(result_micro ${MICRO_ARM_BINARY})
+#
+add_custom_target(result_micro_arm DEPENDS result_micro)
 
 add_subdirectory(eval-driver)
 
