@@ -26,6 +26,27 @@ namespace luci_interpreter
 namespace kernels
 {
 
+TfLiteFusedActivation getTfLiteActivation(Activation activation)
+{
+  switch (activation)
+  {
+    case Activation::RELU:
+      return kTfLiteActRelu;
+    case Activation::RELU6:
+      return kTfLiteActRelu6;
+    case Activation::RELU_N1_TO_1:
+      return kTfLiteActReluN1To1;
+    case Activation::TANH:
+      return kTfLiteActTanh;
+    case Activation::SIGN_BIT:
+      return kTfLiteActSignBit;
+    case Activation::NONE:
+      return kTfLiteActNone;
+    default:
+      assert(false && "Unsupported activation.");
+  }
+}
+
 template <typename T>
 void calculateActivationRange(Activation activation, T *activation_min, T *activation_max)
 {
