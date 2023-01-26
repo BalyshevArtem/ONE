@@ -798,8 +798,11 @@ void UnidirectionalSequenceLSTM::configure()
     // Populate quantization parameters.
     populate_quantized_lstm_params();
 
+    // There are 5 temporary tensors for INT LSTM, one main output tensor
+    // and two variable tensors: output_state and cell_state
     LUCI_INTERPRETER_CHECK(_outputs.size() == 6 + 2);
 
+    // Let's resize 5 temporary tensors for INT LSTM
     for (int i = 1; i < 6; ++i)
     {
       getOutputTensors().at(i)->resize({n_batch * n_cell});
