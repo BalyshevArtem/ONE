@@ -30,28 +30,35 @@ build_kernel_CircleUnidirectionalSequenceLSTM(std::vector<const Tensor *> &&inpu
   assert(inputs.size() == 24);
   const Tensor *input = inputs.at(0);
   const Tensor *input_to_input_weights = inputs.at(1);
-  const Tensor *input_to_cell_weights = inputs.at(2);
-  const Tensor *input_to_forget_weights = inputs.at(3);
+  const Tensor *input_to_forget_weights = inputs.at(2);
+  const Tensor *input_to_cell_weights = inputs.at(3);
   const Tensor *input_to_output_weights = inputs.at(4);
+
   const Tensor *recurrent_to_input_weights = inputs.at(5);
-  const Tensor *recurrent_to_cell_weights = inputs.at(6);
-  const Tensor *recurrent_to_forget_weights = inputs.at(7);
+  const Tensor *recurrent_to_forget_weights = inputs.at(6);
+  const Tensor *recurrent_to_cell_weights = inputs.at(7);
   const Tensor *recurrent_to_output_weights = inputs.at(8);
+
   const Tensor *cell_to_input_weights = inputs.at(9);
   const Tensor *cell_to_forget_weights = inputs.at(10);
   const Tensor *cell_to_output_weights = inputs.at(11);
+
   const Tensor *input_gate_bias = inputs.at(12);
   const Tensor *forget_gate_bias = inputs.at(13);
   const Tensor *cell_gate_bias = inputs.at(14);
   const Tensor *output_gate_bias = inputs.at(15);
+
   const Tensor *projection_weights = inputs.at(16);
   const Tensor *projection_bias = inputs.at(17);
+
   const Tensor *output_state = inputs.at(18);
   const Tensor *cell_state = inputs.at(19);
+
   const Tensor *input_layer_norm_coefficients = inputs.at(20);
   const Tensor *forget_layer_norm_coefficients = inputs.at(21);
   const Tensor *cell_layer_norm_coefficients = inputs.at(22);
   const Tensor *output_layer_norm_coefficients = inputs.at(23);
+
   Tensor *output = outputs.at(0);
 
   // scratch pad tensor
