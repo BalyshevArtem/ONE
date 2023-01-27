@@ -23,7 +23,7 @@ namespace luci_interpreter
 ModuleLoader::ModuleLoader(const char *model_data_raw, RuntimeModule *runtime_module,
                            IMemoryManager *memory_manager)
   : _model_data_raw(model_data_raw), _runtime_module(runtime_module),
-    _memory_manager(memory_manager), _index_to_tensor(std::unordered_map<int32_t, Tensor *>{})
+    _memory_manager(memory_manager), _index_to_tensor(std::unordered_map<const circle::Tensor *, Tensor *>{})
 {
 }
 
@@ -48,8 +48,8 @@ void ModuleLoader::load(bool use_static_memory_manager)
     IBaseRuntimeGraph *runtime_graph = _runtime_graphs.at(i);
     GraphLoader loader(&reader, runtime_graph, _memory_manager, &_index_to_tensor);
 
-    loader.initInputTensors(use_static_memory_manager);
     loader.loadTensors(use_static_memory_manager);
+    loader.initInputOutputTensors(use_static_memory_manager);
     loader.loadOperators(use_static_memory_manager);
   }
 

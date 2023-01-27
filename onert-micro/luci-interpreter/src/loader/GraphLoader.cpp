@@ -44,7 +44,7 @@ bool isCouldBeEmplaceOperation(circle::BuiltinOperator op)
 
 GraphLoader::GraphLoader(CircleReader *reader, IBaseRuntimeGraph *runtime_graph,
                          IMemoryManager *memory_manager,
-                         std::unordered_map<int32_t, Tensor *> *index_to_tensor)
+                         std::unordered_map<const circle::Tensor *, Tensor *> *index_to_tensor)
   : _reader(reader), _runtime_graph(runtime_graph), _memory_manager(memory_manager),
     _index_to_tensor(index_to_tensor)
 {
@@ -75,14 +75,20 @@ void GraphLoader::loadTensors(bool use_static_memory_manager)
 {
   for (uint32_t i = 0; i < _reader->tensors().size(); ++i)
   {
-    const auto const_tensor = _reader->tensors().at(i);
+    // Check if it is duplicated tensor
+//    if (_index_to_tensor->find(i) != _index_to_tensor->end())
+//      continue;
 
-    // TODO: handle with variable tensors
-    if (const_tensor->is_variable() and use_static_memory_manager)
+    auto *raw_tensor = _reader->tensors().at(i);
+
+    // TODO: handle variable tensors with static memory manager
+    if (raw_tensor->is_variable() and use_static_memory_manager)
       assert(false && "Not supported now");
 
-    auto const buffer = wrap(_reader->buffers()[const_tensor->buffer()]->data());
-    auto const const_dims = wrap(const_tensor->shape()); // in NHWC
+    //bool is_const_tensor = true;
+    // TODO chaeck &
+    auto const buffer = wrap(_reader->buffers()[raw_tensor->buffer()]->data());
+    auto const const_dims = wrap(raw_tensor->shape()); // in NHWC
     if (const_dims.empty() && buffer.empty())
     {
       // unknown shape tensor and scalar tensor
@@ -95,11 +101,11 @@ void GraphLoader::loadTensors(bool use_static_memory_manager)
       size *= const_dim;
     }
 
-    if (buffer.empty() && size > 0 && not const_tensor->is_variable())
-    {
-      // normal empty tensor
-      continue;
-    }
+//    if (buffer.empty() && size > 0 && not tensor->is_variable())
+//    {
+//      // empty tensor or variable tensor
+//      is_const_tensor = false;
+//    }
 
     Shape shape(static_cast<int>(const_dims.size()));
     for (int j = 0; j < const_dims.size(); ++j)
@@ -108,11 +114,13 @@ void GraphLoader::loadTensors(bool use_static_memory_manager)
     }
 
     //  Create dtype
-    const auto dtype = luci_datatype(const_tensor->type());
+    // TODO add &
+    const auto dtype = luci_datatype(raw_tensor->type());
 
     AffineQuantization *quantization = nullptr;
-    const auto quant_params = const_tensor->quantization();
-    if (quant_params)
+    // TODO add &
+    const auto quant_params = raw_tensor->quantization();
+    if (quant_params and quant_params->zero_point() and quant_params->scale())
     {
       auto unique_ptr_quantization = std::make_unique<AffineQuantization>();
       assert(quant_params->zero_point()->size() == quant_params->scale()->size());
@@ -134,50 +142,34 @@ void GraphLoader::loadTensors(bool use_static_memory_manager)
     }
 
     // Get pointer to data from buffer
-    auto data_ptr = const_cast<unsigned char *>(buffer.data());
+    auto tensor = std::make_unique<Tensor>(dtype, (shape), quantization);
 
-    auto tensor = std::make_unique<Tensor>(dtype, std::move(shape), quantization);
-    // Save pointer to const data
-    assert(data_ptr != nullptr or const_tensor->is_variable());
+    if (not buffer.empty())
+    {
+      auto data_ptr = const_cast<unsigned char *>(buffer.data());
 
-    if (data_ptr)
+      // Save pointer to data
       tensor->writeDataWithoutCopy(static_cast<void *>(data_ptr));
+    }
 
-    _index_to_tensor->emplace(i, tensor.get());
+    _index_to_tensor->emplace(raw_tensor, tensor.get());
     _runtime_graph->addTensor(std::move(tensor));
   }
 }
 
-void GraphLoader::initInputTensors(bool use_static_memory_manager) const
+void GraphLoader::initInputOutputTensors(bool use_static_memory_manager) const
 {
+  // Input tensors
   for (const auto input_ind : _reader->inputs())
   {
-    const auto tensor = _reader->tensors()[input_ind];
-    const auto dtype = luci_datatype(tensor->type());
-    const auto tensor_shape = wrap(tensor->shape());
-
-    Shape shape(static_cast<int>(tensor_shape.size()));
-    for (int i = 0; i < tensor_shape.size(); ++i)
+    const auto raw_tensor = _reader->tensors()[input_ind];
+    if (_index_to_tensor->find(raw_tensor) == _index_to_tensor->end())
     {
-      shape.dim(i) = tensor_shape.at(i);
+      assert(false && "Failed import graph input tensor");
+      return;
     }
 
-    AffineQuantization *quantization = nullptr;
-    const auto quant_params = tensor->quantization();
-    if (quant_params)
-    {
-      auto unique_ptr_quantization = std::make_unique<AffineQuantization>();
-      assert(quant_params->zero_point()->size() == quant_params->scale()->size());
-      unique_ptr_quantization->scale.assign(quant_params->scale()->cbegin(),
-                                            quant_params->scale()->cend());
-      unique_ptr_quantization->zero_point.assign(quant_params->zero_point()->cbegin(),
-                                                 quant_params->zero_point()->cend());
-      unique_ptr_quantization->quantized_dimension = quant_params->quantized_dimension();
-
-      quantization = _runtime_graph->addAffineQuantization(std::move(unique_ptr_quantization));
-    }
-
-    auto tensor_interpreter = std::make_unique<Tensor>(dtype, std::move(shape), quantization);
+    auto tensor_interpreter = _index_to_tensor->at(raw_tensor);
 
     tensor_interpreter->set_allocatable(_memory_manager->is_allocate_input());
     if (not use_static_memory_manager)
@@ -191,9 +183,21 @@ void GraphLoader::initInputTensors(bool use_static_memory_manager) const
       _memory_manager->allocate_input_buf();
     }
 
-    _runtime_graph->addInputTensor(tensor_interpreter.get());
-    _index_to_tensor->emplace(input_ind, tensor_interpreter.get());
-    _runtime_graph->addTensor(std::move(tensor_interpreter));
+    _runtime_graph->addInputTensor(tensor_interpreter);
+  }
+
+  // Output tensors
+  for (const auto output_ind : _reader->outputs())
+  {
+    const auto raw_tensor = _reader->tensors()[output_ind];
+    if (_index_to_tensor->find(raw_tensor) == _index_to_tensor->end())
+    {
+      assert(false && "Failed import graph input tensor");
+      return;
+    }
+
+    auto output_tensor = _index_to_tensor->at(raw_tensor);
+    _runtime_graph->addOutputTensor(output_tensor);
   }
 }
 
@@ -236,6 +240,13 @@ void GraphLoader::loadOperators(bool use_static_memory_manager)
 
       _memory_manager->allocate_memory_for_input(*input_tensor);
     }
+
+    // Set offset for output tensors
+    for (int32_t ind = 0; ind < output_size; ++ind)
+    {
+      auto output_tensor = _runtime_graph->getOutputTensors().at(ind);
+      output_tensor->set_offset(execution_plan.at(input_size + ind)[0]);
+    }
   }
 
   for (uint32_t i = 0; i < _reader->operators().size(); ++i)
@@ -251,10 +262,19 @@ void GraphLoader::loadOperators(bool use_static_memory_manager)
     for (int32_t j = 0; j < op->inputs()->size(); ++j)
     {
       const auto input_index = op->inputs()->operator[](j);
-      if (_index_to_tensor->find(input_index) != _index_to_tensor->end())
+
+      auto s = _reader->tensors().size();
+      if (input_index != -1)
       {
-        auto input_tensor = _index_to_tensor->at(input_index);
+        const auto raw_tensor = _reader->tensors()[input_index];
+        if (_index_to_tensor->find(raw_tensor) == _index_to_tensor->end())
+        {
+          assert(false && "Failed import operation input tensor");
+          return;
+        }
+        auto input_tensor = _index_to_tensor->at(raw_tensor);
         input_tensors.at(j) = input_tensor;
+
         const auto &graph_input_tensors = _runtime_graph->getInputTensors();
 
         is_graph_input = (std::find(graph_input_tensors.begin(), graph_input_tensors.end(),
@@ -278,49 +298,23 @@ void GraphLoader::loadOperators(bool use_static_memory_manager)
     for (int32_t j = 0; j < op->outputs()->size(); ++j)
     {
       const auto output_index = op->outputs()->operator[](j);
+      const auto raw_tensor = _reader->tensors()[output_index];
 
-      const auto tensor = _reader->tensors()[output_index];
-      const auto dtype = luci_datatype(tensor->type());
-      const auto tensor_shape = wrap(tensor->shape());
-
-      Shape shape(static_cast<int>(tensor_shape.size()));
-      for (int k = 0; k < tensor_shape.size(); ++k)
+      if (_index_to_tensor->find(raw_tensor) == _index_to_tensor->end())
       {
-        shape.dim(k) = tensor_shape.at(k);
+        assert(false && "Failed import operation output tensor");
+        return;
       }
+      auto output_tensor = _index_to_tensor->at(raw_tensor);
+      output_tensors.at(j) = output_tensor;
 
-      AffineQuantization *quantization = nullptr;
-      const auto quant_params = tensor->quantization();
-      if (quant_params)
-      {
-        auto unique_ptr_quantization = std::make_unique<AffineQuantization>();
-        assert(quant_params->zero_point()->size() == quant_params->scale()->size());
-        unique_ptr_quantization->scale.assign(quant_params->scale()->cbegin(),
-                                              quant_params->scale()->cend());
-        unique_ptr_quantization->zero_point.assign(quant_params->zero_point()->cbegin(),
-                                                   quant_params->zero_point()->cend());
-        unique_ptr_quantization->quantized_dimension = quant_params->quantized_dimension();
-
-        quantization = _runtime_graph->addAffineQuantization(std::move(unique_ptr_quantization));
-      }
-
-      auto tensor_interpreter = std::make_unique<Tensor>(dtype, std::move(shape), quantization);
-
+      // TODO: try rewrite it
       if (use_static_memory_manager and
           (std::find(_reader->outputs().begin(), _reader->outputs().end(), output_index) ==
            _reader->outputs().end()))
       {
-        tensor_interpreter->set_offset(execution_plan.at(i + input_size + output_size).at(0));
+        output_tensor->set_offset(execution_plan.at(i + input_size + output_size).at(0));
       }
-
-      _index_to_tensor->emplace(output_index, tensor_interpreter.get());
-      output_tensors.at(j) = tensor_interpreter.get();
-
-      if (std::find(_reader->outputs().begin(), _reader->outputs().end(), output_index) !=
-          _reader->outputs().end())
-        _runtime_graph->addOutputTensor(tensor_interpreter.get());
-
-      _runtime_graph->addTensor(std::move(tensor_interpreter));
     }
 
     const auto opcode = _reader->builtin_code(op);
@@ -329,14 +323,6 @@ void GraphLoader::loadOperators(bool use_static_memory_manager)
     kernel->setInplaceValue(is_inplace);
 
     _runtime_graph->addKernel(std::move(kernel));
-  }
-  if (use_static_memory_manager)
-  {
-    for (int32_t ind = 0; ind < output_size; ++ind)
-    {
-      auto output_tensor = _runtime_graph->getOutputTensors().at(ind);
-      output_tensor->set_offset(execution_plan.at(input_size + ind)[0]);
-    }
   }
 }
 
