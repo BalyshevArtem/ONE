@@ -30,10 +30,13 @@ Logistic::Logistic(const Tensor *input, Tensor *output) : Kernel({input}, {outpu
 void Logistic::configure()
 {
   LUCI_INTERPRETER_CHECK(input()->element_type() == output()->element_type());
+
+#ifndef DIS_QUANT
   if (input()->element_type() == DataType::U8)
   {
     LUCI_INTERPRETER_CHECK(output()->scale() == 1. / 256);
   }
+#endif
   // TODO: enable it only if kernel with dynamic shapes
   output()->resize(input()->shape());
 }
@@ -45,9 +48,11 @@ void Logistic::execute() const
     case DataType::FLOAT32:
       evalFloat();
       break;
+#ifndef DIS_QUANT
     case DataType::U8:
       evalQuantized();
       break;
+#endif
     default:
       assert(false && "Unsupported type.");
   }
@@ -67,6 +72,7 @@ void Logistic::evalFloat() const
   }
 }
 
+#ifndef DIS_QUANT
 void Logistic::evalQuantized() const
 {
   if (_is_inplace)
@@ -82,6 +88,7 @@ void Logistic::evalQuantized() const
     input_tensor->set_data_buffer(nullptr);
   }
 }
+#endif
 
 } // namespace kernels
 } // namespace luci_interpreter

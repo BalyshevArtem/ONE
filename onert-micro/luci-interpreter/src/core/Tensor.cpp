@@ -20,12 +20,19 @@
 
 namespace luci_interpreter
 {
-
+#ifndef DIS_QUANT
 Tensor::Tensor(DataType element_type, Shape shape, AffineQuantization *quantization)
   : _element_type(element_type), _shape(std::move(shape)), _quantization(quantization),
     _data_allocated(false), _data(nullptr)
 {
 }
+#else
+Tensor::Tensor(DataType element_type, Shape shape)
+  : _element_type(element_type), _shape(std::move(shape)),
+    _data_allocated(false), _data(nullptr)
+{
+}
+#endif
 
 void Tensor::readData(void *data_ptr, size_t data_size) const
 {

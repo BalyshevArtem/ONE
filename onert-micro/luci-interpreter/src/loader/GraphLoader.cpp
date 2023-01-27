@@ -87,8 +87,8 @@ void GraphLoader::loadTensors(bool use_static_memory_manager)
 
     //bool is_const_tensor = true;
     // TODO chaeck &
-    auto const buffer = wrap(_reader->buffers()[raw_tensor->buffer()]->data());
-    auto const const_dims = wrap(raw_tensor->shape()); // in NHWC
+    auto const &buffer = wrap(_reader->buffers()[raw_tensor->buffer()]->data());
+    auto const &const_dims = wrap(raw_tensor->shape()); // in NHWC
     if (const_dims.empty() && buffer.empty())
     {
       // unknown shape tensor and scalar tensor
@@ -115,11 +115,12 @@ void GraphLoader::loadTensors(bool use_static_memory_manager)
 
     //  Create dtype
     // TODO add &
-    const auto dtype = luci_datatype(raw_tensor->type());
+    const auto &dtype = luci_datatype(raw_tensor->type());
 
+#ifndef DIS_QUANT
     AffineQuantization *quantization = nullptr;
     // TODO add &
-    const auto quant_params = raw_tensor->quantization();
+    const auto *quant_params = raw_tensor->quantization();
     if (quant_params and quant_params->zero_point() and quant_params->scale())
     {
       auto unique_ptr_quantization = std::make_unique<AffineQuantization>();
@@ -143,6 +144,13 @@ void GraphLoader::loadTensors(bool use_static_memory_manager)
 
     // Get pointer to data from buffer
     auto tensor = std::make_unique<Tensor>(dtype, (shape), quantization);
+#else
+    if (size == 0)
+      continue;
+
+    // Get pointer to data from buffer
+    auto tensor = std::make_unique<Tensor>(dtype, (shape));
+#endif
 
     if (not buffer.empty())
     {
@@ -228,7 +236,7 @@ void GraphLoader::loadOperators(bool use_static_memory_manager)
 
   KernelBuilder kernel_builder(_runtime_graph, _reader);
   const uint32_t input_size = _runtime_graph->getInputTensors().size();
-  const uint32_t output_size = _reader->outputs().size();
+  const uint32_t output_size = _runtime_graph->getOutputTensors().size();
 
   if (use_static_memory_manager)
   {

@@ -68,6 +68,7 @@ private:
   std::vector<int32_t> _dims;
 };
 
+#ifndef DIS_QUANT
 // Tensor affine quantization parameters.
 //
 // The relationship between real and quantized values:
@@ -85,15 +86,13 @@ struct AffineQuantization
   std::vector<int32_t> zero_point;
   int32_t quantized_dimension;
 };
+#endif
 
 class Tensor
 {
 public:
+#ifndef DIS_QUANT
   Tensor(DataType element_type, Shape shape, AffineQuantization *quantization);
-
-  DataType element_type() const { return _element_type; }
-
-  const Shape &shape() const { return _shape; }
 
   float scale() const
   {
@@ -112,6 +111,15 @@ public:
   const std::vector<int32_t> &zero_points() const { return _quantization->zero_point; }
 
   int32_t quantized_dimension() const { return _quantization->quantized_dimension; }
+
+#else
+  Tensor(DataType element_type, Shape shape);
+#endif
+
+  DataType element_type() const { return _element_type; }
+
+  const Shape &shape() const { return _shape; }
+
 
   template <typename T> const T *data() const
   {
@@ -165,7 +173,9 @@ public:
 private:
   DataType _element_type;
   Shape _shape;
+#ifndef DIS_QUANT
   AffineQuantization *_quantization;
+#endif
   uint8_t *_data;
   bool _data_allocated = false;
   // Memory manager is called for tensor only if it is "allocatable".

@@ -81,6 +81,9 @@ inline int32_t calcOffset(const Shape &shape, int32_t d0, int32_t d1, int32_t d2
 template <typename T>
 void calculateActivationRange(Activation activation, T *activation_min, T *activation_max);
 
+Shape calculateShapeForBroadcast(const Shape &input1_shape, const Shape &input2_shape);
+
+#ifdef DIS_QUANT
 void calculateActivationRangeQuantized(Activation activation, const Tensor *output,
                                        int32_t *activation_min, int32_t *activation_max);
 
@@ -131,8 +134,6 @@ void quantizeMultiplier(double double_multiplier, int32_t *quantized_multiplier,
 void quantizeMultiplierSmallerThanOneExp(double double_multiplier, int32_t *quantized_multiplier,
                                          int *left_shift);
 
-Shape calculateShapeForBroadcast(const Shape &input1_shape, const Shape &input2_shape);
-
 inline double getQuantizedConvolutionMultipler(float input_scale, float filter_scale,
                                                float output_scale)
 {
@@ -176,6 +177,7 @@ quantizeMultipliers(const std::vector<double> &effective_scale)
   }
   return params;
 }
+#endif
 
 // Helper wrapper to hide broadcast logic
 template <typename T> class BroadcastableWrapper
@@ -262,7 +264,7 @@ private:
   std::vector<tflite::RuntimeShape> all_shape_;
   std::vector<tflite::RuntimeShape *> all_shape_ptr_;
 };
-
+#ifndef DIS_QUANT
 // A list of quantized tensors in a format that can be used by kernels like
 // split and concatenation.
 template <bool is_const> class VectorOfQuantizedTensors : public VectorOfTensors<uint8_t, is_const>
@@ -288,6 +290,7 @@ private:
   std::vector<int32_t> zero_point_;
   std::vector<float> scale_;
 };
+#endif
 
 } // namespace kernels
 } // namespace luci_interpreter

@@ -221,7 +221,9 @@ struct UnidirectionalSequenceLSTMParams
   float proj_clip;
   bool time_major;
   bool asymmetric_quantize_inputs;
+#ifndef DIS_QUANT
   std::vector<AffineQuantization *> intermediate_affine_quant;
+#endif
 };
 
 // TODO: replace it

@@ -37,7 +37,9 @@ public:
 
 private:
   void evalFloat() const;
+#ifndef DIS_QUANT
   void evalQuantized() const;
+#endif
 };
 
 } // namespace kernels

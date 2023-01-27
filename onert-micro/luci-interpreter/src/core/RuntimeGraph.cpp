@@ -36,6 +36,7 @@ Tensor *IBaseRuntimeGraph::addTensor(std::unique_ptr<Tensor> &&tensor)
   return _tensors.back().get();
 }
 
+#ifndef DIS_QUANT
 AffineQuantization *
 IBaseRuntimeGraph::addAffineQuantization(std::unique_ptr<AffineQuantization> &&quantization)
 {
@@ -44,16 +45,19 @@ IBaseRuntimeGraph::addAffineQuantization(std::unique_ptr<AffineQuantization> &&q
   return _affine_quantizations.back().get();
 }
 
-void IBaseRuntimeGraph::addInputTensor(Tensor *input_tensor)
-{
-  _input_tensors.push_back(input_tensor);
-}
-
 void IBaseRuntimeGraph::addIntermediateTensorAffineQuantization(
   AffineQuantization *intermediate_tensor_affine_quant)
 {
   _intermediate_tensors_affine_quantizations.push_back(intermediate_tensor_affine_quant);
 }
+
+#endif
+
+void IBaseRuntimeGraph::addInputTensor(Tensor *input_tensor)
+{
+  _input_tensors.push_back(input_tensor);
+}
+
 
 void IBaseRuntimeGraph::addOutputTensor(Tensor *output_tensor)
 {

@@ -72,6 +72,8 @@ template void calculateActivationRange(Activation activation, int32_t *activatio
 template void calculateActivationRange(Activation activation, int64_t *activation_min,
                                        int64_t *activation_max);
 
+#ifndef DIS_QUANT
+
 static void calculateActivationRangeQuantizedImpl(Activation activation, int32_t qmin, int32_t qmax,
                                                   const Tensor *output, int32_t *activation_min,
                                                   int32_t *activation_max)
@@ -183,6 +185,7 @@ void quantizeMultiplierSmallerThanOneExp(double double_multiplier, int32_t *quan
   assert(shift <= 0);
   *left_shift = shift;
 }
+#endif
 
 Shape calculateShapeForBroadcast(const Shape &input1_shape, const Shape &input2_shape)
 {

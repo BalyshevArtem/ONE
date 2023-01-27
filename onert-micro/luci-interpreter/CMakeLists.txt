@@ -17,5 +17,5 @@ else()
 endif()
 
 add_compile_options(-fno-exceptions)
-add_compile_options(-Os)
+#add_compile_options(-Os)
 add_subdirectory(src)

@@ -90,12 +90,14 @@ void FullyConnected::execute() const
 {
   switch (input()->element_type())
   {
+#ifndef DIS_QUANT
     case DataType::U8:
       evalQuantized();
       break;
     case DataType::S8:
       evalQuantizedS8();
       break;
+#endif
     case DataType::FLOAT32:
       evalFloat();
       break;
@@ -121,6 +123,7 @@ void FullyConnected::evalFloat() const
     getTensorShape(output()), getTensorData<float>(output()));
 }
 
+#ifndef DIS_QUANT
 void FullyConnected::evalQuantized() const
 {
   double real_multiplier = 0.0;
@@ -186,6 +189,7 @@ void FullyConnected::evalQuantizedS8() const
     getTensorData<int8_t>(weights()), getTensorShape(bias()), getTensorData<int32_t>(bias()),
     getTensorShape(output()), getTensorData<int8_t>(output()));
 }
+#endif
 
 } // namespace kernels
 } // namespace luci_interpreter
