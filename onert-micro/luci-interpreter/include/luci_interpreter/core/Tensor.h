@@ -18,6 +18,7 @@
 #define LUCI_INTERPRETER_CORE_TENSOR_H
 
 #include "luci_interpreter/core/DataType.h"
+#include "luci_interpreter/core/reader/CircleMicroReader.h"
 
 #include <cassert>
 #include <cstddef>
@@ -29,44 +30,44 @@
 namespace luci_interpreter
 {
 
-class Shape
-{
-public:
-  explicit Shape(int rank) : _dims(rank, 0) {}
-
-  Shape(std::initializer_list<int32_t> dims) : _dims(dims.begin(), dims.end()) {}
-
-  int num_dims() const { return _dims.size(); }
-
-  int32_t dim(int i) const
-  {
-    assert(i >= 0 && i < static_cast<int>(_dims.size()));
-    return _dims[i];
-  }
-
-  int32_t &dim(int i)
-  {
-    assert(i >= 0 && i < static_cast<int>(_dims.size()));
-    return _dims[i];
-  }
-
-  int32_t num_elements() const
-  {
-    int32_t result = 1;
-    for (const int32_t dim : _dims)
-    {
-      result *= dim;
-    }
-    return result;
-  }
-
-  bool operator==(const Shape &other) const { return _dims == other._dims; }
-
-  bool operator!=(const Shape &other) const { return !operator==(other); }
-
-private:
-  std::vector<int32_t> _dims;
-};
+//class Shape
+//{
+//public:
+//  explicit Shape(int rank) : _dims(rank, 0) {}
+//
+//  Shape(std::initializer_list<int32_t> dims) : _dims(dims.begin(), dims.end()) {}
+//
+//  int num_dims() const { return _dims.size(); }
+//
+//  int32_t dim(int i) const
+//  {
+//    assert(i >= 0 && i < static_cast<int>(_dims.size()));
+//    return _dims[i];
+//  }
+//
+//  int32_t &dim(int i)
+//  {
+//    assert(i >= 0 && i < static_cast<int>(_dims.size()));
+//    return _dims[i];
+//  }
+//
+//  int32_t num_elements() const
+//  {
+//    int32_t result = 1;
+//    for (const int32_t dim : _dims)
+//    {
+//      result *= dim;
+//    }
+//    return result;
+//  }
+//
+//  bool operator==(const Shape &other) const { return _dims == other._dims; }
+//
+//  bool operator!=(const Shape &other) const { return !operator==(other); }
+//
+//private:
+//  std::vector<int32_t> _dims;
+//};
 
 #ifndef DIS_QUANT
 // Tensor affine quantization parameters.
@@ -113,12 +114,41 @@ public:
   int32_t quantized_dimension() const { return _quantization->quantized_dimension; }
 
 #else
-  Tensor(DataType element_type, Shape shape);
+  Tensor(const circle::Tensor *raw_tensor);
 #endif
 
-  DataType element_type() const { return _element_type; }
+  DataType element_type() const
+  {
+    return luci_datatype(_raw_tensor->type());
+  }
 
-  const Shape &shape() const { return _shape; }
+  int num_dims() const
+  {
+    auto const &const_dims = wrap(_raw_tensor->shape());
+    return const_dims.size();
+  }
+
+  int32_t dim(int i) const
+  {
+    assert(i >= 0);
+    auto const &const_dims = wrap(_raw_tensor->shape());
+    assert(i < const_dims.size());
+
+    return const_dims[i];
+  }
+
+  int32_t num_elements() const
+  {
+    int32_t result = 1;
+    auto const &const_dims = wrap(_raw_tensor->shape());
+    for (const int32_t dim : const_dims)
+    {
+      result *= dim;
+    }
+    return result;
+  }
+
+  //const Shape &shape() const { return _shape; }
 
 
   template <typename T> const T *data() const
@@ -145,18 +175,10 @@ public:
     _data = static_cast<uint8_t *>(data_ptr);
   }
 
-  void resize(const Shape &new_shape);
+  //void resize(const Shape &new_shape);
 
   void set_data_buffer(uint8_t *buffer)
   {
-    if (buffer == nullptr)
-    {
-      _data_allocated = false;
-    }
-    else
-    {
-      _data_allocated = true;
-    }
     _data = buffer;
   }
 
@@ -164,25 +186,24 @@ public:
 
   void set_allocatable(bool value) { _is_allocatable = value; }
 
-  bool is_data_allocated() const { return _data_allocated; }
+  bool is_data_allocated() const { return _data != nullptr; }
 
-  uint32_t get_offset() const { return _offset; }
+  //uint32_t get_offset() const { return _offset; }
 
-  void set_offset(uint32_t offset) { _offset = offset; }
+  //void set_offset(uint32_t offset) { _offset = offset; }
 
 private:
-  DataType _element_type;
-  Shape _shape;
+
 #ifndef DIS_QUANT
   AffineQuantization *_quantization;
 #endif
   uint8_t *_data;
-  bool _data_allocated = false;
   // Memory manager is called for tensor only if it is "allocatable".
   // Kernel configuration could disable allocation of some tensors if they are not needed for
   // particular operation.
   bool _is_allocatable = true;
-  uint32_t _offset = 0;
+  //uint32_t _offset = 0;
+  const circle::Tensor *_raw_tensor;
 };
 
 } // namespace luci_interpreter

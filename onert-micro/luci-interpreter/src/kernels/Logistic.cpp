@@ -38,7 +38,7 @@ void Logistic::configure()
   }
 #endif
   // TODO: enable it only if kernel with dynamic shapes
-  output()->resize(input()->shape());
+  //output()->resize(input()->shape());
 }
 
 void Logistic::execute() const

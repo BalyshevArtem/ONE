@@ -25,15 +25,16 @@ namespace luci_interpreter
 
 // IBaseRuntimeGraph
 IBaseRuntimeGraph::IBaseRuntimeGraph(IMemoryManager *memory_manager)
-  : _memory_manager(memory_manager)
+  : _memory_manager(memory_manager), _index_to_tensor(std::unordered_map<const circle::Tensor *, std::unique_ptr<Tensor>>{})
 {
 }
 
-Tensor *IBaseRuntimeGraph::addTensor(std::unique_ptr<Tensor> &&tensor)
+Tensor *IBaseRuntimeGraph::addTensor(const circle::Tensor *raw_tensor, std::unique_ptr<Tensor> &&tensor)
 {
   assert(tensor != nullptr);
-  _tensors.push_back(std::move(tensor));
-  return _tensors.back().get();
+  _index_to_tensor[raw_tensor] = std::move(tensor);
+  //_tensors.push_back(std::move(tensor));
+  return _index_to_tensor[raw_tensor].get();
 }
 
 #ifndef DIS_QUANT
@@ -81,8 +82,9 @@ RuntimeGraph::RuntimeGraph(IMemoryManager *memory_manager) : IBaseRuntimeGraph(m
 
 RuntimeGraph::~RuntimeGraph()
 {
-  for (auto &tensor : _tensors)
+  for (auto &pair : _index_to_tensor)
   {
+    auto *tensor = pair.second.get();
     if (tensor->is_data_allocated())
       _memory_manager->release_memory(*tensor);
   }

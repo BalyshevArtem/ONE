@@ -29,11 +29,11 @@ void StaticMemoryManager::base_allocate_memory(luci_interpreter::Tensor &tensor,
   {
     return;
   }
-
-  const auto offset = tensor.get_offset();
-  assert(offset >= 0);
-  auto tensor_ptr = buffer_ptr + offset;
-  tensor.set_data_buffer(tensor_ptr);
+//
+//  const auto offset = tensor.get_offset();
+//  assert(offset >= 0);
+//  auto tensor_ptr = buffer_ptr + offset;
+//  tensor.set_data_buffer(tensor_ptr);
 }
 
 void StaticMemoryManager::allocate_memory(luci_interpreter::Tensor &tensor)

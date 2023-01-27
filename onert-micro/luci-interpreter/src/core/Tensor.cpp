@@ -27,18 +27,25 @@ Tensor::Tensor(DataType element_type, Shape shape, AffineQuantization *quantizat
 {
 }
 #else
-Tensor::Tensor(DataType element_type, Shape shape)
-  : _element_type(element_type), _shape(std::move(shape)),
-    _data_allocated(false), _data(nullptr)
+
+Tensor::Tensor(const circle::Tensor *raw_tensor)
+  : _raw_tensor(raw_tensor), _is_allocatable(true), _data(nullptr)
 {
+  // Do nothing
 }
+
+//Tensor::Tensor(DataType element_type, Shape shape)
+//  : _element_type(element_type), _shape(std::move(shape)),
+//    _data_allocated(false), _data(nullptr)
+//{
+//}
 #endif
 
 void Tensor::readData(void *data_ptr, size_t data_size) const
 {
   const size_t element_size = getDataTypeSize(element_type());
-  const int32_t num_elements = shape().num_elements();
-  if (data_size != num_elements * element_size)
+  const int32_t num_elements_value = num_elements();
+  if (data_size != num_elements_value * element_size)
   {
     assert(false && "Invalid data size.");
   }
@@ -49,8 +56,8 @@ void Tensor::readData(void *data_ptr, size_t data_size) const
 void Tensor::writeData(const void *data_ptr, size_t data_size)
 {
   const size_t element_size = getDataTypeSize(element_type());
-  const int32_t num_elements = shape().num_elements();
-  if (data_size != num_elements * element_size)
+  const int32_t num_elements_value = num_elements();
+  if (data_size != num_elements_value * element_size)
   {
     assert(false && "Invalid data size.");
   }
@@ -58,6 +65,7 @@ void Tensor::writeData(const void *data_ptr, size_t data_size)
   std::memcpy(data<void>(), data_ptr, data_size);
 }
 
-void Tensor::resize(const Shape &new_shape) { _shape = new_shape; }
+// TODO: enable this
+//void Tensor::resize(const Shape &new_shape) { _shape = new_shape; }
 
 } // namespace luci_interpreter

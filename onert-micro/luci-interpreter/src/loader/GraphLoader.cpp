@@ -43,10 +43,8 @@ bool isCouldBeEmplaceOperation(circle::BuiltinOperator op)
 } // namespace
 
 GraphLoader::GraphLoader(CircleReader *reader, IBaseRuntimeGraph *runtime_graph,
-                         IMemoryManager *memory_manager,
-                         std::unordered_map<const circle::Tensor *, Tensor *> *index_to_tensor)
-  : _reader(reader), _runtime_graph(runtime_graph), _memory_manager(memory_manager),
-    _index_to_tensor(index_to_tensor)
+                         IMemoryManager *memory_manager)
+  : _reader(reader), _runtime_graph(runtime_graph), _memory_manager(memory_manager)
 {
 }
 
@@ -73,13 +71,14 @@ bool GraphLoader::isCouldBeEmplaceTensor(const int32_t tensor_index)
 
 void GraphLoader::loadTensors(bool use_static_memory_manager)
 {
+  auto *_index_to_tensor = _runtime_graph->get_index_to_tensor();
   for (uint32_t i = 0; i < _reader->tensors().size(); ++i)
   {
-    // Check if it is duplicated tensor
-//    if (_index_to_tensor->find(i) != _index_to_tensor->end())
-//      continue;
-
     auto *raw_tensor = _reader->tensors().at(i);
+
+//    Check if it is duplicated tensor
+    if (_index_to_tensor->find(raw_tensor) != _index_to_tensor->end())
+      continue;
 
     // TODO: handle variable tensors with static memory manager
     if (raw_tensor->is_variable() and use_static_memory_manager)
@@ -107,15 +106,15 @@ void GraphLoader::loadTensors(bool use_static_memory_manager)
 //      is_const_tensor = false;
 //    }
 
-    Shape shape(static_cast<int>(const_dims.size()));
-    for (int j = 0; j < const_dims.size(); ++j)
-    {
-      shape.dim(j) = const_dims.at(j);
-    }
+//    Shape shape(static_cast<int>(const_dims.size()));
+//    for (int j = 0; j < const_dims.size(); ++j)
+//    {
+//      shape.dim(j) = const_dims.at(j);
+//    }
 
     //  Create dtype
     // TODO add &
-    const auto &dtype = luci_datatype(raw_tensor->type());
+   // const auto &dtype = luci_datatype(raw_tensor->type());
 
 #ifndef DIS_QUANT
     AffineQuantization *quantization = nullptr;
@@ -149,24 +148,30 @@ void GraphLoader::loadTensors(bool use_static_memory_manager)
       continue;
 
     // Get pointer to data from buffer
-    auto tensor = std::make_unique<Tensor>(dtype, (shape));
+    auto tensor = std::make_unique<Tensor>(raw_tensor);
 #endif
 
     if (not buffer.empty())
     {
       auto data_ptr = const_cast<unsigned char *>(buffer.data());
 
+      // Let's set allocatabe to false due to it is constant
+      tensor->set_allocatable(false);
+
       // Save pointer to data
       tensor->writeDataWithoutCopy(static_cast<void *>(data_ptr));
     }
 
-    _index_to_tensor->emplace(raw_tensor, tensor.get());
-    _runtime_graph->addTensor(std::move(tensor));
+    // TODO think maybe move _index_to_tensor to RUntimeGraph
+    //_index_to_tensor->emplace(raw_tensor, tensor.get());
+
+    _runtime_graph->addTensor(raw_tensor, std::move(tensor));
   }
 }
 
 void GraphLoader::initInputOutputTensors(bool use_static_memory_manager) const
 {
+  auto *_index_to_tensor = _runtime_graph->get_index_to_tensor();
   // Input tensors
   for (const auto input_ind : _reader->inputs())
   {
@@ -177,7 +182,7 @@ void GraphLoader::initInputOutputTensors(bool use_static_memory_manager) const
       return;
     }
 
-    auto tensor_interpreter = _index_to_tensor->at(raw_tensor);
+    auto tensor_interpreter = _index_to_tensor->at(raw_tensor).get();
 
     tensor_interpreter->set_allocatable(_memory_manager->is_allocate_input());
     if (not use_static_memory_manager)
@@ -204,13 +209,14 @@ void GraphLoader::initInputOutputTensors(bool use_static_memory_manager) const
       return;
     }
 
-    auto output_tensor = _index_to_tensor->at(raw_tensor);
+    auto output_tensor = _index_to_tensor->at(raw_tensor).get();
     _runtime_graph->addOutputTensor(output_tensor);
   }
 }
 
 void GraphLoader::loadOperators(bool use_static_memory_manager)
 {
+  auto *_index_to_tensor = _runtime_graph->get_index_to_tensor();
   ExecutionPlanTable execution_plan;
   // Set execution plan for static memory manager
   if (use_static_memory_manager)
@@ -244,7 +250,7 @@ void GraphLoader::loadOperators(bool use_static_memory_manager)
     for (int32_t input_ind = 0; input_ind < input_size; ++input_ind)
     {
       auto input_tensor = _runtime_graph->getInputTensors().at(input_ind);
-      input_tensor->set_offset(execution_plan.at(input_ind)[0]);
+      //input_tensor->set_offset(execution_plan.at(input_ind)[0]);
 
       _memory_manager->allocate_memory_for_input(*input_tensor);
     }
@@ -253,7 +259,7 @@ void GraphLoader::loadOperators(bool use_static_memory_manager)
     for (int32_t ind = 0; ind < output_size; ++ind)
     {
       auto output_tensor = _runtime_graph->getOutputTensors().at(ind);
-      output_tensor->set_offset(execution_plan.at(input_size + ind)[0]);
+     // output_tensor->set_offset(execution_plan.at(input_size + ind)[0]);
     }
   }
 
@@ -280,7 +286,7 @@ void GraphLoader::loadOperators(bool use_static_memory_manager)
           assert(false && "Failed import operation input tensor");
           return;
         }
-        auto input_tensor = _index_to_tensor->at(raw_tensor);
+        auto input_tensor = _index_to_tensor->at(raw_tensor).get();
         input_tensors.at(j) = input_tensor;
 
         const auto &graph_input_tensors = _runtime_graph->getInputTensors();
@@ -313,7 +319,7 @@ void GraphLoader::loadOperators(bool use_static_memory_manager)
         assert(false && "Failed import operation output tensor");
         return;
       }
-      auto output_tensor = _index_to_tensor->at(raw_tensor);
+      auto output_tensor = _index_to_tensor->at(raw_tensor).get();
       output_tensors.at(j) = output_tensor;
 
       // TODO: try rewrite it
@@ -321,7 +327,7 @@ void GraphLoader::loadOperators(bool use_static_memory_manager)
           (std::find(_reader->outputs().begin(), _reader->outputs().end(), output_index) ==
            _reader->outputs().end()))
       {
-        output_tensor->set_offset(execution_plan.at(i + input_size + output_size).at(0));
+        //output_tensor->set_offset(execution_plan.at(i + input_size + output_size).at(0));
       }
     }
 

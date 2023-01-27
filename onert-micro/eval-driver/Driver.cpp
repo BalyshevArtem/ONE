@@ -51,7 +51,7 @@ void writeDataToFile(const std::string &filename, const char *data, size_t data_
 size_t getTensorSize(const luci_interpreter::Tensor *tensor)
 {
   size_t tensor_size = luci_interpreter::size(tensor->element_type());
-  tensor_size *= tensor->shape().num_elements();
+  tensor_size *= tensor->num_elements();
 
   return tensor_size;
 }
@@ -139,17 +139,17 @@ int entry(int argc, char **argv)
                     output_data.size());
     // In case of Tensor output is Scalar value.
     // The output tensor with rank 0 is treated as a scalar with shape (1)
-    if (output_tensor->shape().num_dims() == 0)
+    if (output_tensor->num_dims() == 0)
     {
       writeDataToFile(std::string(output_file) + std::to_string(i) + ".shape", "1", 1);
     }
     else
     {
-      auto shape_str = std::to_string(output_tensor->shape().dim(0));
-      for (int j = 1; j < output_tensor->shape().num_dims(); j++)
+      auto shape_str = std::to_string(output_tensor->dim(0));
+      for (int j = 1; j < output_tensor->num_dims(); j++)
       {
         shape_str += ",";
-        shape_str += std::to_string(output_tensor->shape().dim(j));
+        shape_str += std::to_string(output_tensor->dim(j));
       }
       const auto tensor_shape_file = std::string(output_file) + std::to_string(i) + ".shape";
       writeDataToFile(tensor_shape_file, shape_str.c_str(), shape_str.size());

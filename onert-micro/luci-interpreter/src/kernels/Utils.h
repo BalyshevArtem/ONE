@@ -73,15 +73,15 @@ inline int32_t computeOutputSize(Padding padding, int32_t image_size, int32_t fi
   }
 }
 
-inline int32_t calcOffset(const Shape &shape, int32_t d0, int32_t d1, int32_t d2, int32_t d3)
-{
-  return ((d0 * shape.dim(1) + d1) * shape.dim(2) + d2) * shape.dim(3) + d3;
-}
+//inline int32_t calcOffset(const Shape &shape, int32_t d0, int32_t d1, int32_t d2, int32_t d3)
+//{
+//  return ((d0 * shape.dim(1) + d1) * shape.dim(2) + d2) * shape.dim(3) + d3;
+//}
 
 template <typename T>
 void calculateActivationRange(Activation activation, T *activation_min, T *activation_max);
 
-Shape calculateShapeForBroadcast(const Shape &input1_shape, const Shape &input2_shape);
+//Shape calculateShapeForBroadcast(const Shape &input1_shape, const Shape &input2_shape);
 
 #ifdef DIS_QUANT
 void calculateActivationRangeQuantized(Activation activation, const Tensor *output,
@@ -197,11 +197,11 @@ inline tflite::RuntimeShape getTensorShape(const Tensor *tensor)
   if (tensor == nullptr)
     return tflite::RuntimeShape();
 
-  const Shape &shape = tensor->shape();
-  tflite::RuntimeShape runtime_shape(shape.num_dims());
-  for (int i = 0; i < shape.num_dims(); ++i)
+  //const Shape &shape = tensor->shape();
+  tflite::RuntimeShape runtime_shape(tensor->num_dims());
+  for (int i = 0; i < tensor->num_dims(); ++i)
   {
-    runtime_shape.SetDim(i, shape.dim(i));
+    runtime_shape.SetDim(i, tensor->dim(i));
   }
   return runtime_shape;
 }

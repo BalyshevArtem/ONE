@@ -56,6 +56,8 @@ else()
     return()
 endif()
 
+add_definitions(-DDIS_QUANT)
+
 set(CMAKE_ARM_OPTIONS
         -DLUCI_INTERPRETER_STATIC=ON
         -DLUCI_STATIC=ON

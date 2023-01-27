@@ -34,6 +34,7 @@ const char *tensor_name(const circle::Tensor *tensor)
   return tensor->name()->c_str();
 }
 
+//TODO remove it
 DataType luci_datatype(const circle::TensorType type)
 {
   switch (type)

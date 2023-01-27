@@ -57,32 +57,33 @@ void FullyConnected::configure()
     assert(false && "Unsupported type.");
   }
 
-  const Shape &input_shape = input()->shape();
-  const Shape &weights_shape = weights()->shape();
+  //const Shape &input_shape = input()->shape();
+  //const Shape &weights_shape = weights()->shape();
 
-  LUCI_INTERPRETER_CHECK(weights_shape.num_dims() == 2);
+  LUCI_INTERPRETER_CHECK(weights()->num_dims() == 2)//weights_shape.num_dims() == 2);
   LUCI_INTERPRETER_CHECK(bias() == nullptr ||
-                         bias()->shape().num_elements() == weights_shape.dim(0));
+                         bias()->num_elements() == weights()->dim(0));
+                         //bias()->shape().num_elements() == weights_shape.dim(0));
 
-  LUCI_INTERPRETER_CHECK(input_shape.num_elements() % weights_shape.dim(1) == 0);
-  const int32_t batch_size = input_shape.num_elements() / weights_shape.dim(1);
-  const int32_t num_units = weights_shape.dim(0);
+  LUCI_INTERPRETER_CHECK(input()->num_elements() % weights()->dim(1) == 0);
+  const int32_t batch_size = input()->num_elements() / weights()->dim(1);
+  const int32_t num_units = weights()->dim(0);
 
   if (bias())
-    LUCI_INTERPRETER_CHECK(bias()->shape().num_elements() == weights()->shape().dim(0));
+    LUCI_INTERPRETER_CHECK(bias()->num_elements() == weights()->dim(0));
 
   // TODO: enable it only if kernel with dynamic shapes
   if (params().keep_num_dims == false)
   {
-    output()->resize({batch_size, num_units});
+    //output()->resize({batch_size, num_units});
   }
   else
   {
-    luci_interpreter::Shape output_shape(input_shape.num_dims());
-    for (int i = 0; i < input_shape.num_dims(); ++i)
-      output_shape.dim(i) = input_shape.dim(i);
-    output_shape.dim(input_shape.num_dims() - 1) = num_units;
-    output()->resize(output_shape);
+//    luci_interpreter::Shape output_shape(input_shape.num_dims());
+//    for (int i = 0; i < input_shape.num_dims(); ++i)
+//      output_shape.dim(i) = input_shape.dim(i);
+//    output_shape.dim(input_shape.num_dims() - 1) = num_units;
+//    output()->resize(output_shape);
   }
 }
 
