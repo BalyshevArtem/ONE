@@ -23,7 +23,6 @@
 
 #include <memory>
 #include <vector>
-#include <unordered_map>
 
 namespace luci_interpreter
 {
@@ -36,12 +35,22 @@ public:
   explicit IBaseRuntimeGraph(IMemoryManager *memory_manager);
   virtual ~IBaseRuntimeGraph() = default;
 
-  Tensor *addTensor(const circle::Tensor *raw_tensor, std::unique_ptr<Tensor> &&tensor);
-
-  std::unordered_map<const circle::Tensor *, std::unique_ptr<Tensor>> *get_index_to_tensor()
+  Tensor *addTensor(std::unique_ptr<Tensor> &&tensor);
+  void shrink_to_fit_tensors()
   {
-    return &_index_to_tensor;
+    _tensors.shrink_to_fit();
   }
+
+  void resize_input_tensors(int32_t n)
+  {
+    _input_tensors.resize(n);
+  }
+
+  void resize_output_tensors(int32_t n)
+  {
+    _output_tensors.resize(n);
+  }
+
 
 #ifndef DIS_QUANT
   AffineQuantization *addAffineQuantization(std::unique_ptr<AffineQuantization> &&quantization);
@@ -53,8 +62,8 @@ public:
     return _intermediate_tensors_affine_quantizations;
   }
 #endif
-  void addInputTensor(Tensor *input_tensor);
-  void addOutputTensor(Tensor *output_tensor);
+  void addInputTensor(Tensor *input_tensor, int pos);
+  void addOutputTensor(Tensor *output_tensor, int pos);
 
   void configureAllocations(Tensor *tensor);
 
@@ -74,9 +83,7 @@ public:
 
 protected:
   IMemoryManager *_memory_manager;
-  //std::vector<std::unique_ptr<Tensor>> _tensors;
-
-  std::unordered_map<const circle::Tensor *, std::unique_ptr<Tensor>> _index_to_tensor;
+  std::vector<std::unique_ptr<Tensor>> _tensors;
 #ifndef DIS_QUANT
   std::vector<std::unique_ptr<AffineQuantization>> _affine_quantizations;
   std::vector<AffineQuantization *> _intermediate_tensors_affine_quantizations;

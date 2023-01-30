@@ -30,7 +30,8 @@ class GraphLoader
 {
 public:
   GraphLoader(CircleReader *reader, IBaseRuntimeGraph *runtime_graph,
-              IMemoryManager *memory_manager);
+              IMemoryManager *memory_manager,
+              std::unordered_map<const circle::Tensor *, Tensor *> *index_to_tensor);
 
   void loadTensors(bool use_static_memory_manager);
   void initInputOutputTensors(bool use_static_memory_manager) const;
@@ -42,7 +43,7 @@ private:
   IBaseRuntimeGraph *_runtime_graph;
   IMemoryManager *_memory_manager;
   CircleReader *_reader;
-  //std::unordered_map<const circle::Tensor *, Tensor *> *_index_to_tensor;
+  std::unordered_map<const circle::Tensor *, Tensor *> *_index_to_tensor;
 };
 
 } // namespace luci_interpreter

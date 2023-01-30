@@ -43,8 +43,10 @@ bool isCouldBeEmplaceOperation(circle::BuiltinOperator op)
 } // namespace
 
 GraphLoader::GraphLoader(CircleReader *reader, IBaseRuntimeGraph *runtime_graph,
-                         IMemoryManager *memory_manager)
-  : _reader(reader), _runtime_graph(runtime_graph), _memory_manager(memory_manager)
+                         IMemoryManager *memory_manager,
+                         std::unordered_map<const circle::Tensor *, Tensor *> *index_to_tensor)
+  : _reader(reader), _runtime_graph(runtime_graph), _memory_manager(memory_manager),
+    _index_to_tensor(index_to_tensor)
 {
 }
 
@@ -71,12 +73,11 @@ bool GraphLoader::isCouldBeEmplaceTensor(const int32_t tensor_index)
 
 void GraphLoader::loadTensors(bool use_static_memory_manager)
 {
-  auto *_index_to_tensor = _runtime_graph->get_index_to_tensor();
   for (uint32_t i = 0; i < _reader->tensors().size(); ++i)
   {
     auto *raw_tensor = _reader->tensors().at(i);
 
-//    Check if it is duplicated tensor
+    // Check if it is duplicated tensor
     if (_index_to_tensor->find(raw_tensor) != _index_to_tensor->end())
       continue;
 
@@ -100,21 +101,9 @@ void GraphLoader::loadTensors(bool use_static_memory_manager)
       size *= const_dim;
     }
 
-//    if (buffer.empty() && size > 0 && not tensor->is_variable())
-//    {
-//      // empty tensor or variable tensor
-//      is_const_tensor = false;
-//    }
-
-//    Shape shape(static_cast<int>(const_dims.size()));
-//    for (int j = 0; j < const_dims.size(); ++j)
-//    {
-//      shape.dim(j) = const_dims.at(j);
-//    }
-
     //  Create dtype
     // TODO add &
-   // const auto &dtype = luci_datatype(raw_tensor->type());
+    // const auto &dtype = luci_datatype(raw_tensor->type());
 
 #ifndef DIS_QUANT
     AffineQuantization *quantization = nullptr;
@@ -163,16 +152,19 @@ void GraphLoader::loadTensors(bool use_static_memory_manager)
     }
 
     // TODO think maybe move _index_to_tensor to RUntimeGraph
-    //_index_to_tensor->emplace(raw_tensor, tensor.get());
+    _index_to_tensor->emplace(raw_tensor, tensor.get());
 
-    _runtime_graph->addTensor(raw_tensor, std::move(tensor));
+    _runtime_graph->addTensor(std::move(tensor));
   }
+
+  _runtime_graph->shrink_to_fit_tensors();
 }
 
 void GraphLoader::initInputOutputTensors(bool use_static_memory_manager) const
 {
-  auto *_index_to_tensor = _runtime_graph->get_index_to_tensor();
   // Input tensors
+  int input_i = 0;
+  _runtime_graph->resize_input_tensors(_reader->inputs().size());
   for (const auto input_ind : _reader->inputs())
   {
     const auto raw_tensor = _reader->tensors()[input_ind];
@@ -182,23 +174,16 @@ void GraphLoader::initInputOutputTensors(bool use_static_memory_manager) const
       return;
     }
 
-    auto tensor_interpreter = _index_to_tensor->at(raw_tensor).get();
+    auto tensor_interpreter = _index_to_tensor->at(raw_tensor);
 
     tensor_interpreter->set_allocatable(_memory_manager->is_allocate_input());
-    if (not use_static_memory_manager)
-    {
-      // Using Dynamic Allocations
-      _memory_manager->allocate_memory(*tensor_interpreter);
-    }
-    else
-    {
-      // Using static allocations
-      _memory_manager->allocate_input_buf();
-    }
 
-    _runtime_graph->addInputTensor(tensor_interpreter);
+    _runtime_graph->addInputTensor(tensor_interpreter, input_i);
+    input_i++;
   }
 
+  int output_i = 0;
+  _runtime_graph->resize_output_tensors(_reader->outputs().size());
   // Output tensors
   for (const auto output_ind : _reader->outputs())
   {
@@ -209,14 +194,14 @@ void GraphLoader::initInputOutputTensors(bool use_static_memory_manager) const
       return;
     }
 
-    auto output_tensor = _index_to_tensor->at(raw_tensor).get();
-    _runtime_graph->addOutputTensor(output_tensor);
+    auto output_tensor = _index_to_tensor->at(raw_tensor);
+    _runtime_graph->addOutputTensor(output_tensor, output_i);
+    output_i++;
   }
 }
 
 void GraphLoader::loadOperators(bool use_static_memory_manager)
 {
-  auto *_index_to_tensor = _runtime_graph->get_index_to_tensor();
   ExecutionPlanTable execution_plan;
   // Set execution plan for static memory manager
   if (use_static_memory_manager)
@@ -286,7 +271,7 @@ void GraphLoader::loadOperators(bool use_static_memory_manager)
           assert(false && "Failed import operation input tensor");
           return;
         }
-        auto input_tensor = _index_to_tensor->at(raw_tensor).get();
+        auto input_tensor = _index_to_tensor->at(raw_tensor);
         input_tensors.at(j) = input_tensor;
 
         const auto &graph_input_tensors = _runtime_graph->getInputTensors();
@@ -319,7 +304,7 @@ void GraphLoader::loadOperators(bool use_static_memory_manager)
         assert(false && "Failed import operation output tensor");
         return;
       }
-      auto output_tensor = _index_to_tensor->at(raw_tensor).get();
+      auto output_tensor = _index_to_tensor->at(raw_tensor);
       output_tensors.at(j) = output_tensor;
 
       // TODO: try rewrite it

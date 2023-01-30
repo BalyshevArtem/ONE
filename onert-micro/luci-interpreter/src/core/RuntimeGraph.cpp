@@ -25,16 +25,15 @@ namespace luci_interpreter
 
 // IBaseRuntimeGraph
 IBaseRuntimeGraph::IBaseRuntimeGraph(IMemoryManager *memory_manager)
-  : _memory_manager(memory_manager), _index_to_tensor(std::unordered_map<const circle::Tensor *, std::unique_ptr<Tensor>>{})
+  : _memory_manager(memory_manager)
 {
 }
 
-Tensor *IBaseRuntimeGraph::addTensor(const circle::Tensor *raw_tensor, std::unique_ptr<Tensor> &&tensor)
+Tensor *IBaseRuntimeGraph::addTensor(std::unique_ptr<Tensor> &&tensor)
 {
   assert(tensor != nullptr);
-  _index_to_tensor[raw_tensor] = std::move(tensor);
-  //_tensors.push_back(std::move(tensor));
-  return _index_to_tensor[raw_tensor].get();
+  _tensors.push_back(std::move(tensor));
+  return _tensors.back().get();
 }
 
 #ifndef DIS_QUANT
@@ -54,15 +53,15 @@ void IBaseRuntimeGraph::addIntermediateTensorAffineQuantization(
 
 #endif
 
-void IBaseRuntimeGraph::addInputTensor(Tensor *input_tensor)
+void IBaseRuntimeGraph::addInputTensor(Tensor *input_tensor, int pos)
 {
-  _input_tensors.push_back(input_tensor);
+  _input_tensors.at(pos) = input_tensor;
 }
 
 
-void IBaseRuntimeGraph::addOutputTensor(Tensor *output_tensor)
+void IBaseRuntimeGraph::addOutputTensor(Tensor *output_tensor, int pos)
 {
-  _output_tensors.push_back(output_tensor);
+  _output_tensors.at(pos) = output_tensor;
 }
 
 void IBaseRuntimeGraph::configureAllocations(Tensor *tensor)
@@ -82,9 +81,8 @@ RuntimeGraph::RuntimeGraph(IMemoryManager *memory_manager) : IBaseRuntimeGraph(m
 
 RuntimeGraph::~RuntimeGraph()
 {
-  for (auto &pair : _index_to_tensor)
+  for (auto &tensor : _tensors)
   {
-    auto *tensor = pair.second.get();
     if (tensor->is_data_allocated())
       _memory_manager->release_memory(*tensor);
   }

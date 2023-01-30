@@ -23,7 +23,7 @@ namespace luci_interpreter
 ModuleLoader::ModuleLoader(const char *model_data_raw, RuntimeModule *runtime_module,
                            IMemoryManager *memory_manager)
   : _model_data_raw(model_data_raw), _runtime_module(runtime_module),
-    _memory_manager(memory_manager)
+    _memory_manager(memory_manager), _index_to_tensor(std::unordered_map<const circle::Tensor *, Tensor *>{})
 {
 }
 
@@ -46,7 +46,7 @@ void ModuleLoader::load(bool use_static_memory_manager)
     if (!reader.select_subgraph(i))
       assert(false && "Error during select subgraph");
     IBaseRuntimeGraph *runtime_graph = _runtime_graphs.at(i);
-    GraphLoader loader(&reader, runtime_graph, _memory_manager);
+    GraphLoader loader(&reader, runtime_graph, _memory_manager, &_index_to_tensor);
 
     loader.loadTensors(use_static_memory_manager);
     loader.initInputOutputTensors(use_static_memory_manager);
@@ -61,7 +61,15 @@ void ModuleLoader::load(bool use_static_memory_manager)
     for (size_t i = 0; i < reader.num_subgraph(); ++i)
     {
       IBaseRuntimeGraph *runtime_graph = _runtime_graphs.at(i);
+
+      for (auto *tensor_interpreter : runtime_graph->getInputTensors())
+      {
+        // Using Dynamic Allocations
+        _memory_manager->allocate_memory(*tensor_interpreter);
+      }
+
       runtime_graph->configure();
+
     }
   }
   else
@@ -70,6 +78,7 @@ void ModuleLoader::load(bool use_static_memory_manager)
     for (size_t i = 0; i < reader.num_subgraph(); ++i)
     {
       _runtime_graphs.at(i)->configure_kernels();
+      // TODO add mem allocate inpout!
     }
   }
 }
