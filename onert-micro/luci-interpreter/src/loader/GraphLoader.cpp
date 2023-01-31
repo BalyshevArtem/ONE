@@ -43,10 +43,8 @@ bool isCouldBeEmplaceOperation(circle::BuiltinOperator op)
 } // namespace
 
 GraphLoader::GraphLoader(CircleReader *reader, IBaseRuntimeGraph *runtime_graph,
-                         IMemoryManager *memory_manager,
-                         std::unordered_map<const circle::Tensor *, Tensor *> *index_to_tensor)
-  : _reader(reader), _runtime_graph(runtime_graph), _memory_manager(memory_manager),
-    _index_to_tensor(index_to_tensor)
+                         IMemoryManager *memory_manager)
+  : _reader(reader), _runtime_graph(runtime_graph), _memory_manager(memory_manager)
 {
 }
 
@@ -73,12 +71,14 @@ bool GraphLoader::isCouldBeEmplaceTensor(const int32_t tensor_index)
 
 void GraphLoader::loadTensors(bool use_static_memory_manager)
 {
+  auto index_to_tensor = _runtime_graph->getIndexToTensor();
+
   for (uint32_t i = 0; i < _reader->tensors().size(); ++i)
   {
     auto *raw_tensor = _reader->tensors().at(i);
 
     // Check if it is duplicated tensor
-    if (_index_to_tensor->find(raw_tensor) != _index_to_tensor->end())
+    if (index_to_tensor->find(raw_tensor) != index_to_tensor->end())
       continue;
 
     // TODO: handle variable tensors with static memory manager
@@ -152,56 +152,59 @@ void GraphLoader::loadTensors(bool use_static_memory_manager)
     }
 
     // TODO think maybe move _index_to_tensor to RUntimeGraph
-    _index_to_tensor->emplace(raw_tensor, tensor.get());
+    //index_to_tensor->emplace(raw_tensor, tensor.get());
 
-    _runtime_graph->addTensor(std::move(tensor));
+    _runtime_graph->addTensor(raw_tensor, std::move(tensor));
   }
 
-  _runtime_graph->shrink_to_fit_tensors();
+ // _runtime_graph->shrink_to_fit_tensors();
 }
 
+// TODO: remove this method
 void GraphLoader::initInputOutputTensors(bool use_static_memory_manager) const
 {
+  auto index_to_tensor = _runtime_graph->getIndexToTensor();
   // Input tensors
-  int input_i = 0;
-  _runtime_graph->resize_input_tensors(_reader->inputs().size());
+ // int input_i = 0;
   for (const auto input_ind : _reader->inputs())
   {
     const auto raw_tensor = _reader->tensors()[input_ind];
-    if (_index_to_tensor->find(raw_tensor) == _index_to_tensor->end())
+    if (index_to_tensor->find(raw_tensor) == index_to_tensor->end())
     {
       assert(false && "Failed import graph input tensor");
       return;
     }
 
-    auto tensor_interpreter = _index_to_tensor->at(raw_tensor);
+    auto tensor_interpreter = index_to_tensor->at(raw_tensor).get();
 
     tensor_interpreter->set_allocatable(_memory_manager->is_allocate_input());
 
-    _runtime_graph->addInputTensor(tensor_interpreter, input_i);
-    input_i++;
+    //_runtime_graph->addInputTensor(tensor_interpreter, input_i);
+    //input_i++;
   }
 
-  int output_i = 0;
-  _runtime_graph->resize_output_tensors(_reader->outputs().size());
-  // Output tensors
-  for (const auto output_ind : _reader->outputs())
-  {
-    const auto raw_tensor = _reader->tensors()[output_ind];
-    if (_index_to_tensor->find(raw_tensor) == _index_to_tensor->end())
-    {
-      assert(false && "Failed import graph input tensor");
-      return;
-    }
-
-    auto output_tensor = _index_to_tensor->at(raw_tensor);
-    _runtime_graph->addOutputTensor(output_tensor, output_i);
-    output_i++;
-  }
+// // int output_i = 0;
+// // _runtime_graph->resize_output_tensors(_reader->outputs().size());
+//  // Output tensors
+//  for (const auto output_ind : _reader->outputs())
+//  {
+//    const auto raw_tensor = _reader->tensors()[output_ind];
+//    if (index_to_tensor->find(raw_tensor) == index_to_tensor->end())
+//    {
+//      assert(false && "Failed import graph input tensor");
+//      return;
+//    }
+//
+//    auto output_tensor = index_to_tensor->at(raw_tensor).get();
+//    _runtime_graph->addOutputTensor(output_tensor, output_i);
+//    output_i++;
+//  }
 }
 
+// TODO Support inplace
 void GraphLoader::loadOperators(bool use_static_memory_manager)
 {
+  auto index_to_tensor = _runtime_graph->getIndexToTensor();
   ExecutionPlanTable execution_plan;
   // Set execution plan for static memory manager
   if (use_static_memory_manager)
@@ -225,7 +228,7 @@ void GraphLoader::loadOperators(bool use_static_memory_manager)
       assert(false && "Static Memory Manager should be used with circle-execution-planner");
   }
 
-  KernelBuilder kernel_builder(_runtime_graph, _reader);
+  //KernelBuilder kernel_builder(_runtime_graph, _reader);
   const uint32_t input_size = _runtime_graph->getInputTensors().size();
   const uint32_t output_size = _runtime_graph->getOutputTensors().size();
 
@@ -253,8 +256,8 @@ void GraphLoader::loadOperators(bool use_static_memory_manager)
     const auto op = _reader->operators().at(i);
     assert(op != nullptr);
 
-    std::vector<const Tensor *> input_tensors(op->inputs()->size());
-    std::vector<Tensor *> output_tensors(op->outputs()->size());
+   // std::vector<const Tensor *> input_tensors(op->inputs()->size());
+   // std::vector<Tensor *> output_tensors(op->outputs()->size());
 
     bool is_inplace = false;
     bool is_graph_input = false;
@@ -266,13 +269,13 @@ void GraphLoader::loadOperators(bool use_static_memory_manager)
       if (input_index != -1)
       {
         const auto raw_tensor = _reader->tensors()[input_index];
-        if (_index_to_tensor->find(raw_tensor) == _index_to_tensor->end())
+        if (index_to_tensor->find(raw_tensor) == index_to_tensor->end())
         {
           assert(false && "Failed import operation input tensor");
           return;
         }
-        auto input_tensor = _index_to_tensor->at(raw_tensor);
-        input_tensors.at(j) = input_tensor;
+        auto input_tensor = index_to_tensor->at(raw_tensor).get();
+       // input_tensors.at(j) = input_tensor;
 
         const auto &graph_input_tensors = _runtime_graph->getInputTensors();
 
@@ -290,38 +293,38 @@ void GraphLoader::loadOperators(bool use_static_memory_manager)
       }
       else
       {
-        input_tensors.at(j) = nullptr;
+        //input_tensors.at(j) = nullptr;
       }
     }
 
-    for (int32_t j = 0; j < op->outputs()->size(); ++j)
-    {
-      const auto output_index = op->outputs()->operator[](j);
-      const auto raw_tensor = _reader->tensors()[output_index];
-
-      if (_index_to_tensor->find(raw_tensor) == _index_to_tensor->end())
-      {
-        assert(false && "Failed import operation output tensor");
-        return;
-      }
-      auto output_tensor = _index_to_tensor->at(raw_tensor);
-      output_tensors.at(j) = output_tensor;
-
-      // TODO: try rewrite it
-      if (use_static_memory_manager and
-          (std::find(_reader->outputs().begin(), _reader->outputs().end(), output_index) ==
-           _reader->outputs().end()))
-      {
-        //output_tensor->set_offset(execution_plan.at(i + input_size + output_size).at(0));
-      }
-    }
-
-    const auto opcode = _reader->builtin_code(op);
-    std::unique_ptr<Kernel> kernel =
-      kernel_builder.build(std::move(input_tensors), std::move(output_tensors), opcode, i);
-    kernel->setInplaceValue(is_inplace);
-
-    _runtime_graph->addKernel(std::move(kernel));
+//    for (int32_t j = 0; j < op->outputs()->size(); ++j)
+//    {
+//      const auto output_index = op->outputs()->operator[](j);
+//      const auto raw_tensor = _reader->tensors()[output_index];
+//
+//      if (index_to_tensor->find(raw_tensor) == index_to_tensor->end())
+//      {
+//        assert(false && "Failed import operation output tensor");
+//        return;
+//      }
+//      auto output_tensor = index_to_tensor->at(raw_tensor).get();
+//      //output_tensors.at(j) = output_tensor;
+//
+//      // TODO: try rewrite it
+//      if (use_static_memory_manager and
+//          (std::find(_reader->outputs().begin(), _reader->outputs().end(), output_index) ==
+//           _reader->outputs().end()))
+//      {
+//        //output_tensor->set_offset(execution_plan.at(i + input_size + output_size).at(0));
+//      }
+//    }
+//
+//    const auto opcode = _reader->builtin_code(op);
+//    std::unique_ptr<Kernel> kernel =
+//      kernel_builder.build(std::move(input_tensors), std::move(output_tensors), opcode, i);
+//    kernel->setInplaceValue(is_inplace);
+//
+//    _runtime_graph->addKernel(std::move(kernel));
   }
 }
 

@@ -17,7 +17,7 @@
 //#ifndef LUCI_INTERPRETER_LOADER_KERNELBUILDER_H
 //#define LUCI_INTERPRETER_LOADER_KERNELBUILDER_H
 //
-//#include "core/Kernel.h"
+////#include "core/Kernel.h"
 //#include "core/RuntimeGraph.h"
 //
 //#include "luci_interpreter/core/reader/CircleMicroReader.h"
@@ -33,7 +33,7 @@
 //class KernelBuilder
 //{
 //public:
-//  KernelBuilder(IBaseRuntimeGraph *runtime_graph, CircleReader *circle_reader);
+//  KernelBuilder();
 //
 //  ~KernelBuilder();
 //
@@ -43,16 +43,17 @@
 //
 //  void configure_kernel(std::vector<const Tensor *> &inputs,
 //                        std::vector<Tensor *> &output,
-//                        circle::BuiltinOperator opcode, int32_t op_index);
+//                        circle::BuiltinOperator opcode, int32_t op_index,
+//                        luci_interpreter::CircleReader *circle_reader);
 //
-//  CircleReader *get_circle_reader() { return _circle_reader; }
+//  //CircleReader *get_circle_reader() { return _circle_reader; }
 //
-//  IBaseRuntimeGraph *get_runtime_graph() { return _runtime_graph; }
+//  //IBaseRuntimeGraph *get_runtime_graph() { return _runtime_graph; }
 //
 //private:
 //  std::unique_ptr<KernelConfigureRegistry> _configure_registry;
-//  IBaseRuntimeGraph *_runtime_graph;
-//  CircleReader *_circle_reader;
+//  //IBaseRuntimeGraph *_runtime_graph;
+//  //CircleReader *_circle_reader;
 //};
 //
 //} // namespace luci_interpreter

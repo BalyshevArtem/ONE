@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "kernels/Logistic.h"
+#include "Builders.h"
 
 #include "kernels/Utils.h"
 
@@ -22,58 +22,98 @@
 
 namespace luci_interpreter
 {
-namespace kernels
+namespace
 {
 
-Logistic::Logistic(const Tensor *input, Tensor *output) : Kernel({input}, {output}) {}
+//
+// Logistic::Logistic(const Tensor *input, Tensor *output) : Kernel({input}, {output}) {}
+//
+// void Logistic::configure()
+//{
+//  LUCI_INTERPRETER_CHECK(input()->element_type() == output()->element_type());
+//
+//#ifndef DIS_QUANT
+//  if (input()->element_type() == DataType::U8)
+//  {
+//    LUCI_INTERPRETER_CHECK(output()->scale() == 1. / 256);
+//  }
+//#endif
+//  // TODO: enable it only if kernel with dynamic shapes
+//  //output()->resize(input()->shape());
+//}
+//
+// void Logistic::execute() const
+//{
+//  switch (input()->element_type())
+//  {
+//    case DataType::FLOAT32:
+//      evalFloat();
+//      break;
+//#ifndef DIS_QUANT
+//    case DataType::U8:
+//      evalQuantized();
+//      break;
+//#endif
+//    default:
+//      assert(false && "Unsupported type.");
+//  }
+//}
+//
+// void Logistic::evalFloat() const
+//{
+//  if (_is_inplace)
+//    output()->set_data_buffer(const_cast<uint8_t *>(input()->data<uint8_t>()));
+//
+//  tflite::reference_ops::Logistic(getTensorShape(input()), getTensorData<float>(input()),
+//                                  getTensorShape(output()), getTensorData<float>(output()));
+//  if (_is_inplace)
+//  {
+//    auto input_tensor = const_cast<Tensor *>(input());
+//    input_tensor->set_data_buffer(nullptr);
+//  }
+//}
+//
+//#ifndef DIS_QUANT
+// void Logistic::evalQuantized() const
+//{
+//  if (_is_inplace)
+//    output()->set_data_buffer(const_cast<uint8_t *>(input()->data<uint8_t>()));
+//
+//  tflite::reference_ops::Logistic(getTensorShape(input()), getTensorData<int8_t>(input()),
+//                                  input()->scale(), input()->zero_point(),
+//                                  getTensorShape(output()), getTensorData<int8_t>(output()),
+//                                  output()->scale(), output()->zero_point());
+//  if (_is_inplace)
+//  {
+//    auto input_tensor = const_cast<Tensor *>(input());
+//    input_tensor->set_data_buffer(nullptr);
+//  }
+//}
+//#endif
 
-void Logistic::configure()
+void evalFloat(std::vector<const Tensor *> &inputs,
+               std::vector<Tensor *> &outputs, const uint32_t,
+               luci_interpreter::CircleReader *, bool is_inplace)
 {
-  LUCI_INTERPRETER_CHECK(input()->element_type() == output()->element_type());
+  assert(!inputs.empty());
+  const auto input = inputs.at(0);
 
-#ifndef DIS_QUANT
-  if (input()->element_type() == DataType::U8)
+  auto output = outputs.at(0);
+
+  if (is_inplace)
+    output->set_data_buffer(const_cast<uint8_t *>(input->data<uint8_t>()));
+
+  tflite::reference_ops::Logistic(kernels::getTensorShape(input), kernels::getTensorData<float>(input),
+                                  kernels::getTensorShape(output), kernels::getTensorData<float>(output));
+  if (is_inplace)
   {
-    LUCI_INTERPRETER_CHECK(output()->scale() == 1. / 256);
-  }
-#endif
-  // TODO: enable it only if kernel with dynamic shapes
-  //output()->resize(input()->shape());
-}
-
-void Logistic::execute() const
-{
-  switch (input()->element_type())
-  {
-    case DataType::FLOAT32:
-      evalFloat();
-      break;
-#ifndef DIS_QUANT
-    case DataType::U8:
-      evalQuantized();
-      break;
-#endif
-    default:
-      assert(false && "Unsupported type.");
-  }
-}
-
-void Logistic::evalFloat() const
-{
-  if (_is_inplace)
-    output()->set_data_buffer(const_cast<uint8_t *>(input()->data<uint8_t>()));
-
-  tflite::reference_ops::Logistic(getTensorShape(input()), getTensorData<float>(input()),
-                                  getTensorShape(output()), getTensorData<float>(output()));
-  if (_is_inplace)
-  {
-    auto input_tensor = const_cast<Tensor *>(input());
+    auto input_tensor = const_cast<Tensor *>(input);
     input_tensor->set_data_buffer(nullptr);
   }
 }
 
 #ifndef DIS_QUANT
-void Logistic::evalQuantized() const
+void evalQuantized() const
 {
   if (_is_inplace)
     output()->set_data_buffer(const_cast<uint8_t *>(input()->data<uint8_t>()));
@@ -90,5 +130,52 @@ void Logistic::evalQuantized() const
 }
 #endif
 
-} // namespace kernels
+} // namespace
+
+// TODO think how remove unused param
+void configure_kernel_CircleLogistic(std::vector<const Tensor *> &inputs,
+                                     std::vector<Tensor *> &outputs, const uint32_t,
+                                     luci_interpreter::CircleReader *)
+{
+  assert(!inputs.empty());
+  const auto input = inputs.at(0);
+
+  auto output = outputs.at(0);
+
+  LUCI_INTERPRETER_CHECK(input->element_type() == output->element_type());
+
+#ifndef DIS_QUANT
+  if (input()->element_type() == DataType::U8)
+  {
+    LUCI_INTERPRETER_CHECK(output()->scale() == 1. / 256);
+  }
+#endif
+  // TODO: enable it only if kernel with dynamic shapes
+  // output()->resize(input()->shape());
+}
+
+// TODO think how remove unused param
+void execute_kernel_CircleLogistic(std::vector<const Tensor *> &inputs,
+                                         std::vector<Tensor *> &outputs, const uint32_t op_index,
+                                         luci_interpreter::CircleReader *circle_reader,
+                                   bool is_inplace)
+{
+  assert(!inputs.empty());
+  const auto input = inputs.at(0);
+
+  switch (input->element_type())
+  {
+    case DataType::FLOAT32:
+      evalFloat(inputs, outputs, op_index, circle_reader, is_inplace);
+      break;
+#ifndef DIS_QUANT
+    case DataType::U8:
+      evalQuantized();
+      break;
+#endif
+    default:
+      assert(false && "Unsupported type.");
+  }
+}
+
 } // namespace luci_interpreter

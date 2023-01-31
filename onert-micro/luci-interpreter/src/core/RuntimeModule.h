@@ -35,24 +35,31 @@ public:
   IBaseRuntimeGraph *addGraph(IMemoryManager *memory_manager, bool use_static_allocations)
   {
     if (use_static_allocations)
-      _graphs.push_back(std::make_unique<StaticRuntimeGraph>(memory_manager));
+      _graphs.push_back(std::make_unique<StaticRuntimeGraph>(memory_manager, &_circle_reader));
     else
-      _graphs.push_back(std::make_unique<RuntimeGraph>(memory_manager));
+      _graphs.push_back(std::make_unique<RuntimeGraph>(memory_manager, &_circle_reader));
     return _graphs.back().get();
   }
 
-  const std::vector<Tensor *> &getInputTensors() const { return getMainGraph()->getInputTensors(); }
-  const std::vector<Tensor *> &getOutputTensors() const
+  std::vector<Tensor *> getInputTensors() const { return getMainGraph()->getInputTensors(); }
+  std::vector<Tensor *> getOutputTensors() const
   {
     return getMainGraph()->getOutputTensors();
   }
 
   void execute() const { getMainGraph()->execute(); }
 
+  CircleReader &getCircleReader()
+  {
+    return _circle_reader;
+  }
+
 private:
   IBaseRuntimeGraph *getMainGraph() const { return _graphs[0].get(); }
 
   std::vector<std::unique_ptr<IBaseRuntimeGraph>> _graphs;
+
+  CircleReader _circle_reader;
 };
 
 } // namespace luci_interpreter

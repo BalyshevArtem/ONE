@@ -39,7 +39,7 @@ private:
   const char *_model_data_raw;
   RuntimeModule *_runtime_module;
   std::vector<IBaseRuntimeGraph *> _runtime_graphs;
-  std::unordered_map<const circle::Tensor *, Tensor *> _index_to_tensor;
+  //std::unordered_map<const circle::Tensor *, Tensor *> _index_to_tensor;
 };
 
 } // namespace luci_interpreter

@@ -19,10 +19,14 @@
 
 #include "luci_interpreter/core/Tensor.h"
 #include "memory_managers/MemoryManager.h"
-#include "core/Kernel.h"
+//#include "core/Kernel.h"
+#include "luci_interpreter/core/reader/CircleMicroReader.h"
+#include "kernels/KernelBuilder.h"
 
 #include <memory>
 #include <vector>
+#include <unordered_map>
+#include <unordered_set>
 
 namespace luci_interpreter
 {
@@ -32,24 +36,24 @@ class RuntimeModule;
 class IBaseRuntimeGraph
 {
 public:
-  explicit IBaseRuntimeGraph(IMemoryManager *memory_manager);
+  explicit IBaseRuntimeGraph(IMemoryManager *memory_manager, CircleReader *circle_reader);
   virtual ~IBaseRuntimeGraph() = default;
 
-  Tensor *addTensor(std::unique_ptr<Tensor> &&tensor);
-  void shrink_to_fit_tensors()
-  {
-    _tensors.shrink_to_fit();
-  }
+  Tensor *addTensor(const circle::Tensor *raw_tensor, std::unique_ptr<Tensor> &&tensor);
+//  void shrink_to_fit_tensors()
+//  {
+//    _tensors.shrink_to_fit();
+//  }
 
-  void resize_input_tensors(int32_t n)
-  {
-    _input_tensors.resize(n);
-  }
-
-  void resize_output_tensors(int32_t n)
-  {
-    _output_tensors.resize(n);
-  }
+//  void resize_input_tensors(int32_t n)
+//  {
+//    _input_tensors.resize(n);
+//  }
+//
+//  void resize_output_tensors(int32_t n)
+//  {
+//    _output_tensors.resize(n);
+//  }
 
 
 #ifndef DIS_QUANT
@@ -62,16 +66,20 @@ public:
     return _intermediate_tensors_affine_quantizations;
   }
 #endif
-  void addInputTensor(Tensor *input_tensor, int pos);
-  void addOutputTensor(Tensor *output_tensor, int pos);
+  //void addInputTensor(Tensor *input_tensor, int pos);
+  //void addOutputTensor(Tensor *output_tensor, int pos);
 
   void configureAllocations(Tensor *tensor);
 
+  std::unordered_map<const circle::Tensor *, std::unique_ptr<Tensor>> *getIndexToTensor()
+  {
+    return &_index_to_tensor;
+  }
 
-  const std::vector<Tensor *> &getInputTensors() const { return _input_tensors; }
-  const std::vector<Tensor *> &getOutputTensors() const { return _output_tensors; }
+  std::vector<Tensor *> getInputTensors() const; //{ return _input_tensors; }
+  std::vector<Tensor *> getOutputTensors() const; //{ return _output_tensors; }
 
-  void addKernel(std::unique_ptr<Kernel> &&kernel);
+  //void addKernel(std::unique_ptr<Kernel> &&kernel);
 
   virtual void execute() = 0;
   virtual void configure() = 0;
@@ -83,25 +91,31 @@ public:
 
 protected:
   IMemoryManager *_memory_manager;
-  std::vector<std::unique_ptr<Tensor>> _tensors;
+  //std::vector<std::unique_ptr<Tensor>> _tensors;
+  std::unordered_map<const circle::Tensor *, std::unique_ptr<Tensor>> _index_to_tensor;
+
+
 #ifndef DIS_QUANT
   std::vector<std::unique_ptr<AffineQuantization>> _affine_quantizations;
   std::vector<AffineQuantization *> _intermediate_tensors_affine_quantizations;
 #endif
-  std::vector<Tensor *> _input_tensors;
+  //std::vector<Tensor *> _input_tensors;
 
-  std::vector<Tensor *> _output_tensors;
+  //std::vector<Tensor *> _output_tensors;
 
   bool _is_valid = false;
 
+  CircleReader *_reader;
+  std::set<int32_t> _inplace_op_indexes;
+
   // Kernels in execution order.
-  std::vector<std::unique_ptr<Kernel>> _kernels;
+  //std::vector<std::unique_ptr<Kernel>> _kernels;
 };
 
 class RuntimeGraph final : public IBaseRuntimeGraph
 {
 public:
-  explicit RuntimeGraph(IMemoryManager *memory_manager);
+  explicit RuntimeGraph(IMemoryManager *memory_manager, CircleReader *circle_reader);
   ~RuntimeGraph() final;
 
   void execute() final;
@@ -123,7 +137,7 @@ private:
 class StaticRuntimeGraph final : public IBaseRuntimeGraph
 {
 public:
-  explicit StaticRuntimeGraph(IMemoryManager *memory_manager);
+  explicit StaticRuntimeGraph(IMemoryManager *memory_manager, CircleReader *circle_reader);
   ~StaticRuntimeGraph() final;
 
   void execute() final;

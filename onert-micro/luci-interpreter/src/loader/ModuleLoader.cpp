@@ -23,7 +23,7 @@ namespace luci_interpreter
 ModuleLoader::ModuleLoader(const char *model_data_raw, RuntimeModule *runtime_module,
                            IMemoryManager *memory_manager)
   : _model_data_raw(model_data_raw), _runtime_module(runtime_module),
-    _memory_manager(memory_manager), _index_to_tensor(std::unordered_map<const circle::Tensor *, Tensor *>{})
+    _memory_manager(memory_manager)//, _index_to_tensor(std::unordered_map<const circle::Tensor *, Tensor *>{})
 {
 }
 
@@ -31,7 +31,7 @@ void ModuleLoader::load(bool use_static_memory_manager)
 {
   const circle::Model *model = circle::GetModel(_model_data_raw);
 
-  CircleReader reader;
+  CircleReader &reader = _runtime_module->getCircleReader();
   if (!reader.parse(model))
     assert(false && "Error during parse");
 
@@ -46,7 +46,7 @@ void ModuleLoader::load(bool use_static_memory_manager)
     if (!reader.select_subgraph(i))
       assert(false && "Error during select subgraph");
     IBaseRuntimeGraph *runtime_graph = _runtime_graphs.at(i);
-    GraphLoader loader(&reader, runtime_graph, _memory_manager, &_index_to_tensor);
+    GraphLoader loader(&reader, runtime_graph, _memory_manager);//, &_index_to_tensor);
 
     loader.loadTensors(use_static_memory_manager);
     loader.initInputOutputTensors(use_static_memory_manager);
@@ -69,7 +69,6 @@ void ModuleLoader::load(bool use_static_memory_manager)
       }
 
       runtime_graph->configure();
-
     }
   }
   else

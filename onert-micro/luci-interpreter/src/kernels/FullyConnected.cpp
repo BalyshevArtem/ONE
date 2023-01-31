@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "kernels/FullyConnected.h"
+#include "Builders.h"
 
 #include "kernels/Utils.h"
 
@@ -23,95 +23,27 @@
 namespace luci_interpreter
 {
 
-namespace kernels
+
+namespace
 {
-
-FullyConnected::FullyConnected(const Tensor *input, const Tensor *weights, const Tensor *bias,
-                               Tensor *output, const FullyConnectedParams &params)
-  : KernelWithParams<FullyConnectedParams>({input, weights, bias}, {output}, params)
+void evalFloat(std::vector<const Tensor *> &inputs, std::vector<Tensor *> &outputs,
+               const uint32_t op_index, luci_interpreter::CircleReader *circle_reader)
 {
-}
+  assert(!inputs.empty());
+  const auto input = inputs.at(0);
+  const auto weights = inputs.at(1);
+  const auto bias = inputs.at(2);
 
-void FullyConnected::configure()
-{
-  if (weights()->element_type() == DataType::U8)
-  {
-    LUCI_INTERPRETER_CHECK(input()->element_type() == DataType::U8);
-    LUCI_INTERPRETER_CHECK(output()->element_type() == DataType::U8);
-    LUCI_INTERPRETER_CHECK(!bias() || bias()->element_type() == DataType::S32)
-  }
-  else if (weights()->element_type() == DataType::FLOAT32)
-  {
-    LUCI_INTERPRETER_CHECK(input()->element_type() == DataType::FLOAT32);
-    LUCI_INTERPRETER_CHECK(output()->element_type() == DataType::FLOAT32);
-    LUCI_INTERPRETER_CHECK(!bias() || bias()->element_type() == DataType::FLOAT32)
-  }
-  else if (weights()->element_type() == DataType::S8)
-  {
-    LUCI_INTERPRETER_CHECK(input()->element_type() == DataType::S8);
-    LUCI_INTERPRETER_CHECK(output()->element_type() == DataType::S8);
-    LUCI_INTERPRETER_CHECK(!bias() || bias()->element_type() == DataType::S32)
-  }
-  else
-  {
-    assert(false && "Unsupported type.");
-  }
+  auto output = outputs.at(0);
 
-  //const Shape &input_shape = input()->shape();
-  //const Shape &weights_shape = weights()->shape();
+  circle::OperatorT oper_t;
+  circle_reader->operators()[op_index]->UnPackTo(&oper_t);
+  const auto *options = oper_t.builtin_options.AsFullyConnectedOptions();
 
-  LUCI_INTERPRETER_CHECK(weights()->num_dims() == 2)//weights_shape.num_dims() == 2);
-  LUCI_INTERPRETER_CHECK(bias() == nullptr ||
-                         bias()->num_elements() == weights()->dim(0));
-                         //bias()->shape().num_elements() == weights_shape.dim(0));
-
-  LUCI_INTERPRETER_CHECK(input()->num_elements() % weights()->dim(1) == 0);
-  const int32_t batch_size = input()->num_elements() / weights()->dim(1);
-  const int32_t num_units = weights()->dim(0);
-
-  if (bias())
-    LUCI_INTERPRETER_CHECK(bias()->num_elements() == weights()->dim(0));
-
-  // TODO: enable it only if kernel with dynamic shapes
-  if (params().keep_num_dims == false)
-  {
-    //output()->resize({batch_size, num_units});
-  }
-  else
-  {
-//    luci_interpreter::Shape output_shape(input_shape.num_dims());
-//    for (int i = 0; i < input_shape.num_dims(); ++i)
-//      output_shape.dim(i) = input_shape.dim(i);
-//    output_shape.dim(input_shape.num_dims() - 1) = num_units;
-//    output()->resize(output_shape);
-  }
-}
-
-void FullyConnected::execute() const
-{
-  switch (input()->element_type())
-  {
-#ifndef DIS_QUANT
-    case DataType::U8:
-      evalQuantized();
-      break;
-    case DataType::S8:
-      evalQuantizedS8();
-      break;
-#endif
-    case DataType::FLOAT32:
-      evalFloat();
-      break;
-    default:
-      assert(false && "Unsupported type.");
-  }
-}
-
-void FullyConnected::evalFloat() const
-{
   float activation_min{};
   float activation_max{};
-  calculateActivationRange(_params.activation, &activation_min, &activation_max);
+  kernels::calculateActivationRange(luci_actfunc(options->fused_activation_function),
+                                    &activation_min, &activation_max);
 
   tflite::FullyConnectedParams params{};
   params.float_activation_min = activation_min;
@@ -119,13 +51,14 @@ void FullyConnected::evalFloat() const
   params.weights_format = tflite::FullyConnectedWeightsFormat::kDefault;
 
   tflite::reference_ops::FullyConnected(
-    params, getTensorShape(input()), getTensorData<float>(input()), getTensorShape(weights()),
-    getTensorData<float>(weights()), getTensorShape(bias()), getTensorData<float>(bias()),
-    getTensorShape(output()), getTensorData<float>(output()));
+    params, kernels::getTensorShape(input), kernels::getTensorData<float>(input),
+    kernels::getTensorShape(weights), kernels::getTensorData<float>(weights),
+    kernels::getTensorShape(bias), kernels::getTensorData<float>(bias),
+    kernels::getTensorShape(output), kernels::getTensorData<float>(output));
 }
 
 #ifndef DIS_QUANT
-void FullyConnected::evalQuantized() const
+void evalQuantized() const
 {
   double real_multiplier = 0.0;
   int output_shift;
@@ -158,7 +91,7 @@ void FullyConnected::evalQuantized() const
     getTensorShape(output()), getTensorData<uint8_t>(output()));
 }
 
-void FullyConnected::evalQuantizedS8() const
+void evalQuantizedS8() const
 {
   double real_multiplier = 0.0;
   int output_shift;
@@ -192,5 +125,104 @@ void FullyConnected::evalQuantizedS8() const
 }
 #endif
 
-} // namespace kernels
+} // namespace
+
+// TODO think how remove unused param
+void configure_kernel_CircleFullyConnected(std::vector<const Tensor *> &inputs,
+                                           std::vector<Tensor *> &outputs,
+                                           const uint32_t op_index,
+                                           luci_interpreter::CircleReader *circle_reader)
+{
+  assert(!inputs.empty());
+  const auto input = inputs.at(0);
+  const auto weights = inputs.at(1);
+  const auto bias = inputs.at(2);
+
+  auto output = outputs.at(0);
+
+  if (weights->element_type() == DataType::U8)
+  {
+    LUCI_INTERPRETER_CHECK(input->element_type() == DataType::U8);
+    LUCI_INTERPRETER_CHECK(output->element_type() == DataType::U8);
+    LUCI_INTERPRETER_CHECK(!bias || bias->element_type() == DataType::S32)
+  }
+  else if (weights->element_type() == DataType::FLOAT32)
+  {
+    LUCI_INTERPRETER_CHECK(input->element_type() == DataType::FLOAT32);
+    LUCI_INTERPRETER_CHECK(output->element_type() == DataType::FLOAT32);
+    LUCI_INTERPRETER_CHECK(!bias || bias->element_type() == DataType::FLOAT32)
+  }
+  else if (weights->element_type() == DataType::S8)
+  {
+    LUCI_INTERPRETER_CHECK(input->element_type() == DataType::S8);
+    LUCI_INTERPRETER_CHECK(output->element_type() == DataType::S8);
+    LUCI_INTERPRETER_CHECK(!bias || bias->element_type() == DataType::S32)
+  }
+  else
+  {
+    assert(false && "Unsupported type.");
+  }
+
+  // const Shape &input_shape = input()->shape();
+  // const Shape &weights_shape = weights()->shape();
+
+  LUCI_INTERPRETER_CHECK(weights->num_dims() == 2); // weights_shape.num_dims() == 2);
+  LUCI_INTERPRETER_CHECK(bias == nullptr || bias->num_elements() == weights->dim(0));
+  // bias()->shape().num_elements() == weights_shape.dim(0));
+
+  LUCI_INTERPRETER_CHECK(input->num_elements() % weights->dim(1) == 0);
+  const int32_t batch_size = input->num_elements() / weights->dim(1);
+  const int32_t num_units = weights->dim(0);
+
+  if (bias)
+    LUCI_INTERPRETER_CHECK(bias->num_elements() == weights->dim(0));
+
+  // TODO: enable it only if kernel with dynamic shapes
+  circle::OperatorT oper_t;
+  circle_reader->operators()[op_index]->UnPackTo(&oper_t);
+  const auto *options = oper_t.builtin_options.AsFullyConnectedOptions();
+
+  // TODO: handle with it
+  if (!options->keep_num_dims)
+  {
+    // output()->resize({batch_size, num_units});
+  }
+  else
+  {
+    //    luci_interpreter::Shape output_shape(input_shape.num_dims());
+    //    for (int i = 0; i < input_shape.num_dims(); ++i)
+    //      output_shape.dim(i) = input_shape.dim(i);
+    //    output_shape.dim(input_shape.num_dims() - 1) = num_units;
+    //    output()->resize(output_shape);
+  }
+}
+
+// TODO think how remove unused param
+void execute_kernel_CircleFullyConnected(std::vector<const Tensor *> &inputs,
+                                           std::vector<Tensor *> &outputs,
+                                           const uint32_t op_index,
+                                           luci_interpreter::CircleReader *circle_reader,
+                                           bool)
+{
+  assert(!inputs.empty());
+  const auto input = inputs.at(0);
+
+  switch (input->element_type())
+  {
+#ifndef DIS_QUANT
+    case DataType::U8:
+      evalQuantized();
+      break;
+    case DataType::S8:
+      evalQuantizedS8();
+      break;
+#endif
+    case DataType::FLOAT32:
+      evalFloat(inputs, outputs, op_index, circle_reader);
+      break;
+    default:
+      assert(false && "Unsupported type.");
+  }
+}
+
 } // namespace luci_interpreter

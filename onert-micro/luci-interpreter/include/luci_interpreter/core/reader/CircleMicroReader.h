@@ -156,7 +156,7 @@ template <typename T> VectorWrapper<T> wrap(const flatbuffers::Vector<T> *vec)
  */
 class CircleReader
 {
-private: // direct API
+public: // direct API
   using CircleBuffers = VectorWrapper<flatbuffers::Offset<circle::Buffer>>;
   using CircleTensors = VectorWrapper<flatbuffers::Offset<circle::Tensor>>;
   using CircleOperators = VectorWrapper<flatbuffers::Offset<circle::Operator>>;

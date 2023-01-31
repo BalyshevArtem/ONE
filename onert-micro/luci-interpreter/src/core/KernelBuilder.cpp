@@ -14,8 +14,8 @@
 // * limitations under the License.
 // */
 //
-//#include "loader/KernelBuilder.h"
-//#include "loader/nodes/Builders.h"
+//#include "core/KernelBuilder.h"
+//#include "kernels/Builders.h"
 //
 //namespace luci_interpreter
 //{
@@ -46,14 +46,14 @@
 //
 //  using KernelConfigureFunc = void (std::vector<const Tensor *> &,
 //                                   std::vector<Tensor *> &, const uint32_t,
-//                                   KernelBuilder &);
+//                                   luci_interpreter::CircleReader *);
 //
 //
 //KernelConfigureRegistry()
 //  {
 //#define REGISTER_KERNEL(builtin_operator, name)                                        \
 //  register_kernel_configure(circle::BuiltinOperator::BuiltinOperator_##builtin_operator, \
-//                          build_kernel_Circle##name);
+//                            configure_kernel_Circle##name);
 //
 //#if USE_GENERATED_LIST
 //#include "GeneratedKernelsToBuild.lst"
@@ -78,10 +78,10 @@
 //  }
 //};
 //
-//KernelBuilder::KernelBuilder(IBaseRuntimeGraph *runtime_graph, CircleReader *circle_reader)
-//  : _runtime_graph(runtime_graph), _circle_reader(circle_reader)
+//KernelBuilder::KernelBuilder():
+//_configure_registry(std::make_unique<KernelConfigureRegistry>())
 //{
-//  _configure_registry = std::make_unique<KernelConfigureRegistry>();
+//  //_configure_registry = std::make_unique<KernelConfigureRegistry>();
 //}
 //
 //KernelBuilder::~KernelBuilder()
@@ -93,14 +93,15 @@
 //void KernelBuilder::configure_kernel(std::vector<const Tensor *> &inputs,
 //                                     std::vector<Tensor *> &outputs,
 //                                     circle::BuiltinOperator opcode,
-//                                     int32_t op_index)
+//                                     int32_t op_index,
+//                                     luci_interpreter::CircleReader *circle_reader)
 //{
 //  auto specific_configure_func = _configure_registry->get_kernel_configure_func(opcode);
 //  if (specific_configure_func == nullptr)
 //    assert(false && "Unsupported operator");
 //
 //
-//  specific_configure_func(std::move(inputs), std::move(outputs), op_index, *this);
+//  specific_configure_func(inputs, outputs, op_index, circle_reader);
 //}
 //
 //} // namespace luci_interpreter
