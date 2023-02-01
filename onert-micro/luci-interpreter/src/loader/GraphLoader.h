@@ -29,20 +29,20 @@ namespace luci_interpreter
 class GraphLoader
 {
 public:
-  GraphLoader(CircleReader *reader, IBaseRuntimeGraph *runtime_graph,
-              IMemoryManager *memory_manager);
+  GraphLoader() = default;//(CircleReader *reader, IBaseRuntimeGraph *runtime_graph,
+             // IMemoryManager *memory_manager);
              // std::unordered_map<const circle::Tensor *, Tensor *> *index_to_tensor);
 
-  void loadTensors(bool use_static_memory_manager);
-  void initInputOutputTensors(bool use_static_memory_manager) const;
-  void loadOperators(bool use_static_memory_manager);
+  static void loadTensors(CircleReader *reader, IBaseRuntimeGraph *runtime_graph, bool use_static_memory_manager);
+  //static void initInputOutputTensors(bool use_static_memory_manager) const;
+  static void loadOperators(CircleReader *reader, IBaseRuntimeGraph *runtime_graph, bool use_static_memory_manager);
 
 private:
-  bool isCouldBeEmplaceTensor(const int32_t tensor_index);
+  static bool isCouldBeEmplaceTensor(CircleReader *reader, const int32_t tensor_index);
 
-  IBaseRuntimeGraph *_runtime_graph;
-  IMemoryManager *_memory_manager;
-  CircleReader *_reader;
+ // IBaseRuntimeGraph *_runtime_graph;
+ // IMemoryManager *_memory_manager;
+ // CircleReader *_reader;
   //std::unordered_map<const circle::Tensor *, Tensor *> *_index_to_tensor;
 };
 

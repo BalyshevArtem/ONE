@@ -31,8 +31,9 @@ Interpreter::Interpreter(const char *model_data_raw)
   _memory_manager = std::make_unique<SimpleMemoryManager>();
   _memory_manager->is_allocate_input(true);
 
-  ModuleLoader loader(model_data_raw, _runtime_module.get(), _memory_manager.get());
-  loader.load(/* is_static_allocations */ false);
+  //ModuleLoader loader();
+  ModuleLoader::load(_runtime_module.get(), _memory_manager.get(),
+                     /* is_static_allocations */ false, model_data_raw);
 }
 
 // Construct interpreter with configurations
@@ -55,8 +56,12 @@ Interpreter::Interpreter(const char *model_data_raw, const InterpreterConfigure 
 
   _memory_manager->is_allocate_input(configuration.getAllocateInputValue());
 
-  ModuleLoader loader(model_data_raw, _runtime_module.get(), _memory_manager.get());
-  loader.load(configuration.isStaticManager());
+  //ModuleLoader loader();
+  ModuleLoader::load(_runtime_module.get(), _memory_manager.get(),
+                     /* is_static_allocations */ configuration.isStaticManager(), model_data_raw);
+
+//  ModuleLoader loader(_runtime_module.get(), _memory_manager.get());
+//  loader.load(configuration.isStaticManager(), model_data_raw);
 }
 
 Interpreter::~Interpreter() = default;

@@ -41,6 +41,11 @@ public:
     return _graphs.back().get();
   }
 
+  IBaseRuntimeGraph *getRuntimeGraphAt(uint32_t pos)
+  {
+    return _graphs.at(pos).get();
+  }
+
   std::vector<Tensor *> getInputTensors() const { return getMainGraph()->getInputTensors(); }
   std::vector<Tensor *> getOutputTensors() const
   {
@@ -54,8 +59,9 @@ public:
     return _circle_reader;
   }
 
-private:
   IBaseRuntimeGraph *getMainGraph() const { return _graphs[0].get(); }
+
+private:
 
   std::vector<std::unique_ptr<IBaseRuntimeGraph>> _graphs;
 

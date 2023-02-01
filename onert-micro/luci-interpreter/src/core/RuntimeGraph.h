@@ -76,6 +76,13 @@ public:
     return &_index_to_tensor;
   }
 
+  virtual void configureGraphInputs() = 0;
+
+  void addInplaceOpIndex(uint32_t index)
+  {
+    _inplace_op_indexes.insert(index);
+  }
+
   std::vector<Tensor *> getInputTensors() const; //{ return _input_tensors; }
   std::vector<Tensor *> getOutputTensors() const; //{ return _output_tensors; }
 
@@ -106,7 +113,7 @@ protected:
   bool _is_valid = false;
 
   CircleReader *_reader;
-  std::set<int32_t> _inplace_op_indexes;
+  std::unordered_set<uint32_t> _inplace_op_indexes;
 
   // Kernels in execution order.
   //std::vector<std::unique_ptr<Kernel>> _kernels;
@@ -120,6 +127,8 @@ public:
 
   void execute() final;
   void configure() final;
+
+  void configureGraphInputs() final;
 
   void configure_kernels() final { assert(false && "Use it only with static allocations"); }
 
@@ -140,6 +149,7 @@ public:
   explicit StaticRuntimeGraph(IMemoryManager *memory_manager, CircleReader *circle_reader);
   ~StaticRuntimeGraph() final;
 
+  void configureGraphInputs() final;
   void execute() final;
   void configure() final;
 

@@ -139,7 +139,6 @@ void KernelBuilder::configure_kernel(std::vector<const Tensor *> &inputs,
   if (specific_configure_func == nullptr)
     assert(false && "Unsupported operator");
 
-
   specific_configure_func(inputs, outputs, op_index, circle_reader);
 }
 

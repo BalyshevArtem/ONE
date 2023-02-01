@@ -27,7 +27,7 @@ namespace luci_interpreter
 IBaseRuntimeGraph::IBaseRuntimeGraph(IMemoryManager *memory_manager, CircleReader *circle_reader)
   : _memory_manager(memory_manager),
     _index_to_tensor(std::unordered_map<const circle::Tensor *, std::unique_ptr<Tensor>>{}),
-    _reader(circle_reader), _inplace_op_indexes(std::set<int32_t>{})
+    _reader(circle_reader), _inplace_op_indexes(std::unordered_set<uint32_t>{})
 {
 }
 
@@ -235,6 +235,22 @@ void RuntimeGraph::deallocate(size_t kernel_index) const
   }
 }
 
+void RuntimeGraph::configureGraphInputs()
+{
+  for (const auto input_ind : _reader->inputs())
+  {
+    const auto raw_tensor = _reader->tensors()[input_ind];
+    if (_index_to_tensor.find(raw_tensor) == _index_to_tensor.end())
+    {
+      assert(false && "Failed import graph input tensor");
+    }
+
+    auto *tensor_interpreter = _index_to_tensor.at(raw_tensor).get();
+
+    _memory_manager->allocate_memory(*tensor_interpreter);
+  }
+}
+
 void RuntimeGraph::configure()
 {
   KernelBuilder kernel_builder;
@@ -379,6 +395,11 @@ void RuntimeGraph::execute()
 StaticRuntimeGraph::StaticRuntimeGraph(IMemoryManager *memory_manager, CircleReader *circle_reader)
   : IBaseRuntimeGraph(memory_manager, circle_reader)
 {
+}
+
+void StaticRuntimeGraph::configureGraphInputs()
+{
+
 }
 
 StaticRuntimeGraph::~StaticRuntimeGraph()

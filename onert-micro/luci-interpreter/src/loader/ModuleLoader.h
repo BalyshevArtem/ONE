@@ -29,16 +29,18 @@ namespace luci_interpreter
 class ModuleLoader
 {
 public:
-  ModuleLoader(const char *model_data_raw, RuntimeModule *runtime_module,
-               IMemoryManager *memory_manager);
+  ModuleLoader() = default;
 
-  void load(bool use_static_memory_manager);
+  static void load(RuntimeModule *_runtime_module,
+                   IMemoryManager *_memory_manager,
+                   bool use_static_memory_manager,
+                   const char *model_data_raw);
 
 private:
-  IMemoryManager *_memory_manager;
-  const char *_model_data_raw;
-  RuntimeModule *_runtime_module;
-  std::vector<IBaseRuntimeGraph *> _runtime_graphs;
+  //IMemoryManager *_memory_manager;
+  //const char *_model_data_raw;
+  //RuntimeModule *_runtime_module;
+  //std::vector<IBaseRuntimeGraph *> _runtime_graphs;
   //std::unordered_map<const circle::Tensor *, Tensor *> _index_to_tensor;
 };
 
