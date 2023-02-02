@@ -31,8 +31,8 @@ public:
 
   virtual ~IMemoryManager() = default;
 
-  bool is_allocate_input() const { return _is_allocate_input; }
-  void is_allocate_input(bool allocate_input) { _is_allocate_input = allocate_input; }
+//  bool is_allocate_input() const { return _is_allocate_input; }
+//  void is_allocate_input(bool allocate_input) { _is_allocate_input = allocate_input; }
 
   // Methods for static allocations
   // Methods to set data pointer for tensor
@@ -58,8 +58,8 @@ public:
   // To set a pointer for tensor in output_buffer with right offset
   virtual void allocate_memory_for_output(luci_interpreter::Tensor &tensor) = 0;
 
-protected:
-  bool _is_allocate_input = true;
+//protected:
+//  bool _is_allocate_input = true;
 };
 
 } // namespace luci_interpreter

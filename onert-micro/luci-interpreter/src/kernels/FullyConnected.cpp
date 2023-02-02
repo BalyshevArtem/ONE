@@ -240,7 +240,7 @@ void execute_kernel_CircleFullyConnected(const circle::Operator *cur_op,
 
   Tensor bias(raw_bias);
   if (bias_data != nullptr)
-    weights.writeDataWithoutCopy(static_cast<void *>(bias_data));
+    bias.writeDataWithoutCopy(static_cast<void *>(bias_data));
 
   //const auto weights = runtime_graph->getTensorByIndex(weight_index);
   //const auto bias = runtime_graph->getTensorByIndex(bias_index);

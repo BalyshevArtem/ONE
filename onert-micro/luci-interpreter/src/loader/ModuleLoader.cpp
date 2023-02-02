@@ -69,7 +69,7 @@ void ModuleLoader::load(RuntimeModule *runtime_module,
     //  runtime_graph = runtime_module->getRuntimeGraphAt(i);
       runtime_graph->configure();
 
-      if (memory_manager->is_allocate_input())
+     // if (memory_manager->is_allocate_input())
         runtime_graph->configureGraphInputs();
    // }
   }

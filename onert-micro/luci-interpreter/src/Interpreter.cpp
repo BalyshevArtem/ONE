@@ -29,7 +29,7 @@ Interpreter::Interpreter(const char *model_data_raw)
   _runtime_module = std::make_unique<RuntimeModule>();
 
   _memory_manager = std::make_unique<SimpleMemoryManager>();
-  _memory_manager->is_allocate_input(true);
+  //_memory_manager->is_allocate_input(true);
 
   //ModuleLoader loader();
   ModuleLoader::load(_runtime_module.get(), _memory_manager.get(),
@@ -54,7 +54,7 @@ Interpreter::Interpreter(const char *model_data_raw, const InterpreterConfigure 
 //    _memory_manager = std::make_unique<SimpleMemoryManager>();
 //  }
 
-  _memory_manager->is_allocate_input(configuration.getAllocateInputValue());
+  //_memory_manager->is_allocate_input(configuration.getAllocateInputValue());
 
   //ModuleLoader loader();
   ModuleLoader::load(_runtime_module.get(), _memory_manager.get(),
