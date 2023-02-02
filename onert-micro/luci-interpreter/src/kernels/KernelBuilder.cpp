@@ -19,36 +19,9 @@
 
 namespace luci_interpreter
 {
-enum class BuilderId
+
+KernelConfigureRegistry::KernelConfigureRegistry()
 {
-#define REGISTER_KERNEL(builtin_operator, name) Circle##name,
-#if USE_GENERATED_LIST
-#include "GeneratedKernelsToBuild.lst"
-#else
-#include "KernelsToBuild.lst"
-#endif
-  Size // casts to count of values in BuilderId enum
-};
-#undef REGISTER_KERNEL
-
-/**
- * @brief Registry of kernel builders
- *
- * This class contains mapping from Opcodes to kernel builder functions
- */
-
-class KernelConfigureRegistry
-{
-public:
-  //  using KernelBuilderFunc = std::unique_ptr<Kernel>(std::vector<const Tensor *> &&,
-  //                                                    std::vector<Tensor *> &&, const uint32_t,
-  //                                                    KernelBuilder &);
-
-  using KernelConfigureFunc = void(std::vector<const Tensor *> &, std::vector<Tensor *> &,
-                                   const uint32_t, luci_interpreter::CircleReader *);
-
-  KernelConfigureRegistry()
-  {
 #define REGISTER_KERNEL(builtin_operator, name)                                          \
   register_kernel_configure(circle::BuiltinOperator::BuiltinOperator_##builtin_operator, \
                             configure_kernel_Circle##name);
@@ -60,35 +33,23 @@ public:
 #endif
 
 #undef REGISTER_KERNEL
-  }
+}
 
-  KernelConfigureFunc *get_kernel_configure_func(circle::BuiltinOperator opcode) const
-  {
-    return _operator_configure.at(size_t(opcode));
-  }
-
-private:
-  std::map<int32_t, KernelConfigureFunc *> _operator_configure;
-
-  void register_kernel_configure(circle::BuiltinOperator id, KernelConfigureFunc *func)
-  {
-    _operator_configure[size_t(id)] = func;
-  }
-};
-
-class KernelExecuteRegistry
+void KernelConfigureRegistry::configure_kernel(const circle::Operator *cur_op,
+                                               circle::BuiltinOperator opcode,
+                                               IBaseRuntimeGraph *runtime_graph)
 {
-public:
-  //  using KernelBuilderFunc = std::unique_ptr<Kernel>(std::vector<const Tensor *> &&,
-  //                                                    std::vector<Tensor *> &&, const uint32_t,
-  //                                                    KernelBuilder &);
+  auto specific_configure_func = get_kernel_configure_func(opcode);
+  if (specific_configure_func == nullptr)
+    assert(false && "Unsupported operator");
 
-  using KernelExecuteFunc = void(std::vector<const Tensor *> &, std::vector<Tensor *> &,
-                                 const uint32_t, luci_interpreter::CircleReader *,
-                                 bool);
+  specific_configure_func(cur_op, runtime_graph);
+}
 
-  KernelExecuteRegistry()
-  {
+
+
+KernelExecuteRegistry::KernelExecuteRegistry()
+{
 #define REGISTER_KERNEL(builtin_operator, name)                                        \
   register_kernel_execute(circle::BuiltinOperator::BuiltinOperator_##builtin_operator, \
                           execute_kernel_Circle##name);
@@ -100,60 +61,153 @@ public:
 #endif
 
 #undef REGISTER_KERNEL
-  }
-
-  KernelExecuteFunc *get_kernel_execute_func(circle::BuiltinOperator opcode) const
-  {
-    return _operator_execute.at(size_t(opcode));
-  }
-
-private:
-  std::map<int32_t, KernelExecuteFunc *> _operator_execute;
-
-  void register_kernel_execute(circle::BuiltinOperator id, KernelExecuteFunc *func)
-  {
-    _operator_execute[size_t(id)] = func;
-  }
-};
-
-
-KernelBuilder::KernelBuilder():
-_configure_registry(std::make_unique<KernelConfigureRegistry>()),
-_execute_registry(std::make_unique<KernelExecuteRegistry>())
-{
 }
 
-KernelBuilder::~KernelBuilder()
+void KernelExecuteRegistry::execute_kernel(const circle::Operator *cur_op,
+                                           circle::BuiltinOperator opcode,
+                                           IBaseRuntimeGraph *runtime_graph, bool is_inplace)
 {
-  // Need to define in this CPP to hide KernelBuilderRegistry internals.
-  // This destructor deletes _builder_registry
-}
-
-void KernelBuilder::configure_kernel(std::vector<const Tensor *> &inputs,
-                                     std::vector<Tensor *> &outputs,
-                                     circle::BuiltinOperator opcode,
-                                     int32_t op_index,
-                                     luci_interpreter::CircleReader *circle_reader)
-{
-  auto specific_configure_func = _configure_registry->get_kernel_configure_func(opcode);
-  if (specific_configure_func == nullptr)
-    assert(false && "Unsupported operator");
-
-  specific_configure_func(inputs, outputs, op_index, circle_reader);
-}
-
-void KernelBuilder::execute_kernel(std::vector<const Tensor *> &inputs,
-                                     std::vector<Tensor *> &outputs,
-                                     circle::BuiltinOperator opcode,
-                                     int32_t op_index,
-                                     luci_interpreter::CircleReader *circle_reader,
-                                     bool is_inplace)
-{
-  auto specific_execute_func = _execute_registry->get_kernel_execute_func(opcode);
+  auto specific_execute_func = get_kernel_execute_func(opcode);
   if (specific_execute_func == nullptr)
     assert(false && "Unsupported operator");
 
-  specific_execute_func(inputs, outputs, op_index, circle_reader, is_inplace);
+  specific_execute_func(cur_op, runtime_graph, is_inplace);
 }
+
+
+////enum class BuilderId
+////{
+////#define REGISTER_KERNEL(builtin_operator, name) Circle##name,
+////#if USE_GENERATED_LIST
+////#include "GeneratedKernelsToBuild.lst"
+////#else
+////#include "KernelsToBuild.lst"
+////#endif
+////  Size // casts to count of values in BuilderId enum
+////};
+////#undef REGISTER_KERNEL
+//
+///**
+// * @brief Registry of kernel builders
+// *
+// * This class contains mapping from Opcodes to kernel builder functions
+// */
+////
+////class KernelConfigureRegistry
+////{
+////public:
+////  //  using KernelBuilderFunc = std::unique_ptr<Kernel>(std::vector<const Tensor *> &&,
+////  //                                                    std::vector<Tensor *> &&, const uint32_t,
+////  //                                                    KernelBuilder &);
+////
+////  using KernelConfigureFunc = void(std::vector<const Tensor *> &, std::vector<Tensor *> &,
+////                                   const uint32_t, luci_interpreter::CircleReader *);
+////
+////  KernelConfigureRegistry()
+////  {
+////#define REGISTER_KERNEL(builtin_operator, name)                                          \
+////  register_kernel_configure(circle::BuiltinOperator::BuiltinOperator_##builtin_operator, \
+////                            configure_kernel_Circle##name);
+////
+////#if USE_GENERATED_LIST
+////#include "GeneratedKernelsToBuild.lst"
+////#else
+////#include "KernelsToBuild.lst"
+////#endif
+////
+////#undef REGISTER_KERNEL
+////  }
+////
+////  KernelConfigureFunc *get_kernel_configure_func(circle::BuiltinOperator opcode) const
+////  {
+////    return _operator_configure.at(size_t(opcode));
+////  }
+////
+////private:
+////  std::unordered_map<int32_t, KernelConfigureFunc *> _operator_configure;
+////
+////  void register_kernel_configure(circle::BuiltinOperator id, KernelConfigureFunc *func)
+////  {
+////    _operator_configure[size_t(id)] = func;
+////  }
+////};
+////
+////class KernelExecuteRegistry
+////{
+////public:
+////  //  using KernelBuilderFunc = std::unique_ptr<Kernel>(std::vector<const Tensor *> &&,
+////  //                                                    std::vector<Tensor *> &&, const uint32_t,
+////  //                                                    KernelBuilder &);
+////
+////  using KernelExecuteFunc = void(std::vector<const Tensor *> &, std::vector<Tensor *> &,
+////                                 const uint32_t, luci_interpreter::CircleReader *,
+////                                 bool);
+////
+////  KernelExecuteRegistry()
+////  {
+////#define REGISTER_KERNEL(builtin_operator, name)                                        \
+////  register_kernel_execute(circle::BuiltinOperator::BuiltinOperator_##builtin_operator, \
+////                          execute_kernel_Circle##name);
+////
+////#if USE_GENERATED_LIST
+////#include "GeneratedKernelsToBuild.lst"
+////#else
+////#include "KernelsToBuild.lst"
+////#endif
+////
+////#undef REGISTER_KERNEL
+////  }
+////
+////  KernelExecuteFunc *get_kernel_execute_func(circle::BuiltinOperator opcode) const
+////  {
+////    return _operator_execute.at(size_t(opcode));
+////  }
+////
+////private:
+////  std::unordered_map<int32_t, KernelExecuteFunc *> _operator_execute;
+////
+////  void register_kernel_execute(circle::BuiltinOperator id, KernelExecuteFunc *func)
+////  {
+////    _operator_execute[size_t(id)] = func;
+////  }
+////};
+//
+//
+////KernelBuilder::KernelBuilder():
+////_configure_registry(KernelConfigureRegistry()),
+////_execute_registry(KernelExecuteRegistry())
+////{
+////}
+//
+////KernelBuilder::~KernelBuilder()
+////{
+////}
+////
+//void KernelBuilder::configure_kernel(std::vector<const Tensor *> &inputs,
+//                                     std::vector<Tensor *> &outputs,
+//                                     circle::BuiltinOperator opcode,
+//                                     int32_t op_index,
+//                                     luci_interpreter::CircleReader *circle_reader)
+//{
+//  auto specific_configure_func = _configure_registry.get_kernel_configure_func(opcode);
+//  if (specific_configure_func == nullptr)
+//    assert(false && "Unsupported operator");
+//
+//  specific_configure_func(inputs, outputs, op_index, circle_reader);
+//}
+//
+//void KernelBuilder::execute_kernel(std::vector<const Tensor *> &inputs,
+//                                     std::vector<Tensor *> &outputs,
+//                                     circle::BuiltinOperator opcode,
+//                                     int32_t op_index,
+//                                     luci_interpreter::CircleReader *circle_reader,
+//                                     bool is_inplace)
+//{
+//  auto specific_execute_func = _execute_registry.get_kernel_execute_func(opcode);
+//  if (specific_execute_func == nullptr)
+//    assert(false && "Unsupported operator");
+//
+//  specific_execute_func(inputs, outputs, op_index, circle_reader, is_inplace);
+//}
 
 } // namespace luci_interpreter

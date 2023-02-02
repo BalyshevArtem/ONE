@@ -26,12 +26,12 @@ namespace luci_interpreter
 
 #define REGISTER_KERNEL(builtin_operator, name)                           \
 void configure_kernel_Circle##name(                                       \
-std::vector<const Tensor *> &inputs, std::vector<Tensor *> &outputs,      \
-const uint32_t op_index, luci_interpreter::CircleReader *circle_reader);  \
+const circle::Operator *cur_op,                                                 \
+IBaseRuntimeGraph *runtime_graph);                                        \
                                                                           \
 void execute_kernel_Circle##name(                                         \
-std::vector<const Tensor *> &inputs, std::vector<Tensor *> &outputs,      \
-const uint32_t op_index, luci_interpreter::CircleReader *circle_reader, bool is_inplace);
+const circle::Operator *cur_op,                                                 \
+IBaseRuntimeGraph *runtime_graph, bool is_inplace);
 
 
 #if USE_GENERATED_LIST

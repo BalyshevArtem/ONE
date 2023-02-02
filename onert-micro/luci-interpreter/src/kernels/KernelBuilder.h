@@ -28,33 +28,86 @@
 namespace luci_interpreter
 {
 
-class KernelConfigureRegistry;
-class KernelExecuteRegistry;
-
-class KernelBuilder
+class KernelConfigureRegistry
 {
 public:
-  KernelBuilder();
+  using KernelConfigureFunc = void(const circle::Operator *,
+    IBaseRuntimeGraph *);
 
-  ~KernelBuilder();
+  KernelConfigureRegistry();
 
-
-  void configure_kernel(std::vector<const Tensor *> &inputs,
-                        std::vector<Tensor *> &output,
-                        circle::BuiltinOperator opcode, int32_t op_index,
-                        luci_interpreter::CircleReader *circle_reader);
-
-  void execute_kernel(std::vector<const Tensor *> &inputs,
-                        std::vector<Tensor *> &output,
-                        circle::BuiltinOperator opcode, int32_t op_index,
-                        luci_interpreter::CircleReader *circle_reader,
-                        bool is_inplace);
-
+  void configure_kernel(const circle::Operator *cur_op,
+                        circle::BuiltinOperator opcode,
+                        IBaseRuntimeGraph *runtime_graph);
 
 private:
-  std::unique_ptr<KernelConfigureRegistry> _configure_registry;
-  std::unique_ptr<KernelExecuteRegistry> _execute_registry;
+  std::unordered_map<int32_t, KernelConfigureFunc *> _operator_configure;
+
+private:
+  KernelConfigureFunc *get_kernel_configure_func(circle::BuiltinOperator opcode) const
+  {
+    return _operator_configure.at(size_t(opcode));
+  }
+
+  void register_kernel_configure(circle::BuiltinOperator id, KernelConfigureFunc *func)
+  {
+    _operator_configure[size_t(id)] = func;
+  }
 };
+
+class KernelExecuteRegistry
+{
+public:
+  using KernelExecuteFunc = void(const circle::Operator *, IBaseRuntimeGraph *, bool);
+
+  KernelExecuteRegistry();
+
+  void execute_kernel(const circle::Operator *cur_op,
+                      circle::BuiltinOperator opcode,
+                      IBaseRuntimeGraph *runtime_graph, bool is_inplace);
+
+private:
+  std::unordered_map<int32_t, KernelExecuteFunc *> _operator_execute;
+
+private:
+  KernelExecuteFunc *get_kernel_execute_func(circle::BuiltinOperator opcode) const
+  {
+    return _operator_execute.at(size_t(opcode));
+  }
+
+  void register_kernel_execute(circle::BuiltinOperator id, KernelExecuteFunc *func)
+  {
+    _operator_execute[size_t(id)] = func;
+  }
+};
+
+//class KernelConfigureRegistry;
+//class KernelExecuteRegistry;
+
+//class KernelBuilder
+//{
+//public:
+//  KernelBuilder() = default;
+//
+//  ~KernelBuilder();
+//
+//
+//  void configure_kernel(std::vector<const Tensor *> &inputs,
+//                        std::vector<Tensor *> &output,
+//                        circle::BuiltinOperator opcode, int32_t op_index,
+//                        luci_interpreter::CircleReader *circle_reader);
+//
+//  void execute_kernel(std::vector<const Tensor *> &inputs,
+//                        std::vector<Tensor *> &output,
+//                        circle::BuiltinOperator opcode, int32_t op_index,
+//                        luci_interpreter::CircleReader *circle_reader,
+//                        bool is_inplace);
+//
+//
+//private:
+//  KernelConfigureRegistry _configure_registry{};
+//  KernelExecuteRegistry _execute_registry{};
+//};
 
 } // namespace luci_interpreter
 

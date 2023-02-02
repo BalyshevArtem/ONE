@@ -21,7 +21,6 @@
 #include "memory_managers/MemoryManager.h"
 //#include "core/Kernel.h"
 #include "luci_interpreter/core/reader/CircleMicroReader.h"
-#include "kernels/KernelBuilder.h"
 
 #include <memory>
 #include <vector>
@@ -75,6 +74,8 @@ public:
   {
     return &_index_to_tensor;
   }
+
+  Tensor *getTensorByIndex(int32_t index);
 
   virtual void configureGraphInputs() = 0;
 

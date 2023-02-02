@@ -91,15 +91,8 @@ namespace
 //}
 //#endif
 
-void evalFloat(std::vector<const Tensor *> &inputs,
-               std::vector<Tensor *> &outputs, const uint32_t,
-               luci_interpreter::CircleReader *, bool is_inplace)
+void evalFloat(const Tensor *input, Tensor *output, bool is_inplace)
 {
-  assert(!inputs.empty());
-  const auto input = inputs.at(0);
-
-  auto output = outputs.at(0);
-
   if (is_inplace)
     output->set_data_buffer(const_cast<uint8_t *>(input->data<uint8_t>()));
 
@@ -133,14 +126,20 @@ void evalQuantized() const
 } // namespace
 
 // TODO think how remove unused param
-void configure_kernel_CircleLogistic(std::vector<const Tensor *> &inputs,
-                                     std::vector<Tensor *> &outputs, const uint32_t,
-                                     luci_interpreter::CircleReader *)
+void configure_kernel_CircleLogistic(const circle::Operator *cur_op,
+                                     IBaseRuntimeGraph *runtime_graph)
 {
-  assert(!inputs.empty());
-  const auto input = inputs.at(0);
+  const auto input_index = cur_op->inputs()->operator[](0);
+  const auto output_index = cur_op->outputs()->operator[](0);
 
-  auto output = outputs.at(0);
+  assert(input_index != -1);
+  assert(output_index != -1);
+
+  const auto input = runtime_graph->getTensorByIndex(input_index);
+  auto output = runtime_graph->getTensorByIndex(output_index);
+
+  assert(input != nullptr);
+  assert(output != nullptr);
 
   LUCI_INTERPRETER_CHECK(input->element_type() == output->element_type());
 
@@ -155,18 +154,26 @@ void configure_kernel_CircleLogistic(std::vector<const Tensor *> &inputs,
 }
 
 // TODO think how remove unused param
-void execute_kernel_CircleLogistic(std::vector<const Tensor *> &inputs,
-                                         std::vector<Tensor *> &outputs, const uint32_t op_index,
-                                         luci_interpreter::CircleReader *circle_reader,
+void execute_kernel_CircleLogistic(const circle::Operator *cur_op,
+                                   IBaseRuntimeGraph *runtime_graph,
                                    bool is_inplace)
 {
-  assert(!inputs.empty());
-  const auto input = inputs.at(0);
+  const auto input_index = cur_op->inputs()->operator[](0);
+  const auto output_index = cur_op->outputs()->operator[](0);
+
+  assert(input_index != -1);
+  assert(output_index != -1);
+
+  const auto input = runtime_graph->getTensorByIndex(input_index);
+  auto output = runtime_graph->getTensorByIndex(output_index);
+
+  assert(input != nullptr);
+  assert(output != nullptr);
 
   switch (input->element_type())
   {
     case DataType::FLOAT32:
-      evalFloat(inputs, outputs, op_index, circle_reader, is_inplace);
+      evalFloat(input, output, is_inplace);
       break;
 #ifndef DIS_QUANT
     case DataType::U8:

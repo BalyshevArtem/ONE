@@ -26,23 +26,12 @@ namespace luci_interpreter
 
 namespace
 {
-void evalFloat(std::vector<const Tensor *> &inputs, std::vector<Tensor *> &outputs,
-               const uint32_t op_index, luci_interpreter::CircleReader *circle_reader)
+void evalFloat(const Tensor *input, const Tensor *weights, const Tensor *bias, Tensor *output,
+               const circle::FullyConnectedOptions *options)
 {
-  assert(!inputs.empty());
-  const auto input = inputs.at(0);
-  const auto weights = inputs.at(1);
-  const auto bias = inputs.at(2);
-
-  auto output = outputs.at(0);
-
-  circle::OperatorT oper_t;
-  circle_reader->operators()[op_index]->UnPackTo(&oper_t);
-  const auto *options = oper_t.builtin_options.AsFullyConnectedOptions();
-
   float activation_min{};
   float activation_max{};
-  kernels::calculateActivationRange(luci_actfunc(options->fused_activation_function),
+  kernels::calculateActivationRange(luci_actfunc(options->fused_activation_function()),
                                     &activation_min, &activation_max);
 
   tflite::FullyConnectedParams params{};
@@ -128,17 +117,28 @@ void evalQuantizedS8() const
 } // namespace
 
 // TODO think how remove unused param
-void configure_kernel_CircleFullyConnected(std::vector<const Tensor *> &inputs,
-                                           std::vector<Tensor *> &outputs,
-                                           const uint32_t op_index,
-                                           luci_interpreter::CircleReader *circle_reader)
+void configure_kernel_CircleFullyConnected(const circle::Operator *cur_op,
+                                           IBaseRuntimeGraph *runtime_graph)
 {
-  assert(!inputs.empty());
-  const auto input = inputs.at(0);
-  const auto weights = inputs.at(1);
-  const auto bias = inputs.at(2);
+  const auto input_index = cur_op->inputs()->operator[](0);
+  const auto weight_index = cur_op->inputs()->operator[](1);
+  const auto bias_index = cur_op->inputs()->operator[](2);
 
-  auto output = outputs.at(0);
+  const auto output_index = cur_op->outputs()->operator[](0);
+
+  assert(input_index != -1);
+  assert(weight_index != -1);
+  assert(output_index != -1);
+
+  const auto input = runtime_graph->getTensorByIndex(input_index);
+  const auto weights = runtime_graph->getTensorByIndex(weight_index);
+  const auto bias = runtime_graph->getTensorByIndex(bias_index);
+
+  auto output = runtime_graph->getTensorByIndex(output_index);
+
+  assert(input != nullptr);
+  assert(weights != nullptr);
+  assert(output != nullptr);
 
   if (weights->element_type() == DataType::U8)
   {
@@ -177,13 +177,11 @@ void configure_kernel_CircleFullyConnected(std::vector<const Tensor *> &inputs,
   if (bias)
     LUCI_INTERPRETER_CHECK(bias->num_elements() == weights->dim(0));
 
-  // TODO: enable it only if kernel with dynamic shapes
-  circle::OperatorT oper_t;
-  circle_reader->operators()[op_index]->UnPackTo(&oper_t);
-  const auto *options = oper_t.builtin_options.AsFullyConnectedOptions();
+  const auto *options = cur_op->builtin_options_as_FullyConnectedOptions();
 
   // TODO: handle with it
-  if (!options->keep_num_dims)
+  // TODO: enable it only if kernel with dynamic shapes
+  if (!options->keep_num_dims())
   {
     // output()->resize({batch_size, num_units});
   }
@@ -198,14 +196,31 @@ void configure_kernel_CircleFullyConnected(std::vector<const Tensor *> &inputs,
 }
 
 // TODO think how remove unused param
-void execute_kernel_CircleFullyConnected(std::vector<const Tensor *> &inputs,
-                                           std::vector<Tensor *> &outputs,
-                                           const uint32_t op_index,
-                                           luci_interpreter::CircleReader *circle_reader,
-                                           bool)
+void execute_kernel_CircleFullyConnected(const circle::Operator *cur_op,
+                                         IBaseRuntimeGraph *runtime_graph,
+                                         bool)
 {
-  assert(!inputs.empty());
-  const auto input = inputs.at(0);
+  const auto input_index = cur_op->inputs()->operator[](0);
+  const auto weight_index = cur_op->inputs()->operator[](1);
+  const auto bias_index = cur_op->inputs()->operator[](2);
+
+  const auto output_index = cur_op->outputs()->operator[](0);
+
+  assert(input_index != -1);
+  assert(weight_index != -1);
+  assert(output_index != -1);
+
+  const auto input = runtime_graph->getTensorByIndex(input_index);
+  const auto weights = runtime_graph->getTensorByIndex(weight_index);
+  const auto bias = runtime_graph->getTensorByIndex(bias_index);
+
+  auto output = runtime_graph->getTensorByIndex(output_index);
+
+  assert(input != nullptr);
+  assert(weights != nullptr);
+  assert(output != nullptr);
+
+  const auto *options = cur_op->builtin_options_as_FullyConnectedOptions();
 
   switch (input->element_type())
   {
@@ -218,7 +233,7 @@ void execute_kernel_CircleFullyConnected(std::vector<const Tensor *> &inputs,
       break;
 #endif
     case DataType::FLOAT32:
-      evalFloat(inputs, outputs, op_index, circle_reader);
+      evalFloat(input, weights, bias, output, options);
       break;
     default:
       assert(false && "Unsupported type.");

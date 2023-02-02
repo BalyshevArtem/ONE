@@ -16,6 +16,7 @@
 
 #include "core/RuntimeGraph.h"
 #include "memory_managers/StaticMemoryManager.h"
+#include "kernels/KernelBuilder.h"
 
 #include <algorithm>
 #include <map>
@@ -251,57 +252,73 @@ void RuntimeGraph::configureGraphInputs()
   }
 }
 
+Tensor *IBaseRuntimeGraph::getTensorByIndex(int32_t index)
+{
+  if (index < 0)
+    return nullptr;
+
+  const auto raw_tensor = _reader->tensors()[index];
+
+  if (_index_to_tensor.find(raw_tensor) == _index_to_tensor.end())
+  {
+    assert(false && "Failed import operation input tensor");
+    return nullptr;
+  }
+
+  return _index_to_tensor.at(raw_tensor).get();
+}
+
 void RuntimeGraph::configure()
 {
-  KernelBuilder kernel_builder;
+  KernelConfigureRegistry kernel_configure;
 
   for (uint32_t i = 0; i < _reader->operators().size(); ++i)
   {
     const auto op = _reader->operators().at(i);
     assert(op != nullptr);
 
-    std::vector<const Tensor *> input_tensors(op->inputs()->size());
-    std::vector<Tensor *> output_tensors(op->outputs()->size());
+  //  std::vector<const Tensor *> input_tensors(op->inputs()->size());
+  //  std::vector<Tensor *> output_tensors(op->outputs()->size());
 
-    for (int32_t j = 0; j < op->inputs()->size(); ++j)
-    {
-      const auto input_index = op->inputs()->operator[](j);
-      if (input_index != -1)
-      {
-        const auto raw_tensor = _reader->tensors()[input_index];
+//    for (int32_t j = 0; j < op->inputs()->size(); ++j)
+//    {
+//      const auto input_index = op->inputs()->operator[](j);
+//      if (input_index != -1)
+//      {
+//        const auto raw_tensor = _reader->tensors()[input_index];
+//
+//        if (_index_to_tensor.find(raw_tensor) == _index_to_tensor.end())
+//        {
+//          assert(false && "Failed import operation input tensor");
+//          return;
+//        }
+//        auto input_tensor = _index_to_tensor.at(raw_tensor).get();
+//
+//        input_tensors.at(j) = input_tensor;
+//      }
+//      else
+//      {
+//        input_tensors.at(j) = nullptr;
+//      }
+//    }
 
-        if (_index_to_tensor.find(raw_tensor) == _index_to_tensor.end())
-        {
-          assert(false && "Failed import operation input tensor");
-          return;
-        }
-        auto input_tensor = _index_to_tensor.at(raw_tensor).get();
-
-        input_tensors.at(j) = input_tensor;
-      }
-      else
-      {
-        input_tensors.at(j) = nullptr;
-      }
-    }
-
-    for (int32_t j = 0; j < op->outputs()->size(); ++j)
-    {
-      const auto output_index = op->outputs()->operator[](j);
-      const auto raw_tensor = _reader->tensors()[output_index];
-
-      if (_index_to_tensor.find(raw_tensor) == _index_to_tensor.end())
-      {
-        assert(false && "Failed import operation output tensor");
-        return;
-      }
-      auto output_tensor = _index_to_tensor.at(raw_tensor).get();
-      output_tensors.at(j) = output_tensor;
-    }
+//    for (int32_t j = 0; j < op->outputs()->size(); ++j)
+//    {
+//      const auto output_index = op->outputs()->operator[](j);
+//      const auto raw_tensor = _reader->tensors()[output_index];
+//
+//      if (_index_to_tensor.find(raw_tensor) == _index_to_tensor.end())
+//      {
+//        assert(false && "Failed import operation output tensor");
+//        return;
+//      }
+//      auto output_tensor = _index_to_tensor.at(raw_tensor).get();
+//      output_tensors.at(j) = output_tensor;
+//    }
 
     const auto opcode = _reader->builtin_code(op);
 
-    kernel_builder.configure_kernel(input_tensors, output_tensors, opcode, i, _reader);
+    kernel_configure.configure_kernel(op, opcode, this);
   }
 
   if (not _is_valid)
@@ -315,51 +332,51 @@ void RuntimeGraph::execute()
   if (not _is_valid)
     configure();
 
-  KernelBuilder kernel_builder;
+  KernelExecuteRegistry kernel_executor;
 
   for (uint32_t i = 0; i < _reader->operators().size(); ++i)
   {
     const auto op = _reader->operators().at(i);
     assert(op != nullptr);
 
-    std::vector<const Tensor *> input_tensors(op->inputs()->size());
-    std::vector<Tensor *> output_tensors(op->outputs()->size());
-
-    for (int32_t j = 0; j < op->inputs()->size(); ++j)
-    {
-      const auto input_index = op->inputs()->operator[](j);
-      if (input_index != -1)
-      {
-        const auto raw_tensor = _reader->tensors()[input_index];
-
-        if (_index_to_tensor.find(raw_tensor) == _index_to_tensor.end())
-        {
-          assert(false && "Failed import operation input tensor");
-          return;
-        }
-        auto input_tensor = _index_to_tensor.at(raw_tensor).get();
-
-        input_tensors.at(j) = input_tensor;
-      }
-      else
-      {
-        input_tensors.at(j) = nullptr;
-      }
-    }
-
-    for (int32_t j = 0; j < op->outputs()->size(); ++j)
-    {
-      const auto output_index = op->outputs()->operator[](j);
-      const auto raw_tensor = _reader->tensors()[output_index];
-
-      if (_index_to_tensor.find(raw_tensor) == _index_to_tensor.end())
-      {
-        assert(false && "Failed import operation output tensor");
-        return;
-      }
-      auto output_tensor = _index_to_tensor.at(raw_tensor).get();
-      output_tensors.at(j) = output_tensor;
-    }
+//    std::vector<const Tensor *> input_tensors(op->inputs()->size());
+//    std::vector<Tensor *> output_tensors(op->outputs()->size());
+//
+//    for (int32_t j = 0; j < op->inputs()->size(); ++j)
+//    {
+//      const auto input_index = op->inputs()->operator[](j);
+//      if (input_index != -1)
+//      {
+//        const auto raw_tensor = _reader->tensors()[input_index];
+//
+//        if (_index_to_tensor.find(raw_tensor) == _index_to_tensor.end())
+//        {
+//          assert(false && "Failed import operation input tensor");
+//          return;
+//        }
+//        auto input_tensor = _index_to_tensor.at(raw_tensor).get();
+//
+//        input_tensors.at(j) = input_tensor;
+//      }
+//      else
+//      {
+//        input_tensors.at(j) = nullptr;
+//      }
+//    }
+//
+//    for (int32_t j = 0; j < op->outputs()->size(); ++j)
+//    {
+//      const auto output_index = op->outputs()->operator[](j);
+//      const auto raw_tensor = _reader->tensors()[output_index];
+//
+//      if (_index_to_tensor.find(raw_tensor) == _index_to_tensor.end())
+//      {
+//        assert(false && "Failed import operation output tensor");
+//        return;
+//      }
+//      auto output_tensor = _index_to_tensor.at(raw_tensor).get();
+//      output_tensors.at(j) = output_tensor;
+//    }
 
     const auto opcode = _reader->builtin_code(op);
 
@@ -370,25 +387,11 @@ void RuntimeGraph::execute()
     if (_inplace_op_indexes.find(i) != _inplace_op_indexes.end())
       is_inplace = true;
 
-    kernel_builder.execute_kernel(input_tensors, output_tensors, opcode, i, _reader, is_inplace);
+    kernel_executor.execute_kernel(op, opcode, this, is_inplace);
 
     deallocate(i);
   }
 
-
-//  for (size_t index = 0; index < _kernels.size(); ++index)
-//  {
-//    const auto &kernel = _kernels[index];
-//
-//    // TODO: add kernel->configure for methods with dynamic shapes
-//
-//    // Preallocate outputs in advance instead of relying on automatic allocation
-//    allocate(index);
-//
-//    kernel->execute();
-//
-//    deallocate(index);
-//  }
 }
 //
 // StaticRuntimeGraph
