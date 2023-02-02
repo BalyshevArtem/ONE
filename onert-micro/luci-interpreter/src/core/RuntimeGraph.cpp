@@ -15,7 +15,7 @@
  */
 
 #include "core/RuntimeGraph.h"
-#include "memory_managers/StaticMemoryManager.h"
+//#include "memory_managers/StaticMemoryManager.h"
 #include "kernels/KernelBuilder.h"
 
 #include <algorithm>
@@ -159,12 +159,14 @@ void RuntimeGraph::buildAllocDeallocPlan()
 
       const auto raw_tensor = _reader->tensors()[input_index];
 
-      assert(_index_to_tensor.find(raw_tensor) != _index_to_tensor.end());
+      //assert(_index_to_tensor.find(raw_tensor) != _index_to_tensor.end());
+      if (_index_to_tensor.find(raw_tensor) == _index_to_tensor.end())
+        continue;
 
       auto tensor = _index_to_tensor[raw_tensor].get();
 
-      auto i_1 = tensor->dim(0);
-      auto i_2 = tensor->dim(1);
+//      auto i_1 = tensor->dim(0);
+//      auto i_2 = tensor->dim(1);
 
       if (lifetimes.count(tensor) > 0)
       {
@@ -181,8 +183,8 @@ void RuntimeGraph::buildAllocDeallocPlan()
       const auto raw_tensor = _reader->tensors()[output_index];
       auto tensor = _index_to_tensor[raw_tensor].get();
 
-      auto i_1 = tensor->dim(0);
-      auto i_2 = tensor->dim(1);
+//      auto i_1 = tensor->dim(0);
+//      auto i_2 = tensor->dim(1);
 
       assert(lifetimes.count(tensor) == 0);
       if (_inplace_op_indexes.find(index) != _inplace_op_indexes.end())
@@ -266,6 +268,25 @@ Tensor *IBaseRuntimeGraph::getTensorByIndex(int32_t index)
   }
 
   return _index_to_tensor.at(raw_tensor).get();
+}
+
+uint8_t *IBaseRuntimeGraph::getDataBufferFromCircleTensor(const circle::Tensor *raw_tensor)
+{
+  if (raw_tensor == nullptr)
+    return nullptr;
+
+  auto const &buffer = wrap(_reader->buffers()[raw_tensor->buffer()]->data());
+  return const_cast<uint8_t *>(buffer.data());
+}
+
+const circle::Tensor *IBaseRuntimeGraph::getCircleTensorByIndex(int32_t index)
+{
+  if (index < 0)
+    return nullptr;
+
+  const auto raw_tensor = _reader->tensors()[index];
+
+  return raw_tensor;
 }
 
 void RuntimeGraph::configure()
@@ -393,72 +414,72 @@ void RuntimeGraph::execute()
   }
 
 }
+////
+//// StaticRuntimeGraph
+//StaticRuntimeGraph::StaticRuntimeGraph(IMemoryManager *memory_manager, CircleReader *circle_reader)
+//  : IBaseRuntimeGraph(memory_manager, circle_reader)
+//{
+//}
 //
-// StaticRuntimeGraph
-StaticRuntimeGraph::StaticRuntimeGraph(IMemoryManager *memory_manager, CircleReader *circle_reader)
-  : IBaseRuntimeGraph(memory_manager, circle_reader)
-{
-}
-
-void StaticRuntimeGraph::configureGraphInputs()
-{
-
-}
-
-StaticRuntimeGraph::~StaticRuntimeGraph()
-{
-//  // Release intermediate computing buffer.
-//  _memory_manager->release_computing_buf();
-//  _memory_manager->release_input_buf();
-//  _memory_manager->release_output_buf();
-}
-
-void StaticRuntimeGraph::configure()
-{
-//  // Allocate memory for intermediate computing buffer and for output buffer.
+//void StaticRuntimeGraph::configureGraphInputs()
+//{
 //
-//  _memory_manager->allocate_computing_buf();
-//  _memory_manager->allocate_output_buf();
+//}
 //
-//  // Set tensor's data pointer for intermediate tensors
-//  for (auto &kernel : _kernels)
-//  {
-//    const auto output_tensors = kernel->getOutputTensors();
+//StaticRuntimeGraph::~StaticRuntimeGraph()
+//{
+////  // Release intermediate computing buffer.
+////  _memory_manager->release_computing_buf();
+////  _memory_manager->release_input_buf();
+////  _memory_manager->release_output_buf();
+//}
 //
-//    for (auto tensor : output_tensors)
-//      _memory_manager->allocate_memory(*tensor);
-//  }
+//void StaticRuntimeGraph::configure()
+//{
+////  // Allocate memory for intermediate computing buffer and for output buffer.
+////
+////  _memory_manager->allocate_computing_buf();
+////  _memory_manager->allocate_output_buf();
+////
+////  // Set tensor's data pointer for intermediate tensors
+////  for (auto &kernel : _kernels)
+////  {
+////    const auto output_tensors = kernel->getOutputTensors();
+////
+////    for (auto tensor : output_tensors)
+////      _memory_manager->allocate_memory(*tensor);
+////  }
+////
+////  // Set tensor's data pointer for output tensors
+////  for (const auto output_tensor : _output_tensors)
+////    _memory_manager->allocate_memory_for_output(*output_tensor);
+////
+////  _is_valid = true;
+//}
 //
-//  // Set tensor's data pointer for output tensors
-//  for (const auto output_tensor : _output_tensors)
-//    _memory_manager->allocate_memory_for_output(*output_tensor);
+//void StaticRuntimeGraph::configure_kernels()
+//{
+////  for (auto &kernel : _kernels)
+////  {
+////    kernel->configure();
+////  }
+//}
 //
-//  _is_valid = true;
-}
-
-void StaticRuntimeGraph::configure_kernels()
-{
-//  for (auto &kernel : _kernels)
-//  {
-//    kernel->configure();
-//  }
-}
-
-void StaticRuntimeGraph::execute()
-{
-//  if (not _is_valid)
-//    configure();
-//
-//  for (auto &kernel : _kernels)
-//  {
-//    // TODO: add kernel->configure for methods with dynamic shapes
-//    kernel->execute();
-//  }
-//
-//  // Release intermediate computing buffer.
-//  _memory_manager->release_computing_buf();
-//
-//  _is_valid = false;
-}
+//void StaticRuntimeGraph::execute()
+//{
+////  if (not _is_valid)
+////    configure();
+////
+////  for (auto &kernel : _kernels)
+////  {
+////    // TODO: add kernel->configure for methods with dynamic shapes
+////    kernel->execute();
+////  }
+////
+////  // Release intermediate computing buffer.
+////  _memory_manager->release_computing_buf();
+////
+////  _is_valid = false;
+//}
 
 } // namespace luci_interpreter

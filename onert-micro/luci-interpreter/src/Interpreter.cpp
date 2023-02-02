@@ -16,7 +16,7 @@
 
 #include "luci_interpreter/Interpreter.h"
 #include "memory_managers/SimpleMemoryManager.h"
-#include "memory_managers/StaticMemoryManager.h"
+//#include "memory_managers/StaticMemoryManager.h"
 
 #include "loader/ModuleLoader.h"
 
@@ -44,15 +44,15 @@ Interpreter::Interpreter(const char *model_data_raw, const InterpreterConfigure 
   // Note:
   // configuration._input_buf_size, configuration._temp_buf_size, configuration._output_buf_size
   // will be removed and will be read from circle file
-  if (configuration.isStaticManager())
-  {
-    _memory_manager = std::make_unique<StaticMemoryManager>(
-      configuration._input_buf_size, configuration._temp_buf_size, configuration._output_buf_size);
-  }
-  else
-  {
-    _memory_manager = std::make_unique<SimpleMemoryManager>();
-  }
+//  if (configuration.isStaticManager())
+//  {
+//    _memory_manager = std::make_unique<StaticMemoryManager>(
+//      configuration._input_buf_size, configuration._temp_buf_size, configuration._output_buf_size);
+//  }
+//  else
+//  {
+//    _memory_manager = std::make_unique<SimpleMemoryManager>();
+//  }
 
   _memory_manager->is_allocate_input(configuration.getAllocateInputValue());
 

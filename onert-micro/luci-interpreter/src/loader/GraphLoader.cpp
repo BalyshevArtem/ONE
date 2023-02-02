@@ -136,20 +136,23 @@ void GraphLoader::loadTensors(CircleReader *reader, IBaseRuntimeGraph *runtime_g
     if (size == 0)
       continue;
 
+    if (not buffer.empty())
+    {
+      continue;
+      //auto data_ptr = const_cast<unsigned char *>(buffer.data());
+
+      // Let's set allocatabe to false due to it is constant
+      //  tensor->set_allocatable(false);
+
+      // Save pointer to data
+      // tensor->writeDataWithoutCopy(static_cast<void *>(data_ptr));
+    }
+
     // Get pointer to data from buffer
     auto tensor = std::make_unique<Tensor>(raw_tensor);
 #endif
 
-    if (not buffer.empty())
-    {
-      auto data_ptr = const_cast<unsigned char *>(buffer.data());
 
-      // Let's set allocatabe to false due to it is constant
-      tensor->set_allocatable(false);
-
-      // Save pointer to data
-      tensor->writeDataWithoutCopy(static_cast<void *>(data_ptr));
-    }
 
     // TODO think maybe move _index_to_tensor to RUntimeGraph
     //index_to_tensor->emplace(raw_tensor, tensor.get());
@@ -272,8 +275,9 @@ void GraphLoader::loadOperators(CircleReader *reader, IBaseRuntimeGraph *runtime
         const auto raw_tensor = reader->tensors()[input_index];
         if (index_to_tensor->find(raw_tensor) == index_to_tensor->end())
         {
-          assert(false && "Failed import operation input tensor");
-          return;
+          //assert(false && "Failed import operation input tensor");
+          //return;
+          continue;
         }
         auto *input_tensor = index_to_tensor->at(raw_tensor).get();
        // input_tensors.at(j) = input_tensor;

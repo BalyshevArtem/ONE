@@ -21,10 +21,10 @@ namespace luci_interpreter
 
 void SimpleMemoryManager::allocate_memory(luci_interpreter::Tensor &tensor)
 {
-  if (!tensor.is_allocatable())
-  {
-    return;
-  }
+//  if (!tensor.is_allocatable())
+//  {
+//    return;
+//  }
   if (tensor.is_data_allocated())
   {
     release_memory(tensor);
@@ -38,10 +38,10 @@ void SimpleMemoryManager::allocate_memory(luci_interpreter::Tensor &tensor)
 
 void SimpleMemoryManager::release_memory(luci_interpreter::Tensor &tensor)
 {
-  if (!tensor.is_allocatable())
-  {
-    return;
-  }
+//  if (!tensor.is_allocatable())
+//  {
+//    return;
+//  }
 
   if (!tensor.is_data_allocated())
   {

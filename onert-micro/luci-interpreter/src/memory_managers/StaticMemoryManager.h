@@ -16,74 +16,74 @@
 
 #ifndef LUCI_INTERPRETER_STATIC_MEMORY_MANAGER_H
 #define LUCI_INTERPRETER_STATIC_MEMORY_MANAGER_H
-
-#include "MemoryManager.h"
-
-#include <cassert>
-
-namespace luci_interpreter
-{
-
-// Used for allocations in static buffer, using offsets defined in luci model.
-class StaticMemoryManager : public IMemoryManager
-{
-public:
-  StaticMemoryManager() = delete;
-
-  // To initialize static memory manager with precalculating required buffers size for input,
-  // output and for intermediate computations buffers.
-  // Using Static Memory Manager with common buffer for input, output, and for intermediate
-  // computations
-  // TODO remove this *_req_size to read it from circle file
-  explicit StaticMemoryManager(int32_t input_req_size, int32_t buffer_req_size,
-                               int32_t output_req_size)
-    : _input_buffer_ptr(nullptr), _buffer_ptr(nullptr), _output_buffer_ptr(nullptr),
-      _input_req_size(input_req_size), _buffer_req_size(buffer_req_size),
-      _output_req_size(output_req_size)
-  { /* Do nothing */
-  }
-
-  // To set a pointer for tensor in _buffer_ptr with right offset
-  void allocate_memory(luci_interpreter::Tensor &tensor) final;
-  // To set tensor data pointer to nullptr
-  void release_memory(luci_interpreter::Tensor &tensor) final;
-
-  // To set a pointer for tensor in input_buffer with right offset
-  void allocate_memory_for_input(luci_interpreter::Tensor &tensor) final;
-  // To set a pointer for tensor in output_buffer with right offset
-  void allocate_memory_for_output(luci_interpreter::Tensor &tensor) final;
-
-  // Methods to set data pointer for tensor
-  // To allocate input memory buffer with _input_req_size * size_type bytes. Result pointer -
-  // _input_buffer_ptr
-  void allocate_input_buf() final;
-  // To allocate input memory buffer with _output_req_size * size_type bytes. Result pointer -
-  // _output_buffer_ptr
-  void allocate_output_buf() final;
-  // To allocate intermediate computing memory buffer with _buffer_req_size * size_type bytes.
-  // Result pointer - _buffer_ptr
-  void allocate_computing_buf() final;
-
-  // To delete memory for intermediate computing buffer
-  void release_computing_buf() final;
-  // To delete memory for input buffer
-  void release_input_buf() final;
-  // To delete memory for output buffer
-  void release_output_buf() final;
-
-private:
-  void base_allocate_memory(luci_interpreter::Tensor &tensor, uint8_t *buffer_ptr);
-
-  // Stores a pointer to the beginning of the allocated memory buffer.
-  uint8_t *_buffer_ptr;
-  uint8_t *_input_buffer_ptr;
-  uint8_t *_output_buffer_ptr;
-
-  // TODO remove this fields to read it from circle file
-  int32_t _input_req_size{};
-  int32_t _buffer_req_size{};
-  int32_t _output_req_size{};
-};
+//
+//#include "MemoryManager.h"
+//
+//#include <cassert>
+//
+//namespace luci_interpreter
+//{
+//
+//// Used for allocations in static buffer, using offsets defined in luci model.
+//class StaticMemoryManager : public IMemoryManager
+//{
+//public:
+//  StaticMemoryManager() = delete;
+//
+//  // To initialize static memory manager with precalculating required buffers size for input,
+//  // output and for intermediate computations buffers.
+//  // Using Static Memory Manager with common buffer for input, output, and for intermediate
+//  // computations
+//  // TODO remove this *_req_size to read it from circle file
+//  explicit StaticMemoryManager(int32_t input_req_size, int32_t buffer_req_size,
+//                               int32_t output_req_size)
+//    : _input_buffer_ptr(nullptr), _buffer_ptr(nullptr), _output_buffer_ptr(nullptr),
+//      _input_req_size(input_req_size), _buffer_req_size(buffer_req_size),
+//      _output_req_size(output_req_size)
+//  { /* Do nothing */
+//  }
+//
+//  // To set a pointer for tensor in _buffer_ptr with right offset
+//  void allocate_memory(luci_interpreter::Tensor &tensor) final;
+//  // To set tensor data pointer to nullptr
+//  void release_memory(luci_interpreter::Tensor &tensor) final;
+//
+//  // To set a pointer for tensor in input_buffer with right offset
+//  void allocate_memory_for_input(luci_interpreter::Tensor &tensor) final;
+//  // To set a pointer for tensor in output_buffer with right offset
+//  void allocate_memory_for_output(luci_interpreter::Tensor &tensor) final;
+//
+//  // Methods to set data pointer for tensor
+//  // To allocate input memory buffer with _input_req_size * size_type bytes. Result pointer -
+//  // _input_buffer_ptr
+//  void allocate_input_buf() final;
+//  // To allocate input memory buffer with _output_req_size * size_type bytes. Result pointer -
+//  // _output_buffer_ptr
+//  void allocate_output_buf() final;
+//  // To allocate intermediate computing memory buffer with _buffer_req_size * size_type bytes.
+//  // Result pointer - _buffer_ptr
+//  void allocate_computing_buf() final;
+//
+//  // To delete memory for intermediate computing buffer
+//  void release_computing_buf() final;
+//  // To delete memory for input buffer
+//  void release_input_buf() final;
+//  // To delete memory for output buffer
+//  void release_output_buf() final;
+//
+//private:
+//  void base_allocate_memory(luci_interpreter::Tensor &tensor, uint8_t *buffer_ptr);
+//
+//  // Stores a pointer to the beginning of the allocated memory buffer.
+//  uint8_t *_buffer_ptr;
+//  uint8_t *_input_buffer_ptr;
+//  uint8_t *_output_buffer_ptr;
+//
+//  // TODO remove this fields to read it from circle file
+//  int32_t _input_req_size{};
+//  int32_t _buffer_req_size{};
+//  int32_t _output_req_size{};
+//};
 
 } // namespace luci_interpreter
 

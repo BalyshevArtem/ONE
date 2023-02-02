@@ -75,7 +75,11 @@ public:
     return &_index_to_tensor;
   }
 
+  const circle::Tensor *getCircleTensorByIndex(int32_t index);
+
   Tensor *getTensorByIndex(int32_t index);
+
+  uint8_t *getDataBufferFromCircleTensor(const circle::Tensor *raw_tensor);
 
   virtual void configureGraphInputs() = 0;
 
@@ -144,18 +148,18 @@ private:
   std::vector<std::vector<Tensor *>> _dealloc_plan;
 };
 
-class StaticRuntimeGraph final : public IBaseRuntimeGraph
-{
-public:
-  explicit StaticRuntimeGraph(IMemoryManager *memory_manager, CircleReader *circle_reader);
-  ~StaticRuntimeGraph() final;
-
-  void configureGraphInputs() final;
-  void execute() final;
-  void configure() final;
-
-  void configure_kernels() final;
-};
+//class StaticRuntimeGraph final : public IBaseRuntimeGraph
+//{
+//public:
+//  explicit StaticRuntimeGraph(IMemoryManager *memory_manager, CircleReader *circle_reader);
+//  ~StaticRuntimeGraph() final;
+//
+//  void configureGraphInputs() final;
+//  void execute() final;
+//  void configure() final;
+//
+//  void configure_kernels() final;
+//};
 
 } // namespace luci_interpreter
 

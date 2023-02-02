@@ -38,38 +38,40 @@ void ModuleLoader::load(RuntimeModule *runtime_module,
   if (!reader.parse(model))
     assert(false && "Error during parse");
 
-  for (size_t i = 0; i < reader.num_subgraph(); ++i)
-  {
-    runtime_module->addGraph(memory_manager, use_static_memory_manager);
-  }
+  assert(reader.num_subgraph() == 1);
 
-  for (size_t i = 0; i < reader.num_subgraph(); ++i)
-  {
-    if (!reader.select_subgraph(i))
+//  for (size_t i = 0; i < reader.num_subgraph(); ++i)
+//  {
+  runtime_module->addGraph(memory_manager, use_static_memory_manager);
+//  }
+
+  //for (size_t i = 0; i < reader.num_subgraph(); ++i)
+  //{
+    if (!reader.select_subgraph(0))
       assert(false && "Error during select subgraph");
-    IBaseRuntimeGraph *runtime_graph = runtime_module->getRuntimeGraphAt(i); //_runtime_graphs.at(i);
+    IBaseRuntimeGraph *runtime_graph = runtime_module->getMainGraph(); //_runtime_graphs.at(i);
    // GraphLoader loader(&reader, runtime_graph, memory_manager);//, &_index_to_tensor);
 
-   GraphLoader::loadTensors(&reader, runtime_graph, use_static_memory_manager);
+    GraphLoader::loadTensors(&reader, runtime_graph, use_static_memory_manager);
    // loader.initInputOutputTensors(use_static_memory_manager);
-   GraphLoader::loadOperators(&reader, runtime_graph, use_static_memory_manager);
-  }
+    GraphLoader::loadOperators(&reader, runtime_graph, use_static_memory_manager);
+  //}
 
   // For Dynamic Memory manager we build memory allocate/deallocate plan and then configure kernels.
   // For Static Memory manager we only configure kernels.
   if (not use_static_memory_manager)
   {
     // Dynamic memory manager case
-    IBaseRuntimeGraph *runtime_graph = runtime_module->getMainGraph();
+    //RuntimeGraph *runtime_graph = runtime_module->getMainGraph();
 
-    if (memory_manager->is_allocate_input())
-      runtime_graph->configureGraphInputs();
-
-    for (size_t i = 0; i < reader.num_subgraph(); ++i)
-    {
-      runtime_graph = runtime_module->getRuntimeGraphAt(i);
+   // for (size_t i = 0; i < reader.num_subgraph(); ++i)
+    //{
+    //  runtime_graph = runtime_module->getRuntimeGraphAt(i);
       runtime_graph->configure();
-    }
+
+      if (memory_manager->is_allocate_input())
+        runtime_graph->configureGraphInputs();
+   // }
   }
   else
   {

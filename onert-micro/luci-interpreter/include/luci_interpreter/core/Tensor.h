@@ -182,9 +182,9 @@ public:
     _data = buffer;
   }
 
-  bool is_allocatable() const { return _is_allocatable; }
+//  bool is_allocatable() const { return _is_allocatable; }
 
-  void set_allocatable(bool value) { _is_allocatable = value; }
+//  void set_allocatable(bool value) { _is_allocatable = value; }
 
   bool is_data_allocated() const { return _data != nullptr; }
 
@@ -201,7 +201,7 @@ private:
   // Memory manager is called for tensor only if it is "allocatable".
   // Kernel configuration could disable allocation of some tensors if they are not needed for
   // particular operation.
-  bool _is_allocatable = true;
+ // bool _is_allocatable = true;
   //uint32_t _offset = 0;
   const circle::Tensor *_raw_tensor;
 };

@@ -32,24 +32,25 @@ class RuntimeModule
 public:
   RuntimeModule() = default;
 
-  IBaseRuntimeGraph *addGraph(IMemoryManager *memory_manager, bool use_static_allocations)
+  RuntimeGraph *addGraph(IMemoryManager *memory_manager, bool use_static_allocations)
   {
-    if (use_static_allocations)
-      _graphs.push_back(std::make_unique<StaticRuntimeGraph>(memory_manager, &_circle_reader));
-    else
-      _graphs.push_back(std::make_unique<RuntimeGraph>(memory_manager, &_circle_reader));
-    return _graphs.back().get();
+//    if (use_static_allocations)
+//      _graphs.push_back(std::make_unique<StaticRuntimeGraph>(memory_manager, &_circle_reader));
+//    else
+//      _graphs.emplace_back(memory_manager, &_circle_reader);
+//    return &_graphs.back();
+    _graphs = std::make_unique<RuntimeGraph>(memory_manager, &_circle_reader);
   }
 
-  IBaseRuntimeGraph *getRuntimeGraphAt(uint32_t pos)
-  {
-    return _graphs.at(pos).get();
-  }
+//  RuntimeGraph *getRuntimeGraphAt(uint32_t pos)
+//  {
+//    return &_graphs.at(pos);
+//  }
 
-  std::vector<Tensor *> getInputTensors() const { return getMainGraph()->getInputTensors(); }
+  std::vector<Tensor *> getInputTensors() const { return _graphs->getInputTensors(); }
   std::vector<Tensor *> getOutputTensors() const
   {
-    return getMainGraph()->getOutputTensors();
+    return _graphs->getOutputTensors();
   }
 
   void execute() const { getMainGraph()->execute(); }
@@ -59,11 +60,11 @@ public:
     return _circle_reader;
   }
 
-  IBaseRuntimeGraph *getMainGraph() const { return _graphs[0].get(); }
+  IBaseRuntimeGraph *getMainGraph() const { return _graphs.get(); }
 
 private:
 
-  std::vector<std::unique_ptr<IBaseRuntimeGraph>> _graphs;
+  std::unique_ptr<RuntimeGraph> _graphs;
 
   CircleReader _circle_reader;
 };

@@ -29,7 +29,7 @@ Tensor::Tensor(DataType element_type, Shape shape, AffineQuantization *quantizat
 #else
 
 Tensor::Tensor(const circle::Tensor *raw_tensor)
-  : _raw_tensor(raw_tensor), _is_allocatable(true), _data(nullptr)
+  : _raw_tensor(raw_tensor), _data(nullptr)
 {
   // Do nothing
 }
