@@ -27,14 +27,14 @@ namespace luci_interpreter
 // IBaseRuntimeGraph
 IBaseRuntimeGraph::IBaseRuntimeGraph(IMemoryManager *memory_manager, CircleReader *circle_reader)
   : _memory_manager(memory_manager),
-    _index_to_tensor(std::unordered_map<const circle::Tensor *, std::unique_ptr<Tensor>>{}),
+    _index_to_tensor(std::unordered_map<const circle::Tensor *, uint8_t *>{}),
     _reader(circle_reader), _inplace_op_indexes(std::unordered_set<uint32_t>{})
 {
 }
 
-std::vector<Tensor *> IBaseRuntimeGraph::getOutputTensors() const
+std::vector<const circle::Tensor *> IBaseRuntimeGraph::getOutputTensors() const
 {
-  std::vector<Tensor *> output_tensors;
+  std::vector<const circle::Tensor *> output_tensors;
 
   for (const auto output_ind : _reader->outputs())
   {
@@ -44,30 +44,27 @@ std::vector<Tensor *> IBaseRuntimeGraph::getOutputTensors() const
       assert(false && "Failed import graph input tensor");
     }
 
-    auto tensor_interpreter = _index_to_tensor.at(raw_tensor).get();
 
-    output_tensors.push_back(tensor_interpreter);
+    output_tensors.push_back(raw_tensor);
   }
   assert(!output_tensors.empty());
 
   return output_tensors;
 }
 
-std::vector<Tensor *> IBaseRuntimeGraph::getInputTensors() const
+std::vector<const circle::Tensor *> IBaseRuntimeGraph::getInputTensors() const
 {
-  std::vector<Tensor *> input_tensors;
+  std::vector<const circle::Tensor *> input_tensors;
 
   for (const auto input_ind : _reader->inputs())
   {
     const auto raw_tensor = _reader->tensors()[input_ind];
-    if (_index_to_tensor.find(raw_tensor) == _index_to_tensor.end())
-    {
-      assert(false && "Failed import graph input tensor");
-    }
+//    if (_index_to_tensor.find(raw_tensor) == _index_to_tensor.end())
+//    {
+//      assert(false && "Failed import graph input tensor");
+//    }
 
-    auto tensor_interpreter = _index_to_tensor.at(raw_tensor).get();
-
-    input_tensors.push_back(tensor_interpreter);
+    input_tensors.push_back(raw_tensor);
   }
   assert(!input_tensors.empty());
 
@@ -76,12 +73,12 @@ std::vector<Tensor *> IBaseRuntimeGraph::getInputTensors() const
 
 Tensor *IBaseRuntimeGraph::addTensor(const circle::Tensor *raw_tensor, std::unique_ptr<Tensor> &&tensor)
 {
-  assert(raw_tensor != nullptr);
-  assert(tensor != nullptr);
-  //_tensors.push_back(std::move(tensor));
-  //return _tensors.back().get();
-  _index_to_tensor[raw_tensor] = std::move(tensor);
-  return _index_to_tensor[raw_tensor].get();
+//  assert(raw_tensor != nullptr);
+//  assert(tensor != nullptr);
+//  //_tensors.push_back(std::move(tensor));
+//  //return _tensors.back().get();
+//  _index_to_tensor[raw_tensor] = std::move(tensor);
+//  return _index_to_tensor[raw_tensor].get();
 }
 
 #ifndef DIS_QUANT
@@ -112,10 +109,13 @@ void IBaseRuntimeGraph::addIntermediateTensorAffineQuantization(
 //  _output_tensors.at(pos) = output_tensor;
 //}
 
-void IBaseRuntimeGraph::configureAllocations(Tensor *tensor)
-{
-  _memory_manager->allocate_memory(*tensor);
-}
+//void IBaseRuntimeGraph::configureAllocations(circle::Tensor *tensor)
+//{
+//  assert(_index_to_tensor.find(tensor) == _index_to_tensor.end());
+//  auto *data = _memory_manager->allocate_memory(*tensor);
+//  _index_to_tensor[tensor] = data;
+//  _memory_manager->allocate_memory(*tensor);
+//}
 
 //void IBaseRuntimeGraph::addKernel(std::unique_ptr<Kernel> &&kernel)
 //{
@@ -133,9 +133,9 @@ RuntimeGraph::~RuntimeGraph()
 {
   for (auto &idx_to_tensor : _index_to_tensor)
   {
-    const auto tensor = idx_to_tensor.second.get();
-    if (tensor->is_data_allocated())
-      _memory_manager->release_memory(*tensor);
+    auto *data = idx_to_tensor.second;
+
+    _memory_manager->release_memory(data);
   }
 }
 
@@ -143,8 +143,29 @@ void RuntimeGraph::buildAllocDeallocPlan()
 {
   invalidate();
   using Lifetime = std::pair<size_t, size_t>;
-  std::map<Tensor *, Lifetime> lifetimes;
+  std::map<const circle::Tensor *, Lifetime> lifetimes;
   const size_t num_kernels = _reader->operators().size(); //_kernels.size();
+
+  for (const auto input_ind : _reader->inputs())
+  {
+    const auto raw_tensor = _reader->tensors()[input_ind];
+//    if (_index_to_tensor.find(raw_tensor) == _index_to_tensor.end())
+//    {
+//      assert(false && "Failed import graph input tensor");
+//    }
+
+    //auto tensor = _index_to_tensor.at(raw_tensor).get();
+
+
+    //lifetimes.at(raw_tensor).second = num_kernels;
+
+    assert(lifetimes.count(raw_tensor) == 0);
+   // if (_inplace_op_indexes.find(input_ind) != _inplace_op_indexes.end())
+      lifetimes[raw_tensor] = Lifetime(-1, 0);
+    //else
+    //  lifetimes[raw_tensor] = Lifetime(index, index);
+  }
+
   for (int32_t index = 0; index < num_kernels; ++index)
   {
     const auto kernel = _reader->operators().at(index);
@@ -159,21 +180,24 @@ void RuntimeGraph::buildAllocDeallocPlan()
 
       const auto raw_tensor = _reader->tensors()[input_index];
 
-      //assert(_index_to_tensor.find(raw_tensor) != _index_to_tensor.end());
-      if (_index_to_tensor.find(raw_tensor) == _index_to_tensor.end())
+      auto const &buffer = wrap(_reader->buffers()[raw_tensor->buffer()]->data());
+      if (not buffer.empty())
+      {
+        // unknown shape tensor and scalar tensor
         continue;
+      }
 
-      auto tensor = _index_to_tensor[raw_tensor].get();
+     // auto tensor = _index_to_tensor[raw_tensor].get();
 
 //      auto i_1 = tensor->dim(0);
 //      auto i_2 = tensor->dim(1);
 
-      if (lifetimes.count(tensor) > 0)
+      if (lifetimes.count(raw_tensor) > 0)
       {
         if (_inplace_op_indexes.find(index) != _inplace_op_indexes.end())
-          lifetimes.at(tensor).second = -1;
+          lifetimes.at(raw_tensor).second = -1;
         else
-          lifetimes.at(tensor).second = index;
+          lifetimes.at(raw_tensor).second = index;
       }
     }
 
@@ -181,35 +205,35 @@ void RuntimeGraph::buildAllocDeallocPlan()
     {
       const auto output_index = kernel->outputs()->operator[](j);
       const auto raw_tensor = _reader->tensors()[output_index];
-      auto tensor = _index_to_tensor[raw_tensor].get();
+     // auto tensor = _index_to_tensor[raw_tensor].get();
 
 //      auto i_1 = tensor->dim(0);
 //      auto i_2 = tensor->dim(1);
 
-      assert(lifetimes.count(tensor) == 0);
+      assert(lifetimes.count(raw_tensor) == 0);
       if (_inplace_op_indexes.find(index) != _inplace_op_indexes.end())
-        lifetimes[tensor] = Lifetime(-1, index);
+        lifetimes[raw_tensor] = Lifetime(-1, index);
       else
-        lifetimes[tensor] = Lifetime(index, index);
+        lifetimes[raw_tensor] = Lifetime(index, index);
     }
   }
 
   for (const auto output_ind : _reader->outputs())
   {
     const auto raw_tensor = _reader->tensors()[output_ind];
-    if (_index_to_tensor.find(raw_tensor) == _index_to_tensor.end())
-    {
-      assert(false && "Failed import graph input tensor");
-    }
+//    if (_index_to_tensor.find(raw_tensor) == _index_to_tensor.end())
+//    {
+//      assert(false && "Failed import graph input tensor");
+//    }
 
-    auto tensor = _index_to_tensor.at(raw_tensor).get();
+    //auto tensor = _index_to_tensor.at(raw_tensor).get();
 
-    if (lifetimes.count(tensor) > 0)
-      lifetimes.at(tensor).second = num_kernels;
+    if (lifetimes.count(raw_tensor) > 0)
+      lifetimes.at(raw_tensor).second = num_kernels;
   }
   //
-  _alloc_plan.assign(num_kernels, std::vector<Tensor *>());
-  _dealloc_plan.assign(num_kernels + 1, std::vector<Tensor *>());
+  _alloc_plan.assign(num_kernels, std::vector<const circle::Tensor *>());
+  _dealloc_plan.assign(num_kernels + 1, std::vector<const circle::Tensor *>());
   for (const auto &item : lifetimes)
   {
     if (item.second.first != -1)
@@ -220,21 +244,32 @@ void RuntimeGraph::buildAllocDeallocPlan()
   _is_valid = true;
 }
 
-void RuntimeGraph::allocate(size_t kernel_index) const
+void RuntimeGraph::allocate(size_t kernel_index)
 {
   assert(_is_valid && kernel_index < _alloc_plan.size());
-  for (Tensor *tensor : _alloc_plan[kernel_index])
+  for (const circle::Tensor *tensor : _alloc_plan[kernel_index])
   {
-    _memory_manager->allocate_memory(*tensor);
+    //assert(_index_to_tensor.find(tensor) == _index_to_tensor.end());
+    if (_index_to_tensor.find(tensor) != _index_to_tensor.end())
+    {
+      auto *data = _index_to_tensor.at(tensor);
+      _memory_manager->release_memory(data);
+    }
+    auto *data = _memory_manager->allocate_memory(*tensor);
+    _index_to_tensor[tensor] = data;
   }
 }
 
-void RuntimeGraph::deallocate(size_t kernel_index) const
+void RuntimeGraph::deallocate(size_t kernel_index)
 {
   assert(_is_valid && kernel_index < _dealloc_plan.size());
-  for (Tensor *tensor : _dealloc_plan[kernel_index])
+  for (const circle::Tensor *tensor : _dealloc_plan[kernel_index])
   {
-    _memory_manager->release_memory(*tensor);
+    auto it = _index_to_tensor.find(tensor);
+    assert(it != _index_to_tensor.end());
+    auto *data = _index_to_tensor.at(tensor);
+    _memory_manager->release_memory(data);
+    _index_to_tensor.erase(it);
   }
 }
 
@@ -243,31 +278,62 @@ void RuntimeGraph::configureGraphInputs()
   for (const auto input_ind : _reader->inputs())
   {
     const auto raw_tensor = _reader->tensors()[input_ind];
-    if (_index_to_tensor.find(raw_tensor) == _index_to_tensor.end())
+
+    if (_index_to_tensor.find(raw_tensor) != _index_to_tensor.end())
     {
-      assert(false && "Failed import graph input tensor");
+      auto *data = _index_to_tensor.at(raw_tensor);
+      _memory_manager->release_memory(data);
     }
 
-    auto *tensor_interpreter = _index_to_tensor.at(raw_tensor).get();
+    //auto *tensor_interpreter = _index_to_tensor.at(raw_tensor).get();
 
-    _memory_manager->allocate_memory(*tensor_interpreter);
+    auto *data = _memory_manager->allocate_memory(*raw_tensor);
+
+    _index_to_tensor[raw_tensor] = data;
   }
 }
-
-Tensor *IBaseRuntimeGraph::getTensorByIndex(int32_t index)
+uint8_t *IBaseRuntimeGraph::getDataByCircleTensor(const circle::Tensor *raw_tensor)
 {
-  if (index < 0)
+  if (raw_tensor == nullptr)
     return nullptr;
-
-  const auto raw_tensor = _reader->tensors()[index];
 
   if (_index_to_tensor.find(raw_tensor) == _index_to_tensor.end())
   {
-    assert(false && "Failed import operation input tensor");
+    //assert(false && "Failed import operation input tensor");
     return nullptr;
   }
 
-  return _index_to_tensor.at(raw_tensor).get();
+  return _index_to_tensor.at(raw_tensor);
+}
+
+//void IBaseRuntimeGraph::setDataByCircleTensor(const circle::Tensor *raw_tensor, uint8_t *data)
+//{
+//  if (raw_tensor == nullptr)
+//    assert(false && "Failed import operation input tensor");
+//
+//  if (_index_to_tensor.find(raw_tensor) == _index_to_tensor.end())
+//    assert(false && "Failed import operation input tensor");
+//
+//  _index_to_tensor.at(raw_tensor);
+//}
+
+void IBaseRuntimeGraph::setNullDataByCircleTensor(const circle::Tensor *raw_tensor, const circle::Tensor *output_tensor)
+{
+  if (raw_tensor == nullptr)
+    return;
+
+
+  auto it = _index_to_tensor.find(raw_tensor);
+  if (_index_to_tensor.find(raw_tensor) == _index_to_tensor.end())
+  {
+    assert(false && "Failed import operation input tensor");
+    return;
+  }
+  auto *data = _index_to_tensor[raw_tensor];
+  //return _index_to_tensor.at(raw_tensor);
+  _index_to_tensor[raw_tensor] = nullptr;
+  _index_to_tensor.erase(it);
+  _index_to_tensor[output_tensor] = data;
 }
 
 uint8_t *IBaseRuntimeGraph::getDataBufferFromCircleTensor(const circle::Tensor *raw_tensor)
@@ -353,6 +419,7 @@ void RuntimeGraph::execute()
   if (not _is_valid)
     configure();
 
+
   KernelExecuteRegistry kernel_executor;
 
   for (uint32_t i = 0; i < _reader->operators().size(); ++i)
@@ -414,6 +481,10 @@ void RuntimeGraph::execute()
   }
 
 }
+
+
+
+
 ////
 //// StaticRuntimeGraph
 //StaticRuntimeGraph::StaticRuntimeGraph(IMemoryManager *memory_manager, CircleReader *circle_reader)

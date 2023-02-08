@@ -40,6 +40,7 @@ public:
 //      _graphs.emplace_back(memory_manager, &_circle_reader);
 //    return &_graphs.back();
     _graphs = std::make_unique<RuntimeGraph>(memory_manager, &_circle_reader);
+    return _graphs.get();
   }
 
 //  RuntimeGraph *getRuntimeGraphAt(uint32_t pos)
@@ -47,8 +48,8 @@ public:
 //    return &_graphs.at(pos);
 //  }
 
-  std::vector<Tensor *> getInputTensors() const { return _graphs->getInputTensors(); }
-  std::vector<Tensor *> getOutputTensors() const
+  std::vector<const circle::Tensor *> getInputTensors() const { return _graphs->getInputTensors(); }
+  std::vector<const circle::Tensor *> getOutputTensors() const
   {
     return _graphs->getOutputTensors();
   }

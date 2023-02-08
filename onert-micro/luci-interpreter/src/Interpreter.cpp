@@ -68,29 +68,44 @@ Interpreter::~Interpreter() = default;
 
 void Interpreter::interpret() { _runtime_module->execute(); }
 
-std::vector<Tensor *> Interpreter::getInputTensors() { return _runtime_module->getInputTensors(); }
+std::vector<const circle::Tensor *> Interpreter::getInputTensors() { return _runtime_module->getInputTensors(); }
 
-std::vector<Tensor *> Interpreter::getOutputTensors()
+std::vector<const circle::Tensor *> Interpreter::getOutputTensors()
 {
   return _runtime_module->getOutputTensors();
 }
 
-void Interpreter::writeInputTensor(Tensor *input_tensor, const void *data, size_t data_size)
+void Interpreter::writeInputTensor(const circle::Tensor *input_tensor, const uint8_t *data, size_t data_size)
 {
-  if (data != nullptr)
-    input_tensor->writeData(data, data_size);
+  auto *runtime_graph = _runtime_module->getMainGraph();
+  runtime_graph->configureGraphInputs();
+
+  auto *data_ptr = runtime_graph->getDataByCircleTensor(input_tensor);
+
+  std::memcpy(data_ptr, data, data_size);
+
+//  if (data != nullptr)
+//    input_tensor->writeData(data, data_size);
 }
 
-void Interpreter::writeInputTensorWithoutCopy(Tensor *input_tensor, const void *data)
+void Interpreter::writeInputTensorWithoutCopy(const circle::Tensor *input_tensor, const uint8_t *data)
 {
-  if (data != nullptr)
-    input_tensor->writeDataWithoutCopy(const_cast<void *>(data));
+  auto *runtime_graph = _runtime_module->getMainGraph();
+  runtime_graph->configureGraphInputs();
+//  if (data != nullptr)
+//    input_tensor->writeDataWithoutCopy(const_cast<void *>(data));
 }
 
-void Interpreter::readOutputTensor(const Tensor *output_tensor, void *data, size_t data_size)
+void Interpreter::readOutputTensor(const circle::Tensor *output_tensor, uint8_t *data, size_t data_size)
 {
-  if (data != nullptr)
-    output_tensor->readData(data, data_size);
+  auto *runtime_graph = _runtime_module->getMainGraph();
+
+  auto *data_ptr = runtime_graph->getDataByCircleTensor(output_tensor);
+
+  std::memcpy(data, data_ptr, data_size);
+
+//  if (data != nullptr)
+//    output_tensor->readData(data, data_size);
 }
 
 } // namespace luci_interpreter

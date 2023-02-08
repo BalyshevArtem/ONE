@@ -26,8 +26,9 @@ namespace luci_interpreter
 
 namespace
 {
-void evalFloat(const Tensor *input, const Tensor *weights, const Tensor *bias, Tensor *output,
-               const circle::FullyConnectedOptions *options)
+void evalFloat(const circle::Tensor *input, const circle::Tensor *weights, uint8_t *weights_data, const circle::Tensor *bias,
+               uint8_t *bias_data, const circle::Tensor *output,
+               const circle::FullyConnectedOptions *options, IBaseRuntimeGraph *runtime_graph)
 {
   float activation_min{};
   float activation_max{};
@@ -40,10 +41,10 @@ void evalFloat(const Tensor *input, const Tensor *weights, const Tensor *bias, T
   params.weights_format = tflite::FullyConnectedWeightsFormat::kDefault;
 
   tflite::reference_ops::FullyConnected(
-    params, kernels::getTensorShape(input), kernels::getTensorData<float>(input),
-    kernels::getTensorShape(weights), kernels::getTensorData<float>(weights),
-    kernels::getTensorShape(bias), kernels::getTensorData<float>(bias),
-    kernels::getTensorShape(output), kernels::getTensorData<float>(output));
+    params, kernels::getTensorShape(input), reinterpret_cast<float *>(runtime_graph->getDataByCircleTensor(input)),
+    kernels::getTensorShape(weights), reinterpret_cast<float *>(weights_data),
+    kernels::getTensorShape(bias), reinterpret_cast<float *>(bias_data),
+    kernels::getTensorShape(output), reinterpret_cast<float *>(runtime_graph->getDataByCircleTensor(output)));
 }
 
 #ifndef DIS_QUANT
@@ -130,49 +131,49 @@ void configure_kernel_CircleFullyConnected(const circle::Operator *cur_op,
   assert(weight_index != -1);
   assert(output_index != -1);
 
-  const auto input = runtime_graph->getTensorByIndex(input_index);
+  const auto input = runtime_graph->getCircleTensorByIndex(input_index);
 
-  const auto raw_weights = runtime_graph->getCircleTensorByIndex(weight_index);
+  const auto weights = runtime_graph->getCircleTensorByIndex(weight_index);
   const auto raw_bias = runtime_graph->getCircleTensorByIndex(bias_index);
 
-  assert(raw_weights != nullptr);
+  assert(weights != nullptr);
 
-  auto weights_data = runtime_graph->getDataBufferFromCircleTensor(raw_weights);
-  auto bias_data = runtime_graph->getDataBufferFromCircleTensor(raw_bias);
+  //auto weights_data = runtime_graph->getDataBufferFromCircleTensor(weights);
+  //auto bias_data = runtime_graph->getDataBufferFromCircleTensor(raw_bias);
 
-  Tensor weights(raw_weights);
-  weights.writeDataWithoutCopy(static_cast<void *>(weights_data));
+  //Tensor weights(raw_weights);
+  //weights.writeDataWithoutCopy(static_cast<void *>(weights_data));
 
-  Tensor bias(raw_bias);
-  if (bias_data != nullptr)
-    weights.writeDataWithoutCopy(static_cast<void *>(bias_data));
+  //Tensor bias(raw_bias);
+  //if (bias_data != nullptr)
+  //  weights.writeDataWithoutCopy(static_cast<void *>(bias_data));
 
   //const auto weights = runtime_graph->getTensorByIndex(weight_index);
   //const auto bias = runtime_graph->getTensorByIndex(bias_index);
 
-  auto output = runtime_graph->getTensorByIndex(output_index);
+  auto output = runtime_graph->getCircleTensorByIndex(output_index);
 
   assert(input != nullptr);
   assert(output != nullptr);
 
-  if (weights.element_type() == DataType::U8)
+  if (Tensor::element_type(weights) == DataType::U8)
   {
-    LUCI_INTERPRETER_CHECK(input->element_type() == DataType::U8);
-    LUCI_INTERPRETER_CHECK(output->element_type() == DataType::U8);
-    LUCI_INTERPRETER_CHECK(!raw_bias || bias.element_type() == DataType::S32)
+    LUCI_INTERPRETER_CHECK(Tensor::element_type(input) == DataType::U8);
+    LUCI_INTERPRETER_CHECK(Tensor::element_type(output) == DataType::U8);
+    LUCI_INTERPRETER_CHECK(!raw_bias || Tensor::element_type(raw_bias) == DataType::S32)
   }
-  else if (weights.element_type() == DataType::FLOAT32)
+  else if (Tensor::element_type(weights) == DataType::FLOAT32)
   {
-    LUCI_INTERPRETER_CHECK(input->element_type() == DataType::FLOAT32);
-    LUCI_INTERPRETER_CHECK(output->element_type() == DataType::FLOAT32);
-    LUCI_INTERPRETER_CHECK(!raw_bias || bias.element_type() == DataType::FLOAT32)
+    LUCI_INTERPRETER_CHECK(Tensor::element_type(input) == DataType::FLOAT32);
+    LUCI_INTERPRETER_CHECK(Tensor::element_type(output) == DataType::FLOAT32);
+    LUCI_INTERPRETER_CHECK(!raw_bias || Tensor::element_type(raw_bias) == DataType::FLOAT32)
   }
-  else if (weights.element_type() == DataType::S8)
-  {
-    LUCI_INTERPRETER_CHECK(input->element_type() == DataType::S8);
-    LUCI_INTERPRETER_CHECK(output->element_type() == DataType::S8);
-    LUCI_INTERPRETER_CHECK(!raw_bias || bias.element_type() == DataType::S32)
-  }
+//  else if (weights.element_type() == DataType::S8)
+//  {
+//    LUCI_INTERPRETER_CHECK(input->element_type() == DataType::S8);
+//    LUCI_INTERPRETER_CHECK(output->element_type() == DataType::S8);
+//    LUCI_INTERPRETER_CHECK(!raw_bias || bias.element_type() == DataType::S32)
+//  }
   else
   {
     assert(false && "Unsupported type.");
@@ -181,16 +182,16 @@ void configure_kernel_CircleFullyConnected(const circle::Operator *cur_op,
   // const Shape &input_shape = input()->shape();
   // const Shape &weights_shape = weights()->shape();
 
-  LUCI_INTERPRETER_CHECK(weights.num_dims() == 2); // weights_shape.num_dims() == 2);
-  LUCI_INTERPRETER_CHECK(raw_bias == nullptr || bias.num_elements() == weights.dim(0));
+  LUCI_INTERPRETER_CHECK(Tensor::num_dims(weights) == 2); // weights_shape.num_dims() == 2);
+  LUCI_INTERPRETER_CHECK(raw_bias == nullptr || Tensor::num_elements(raw_bias) == Tensor::dim(0, weights));
   // bias()->shape().num_elements() == weights_shape.dim(0));
 
-  LUCI_INTERPRETER_CHECK(input->num_elements() % weights.dim(1) == 0);
-  const int32_t batch_size = input->num_elements() / weights.dim(1);
-  const int32_t num_units = weights.dim(0);
+  LUCI_INTERPRETER_CHECK(Tensor::num_elements(input) % Tensor::dim(1, weights) == 0);
+  const int32_t batch_size = Tensor::num_elements(input) / Tensor::dim(1, weights);
+  const int32_t num_units = Tensor::dim(0, weights);
 
   if (raw_bias)
-    LUCI_INTERPRETER_CHECK(bias.num_elements() == weights.dim(0));
+    LUCI_INTERPRETER_CHECK(Tensor::num_elements(raw_bias) == Tensor::dim(0, weights));
 
   const auto *options = cur_op->builtin_options_as_FullyConnectedOptions();
 
@@ -225,7 +226,7 @@ void execute_kernel_CircleFullyConnected(const circle::Operator *cur_op,
   assert(weight_index != -1);
   assert(output_index != -1);
 
-  const auto input = runtime_graph->getTensorByIndex(input_index);
+  const auto input = runtime_graph->getCircleTensorByIndex(input_index);
 
   const auto raw_weights = runtime_graph->getCircleTensorByIndex(weight_index);
   const auto raw_bias = runtime_graph->getCircleTensorByIndex(bias_index);
@@ -235,21 +236,24 @@ void execute_kernel_CircleFullyConnected(const circle::Operator *cur_op,
   auto weights_data = runtime_graph->getDataBufferFromCircleTensor(raw_weights);
   auto bias_data = runtime_graph->getDataBufferFromCircleTensor(raw_bias);
 
-  Tensor weights(raw_weights);
-  weights.writeDataWithoutCopy(static_cast<void *>(weights_data));
-
-  Tensor bias(raw_bias);
-  if (bias_data != nullptr)
-    bias.writeDataWithoutCopy(static_cast<void *>(bias_data));
+//  Tensor weights(raw_weights);
+//  weights.writeDataWithoutCopy(static_cast<void *>(weights_data));
+//
+//  Tensor bias(raw_bias);
+//  if (bias_data != nullptr)
+//    bias.writeDataWithoutCopy(static_cast<void *>(bias_data));
 
   //const auto weights = runtime_graph->getTensorByIndex(weight_index);
   //const auto bias = runtime_graph->getTensorByIndex(bias_index);
 
-  auto output = runtime_graph->getTensorByIndex(output_index);
+  auto output = runtime_graph->getCircleTensorByIndex(output_index);
+
+  assert(input != nullptr);
+  assert(output != nullptr);
 
   const auto *options = cur_op->builtin_options_as_FullyConnectedOptions();
 
-  switch (input->element_type())
+  switch (Tensor::element_type(input))
   {
 #ifndef DIS_QUANT
     case DataType::U8:
@@ -260,7 +264,7 @@ void execute_kernel_CircleFullyConnected(const circle::Operator *cur_op,
       break;
 #endif
     case DataType::FLOAT32:
-      evalFloat(input, &weights, raw_bias == nullptr ? nullptr : &bias, output, options);
+      evalFloat(input, raw_weights, weights_data ,raw_bias == nullptr ? nullptr : raw_bias, bias_data, output, options, runtime_graph);
       break;
     default:
       assert(false && "Unsupported type.");

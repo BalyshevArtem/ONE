@@ -26,8 +26,8 @@ namespace luci_interpreter
 class IMemoryManager
 {
 public:
-  virtual void allocate_memory(luci_interpreter::Tensor &tensor) = 0;
-  virtual void release_memory(luci_interpreter::Tensor &tensor) = 0;
+  virtual uint8_t *allocate_memory(const circle::Tensor &tensor) = 0;
+  virtual void release_memory(uint8_t *data) = 0;
 
   virtual ~IMemoryManager() = default;
 

@@ -28,21 +28,21 @@ namespace
 {
 using namespace kernels;
 
-void evalFloat(const Tensor *input, const Tensor *filter, const Tensor *bias, Tensor *output,
-               const circle::Conv2DOptions *options)
+void evalFloat(const circle::Tensor *input, const circle::Tensor *filter,
+               const circle::Tensor *bias, const circle::Tensor *output,
+               const circle::Conv2DOptions *options, IBaseRuntimeGraph *runtime_graph)
 {
-  const int32_t batches = input->dim(0);
-  const int32_t input_height = input->dim(1);
-  const int32_t input_width = input->dim(2);
-  const int32_t output_depth = filter->dim(0);
-  const int32_t filter_height = filter->dim(1);
-  const int32_t filter_width = filter->dim(2);
-
+  const int32_t batches = Tensor::dim(0, input);
+  const int32_t input_height = Tensor::dim(1, input);
+  const int32_t input_width = Tensor::dim(2, input);
+  const int32_t output_depth = Tensor::dim(0, filter);
+  const int32_t filter_height = Tensor::dim(1, filter);
+  const int32_t filter_width = Tensor::dim(2, filter);
   const int32_t output_height =
-    kernels::computeOutputSize(static_cast<Padding>(options->padding()), input_height, filter_height, options->stride_h(),
+    kernels::computeOutputSize(luci_padding(options->padding()), input_height, filter_height, options->stride_h(),
                       options->dilation_h_factor());
   const int32_t output_width =
-    kernels::computeOutputSize(static_cast<Padding>(options->padding()), input_width, filter_width, options->stride_w(),
+    kernels::computeOutputSize(luci_padding(options->padding()), input_width, filter_width, options->stride_w(),
                       options->dilation_w_factor());
 
   const auto padding_height = kernels::computePadding(options->stride_h(), options->dilation_h_factor(),
@@ -66,10 +66,16 @@ void evalFloat(const Tensor *input, const Tensor *filter, const Tensor *bias, Te
 
   float *scratchpad_data = nullptr;
 
-  luci_interpreter_pal::Conv(params, getTensorShape(input), getTensorData<float>(input),
-                             getTensorShape(filter), getTensorData<float>(filter),
-                             getTensorShape(bias), getTensorData<float>(bias),
-                             getTensorShape(output), getTensorData<float>(output),
+  const float *input_data = reinterpret_cast<const float *>(runtime_graph->getDataByCircleTensor(input));
+  float *output_data = reinterpret_cast<float *>(runtime_graph->getDataByCircleTensor(output));
+
+  auto filter_data = reinterpret_cast<const float *>(runtime_graph->getDataBufferFromCircleTensor(filter));
+  auto bias_data = reinterpret_cast<const float *>(runtime_graph->getDataBufferFromCircleTensor(bias));
+
+  luci_interpreter_pal::Conv(params, getTensorShape(input), input_data,
+                             getTensorShape(filter), filter_data,
+                             getTensorShape(bias), bias_data,
+                             getTensorShape(output), output_data,
                              getTensorShape(nullptr), scratchpad_data);
 }
 
@@ -88,35 +94,23 @@ void configure_kernel_CircleConv2D(const circle::Operator *cur_op,
   assert(filter_index != -1);
   assert(output_index != -1);
 
-  const auto input = runtime_graph->getTensorByIndex(input_index);
+  const auto input = runtime_graph->getCircleTensorByIndex(input_index);
 
-  const auto raw_filter = runtime_graph->getCircleTensorByIndex(filter_index);
-  const auto raw_bias = runtime_graph->getCircleTensorByIndex(bias_index);
+  const auto filter = runtime_graph->getCircleTensorByIndex(filter_index);
+  const auto bias = runtime_graph->getCircleTensorByIndex(bias_index);
 
-  assert(raw_filter != nullptr);
+  assert(filter != nullptr);
 
-  auto filter_data = runtime_graph->getDataBufferFromCircleTensor(raw_filter);
-  auto bias_data = runtime_graph->getDataBufferFromCircleTensor(raw_bias);
+  auto filter_data = runtime_graph->getDataBufferFromCircleTensor(filter);
+  auto bias_data = runtime_graph->getDataBufferFromCircleTensor(bias);
 
-  Tensor filter(raw_filter);
-  filter.writeDataWithoutCopy(static_cast<void *>(filter_data));
-
-  Tensor bias(raw_bias);
-  if (bias_data != nullptr)
-    bias.writeDataWithoutCopy(static_cast<void *>(bias_data));
-
-  //const auto weights = runtime_graph->getTensorByIndex(weight_index);
-  //const auto bias = runtime_graph->getTensorByIndex(bias_index);
-
-  auto output = runtime_graph->getTensorByIndex(output_index);
+  auto output = runtime_graph->getCircleTensorByIndex(output_index);
 
   const auto *options = cur_op->builtin_options_as_Conv2DOptions();
 
-
-
-  if (input->element_type() == DataType::FLOAT32 && filter.element_type() == DataType::FLOAT32)
+  if (Tensor::element_type(input) == DataType::FLOAT32 && Tensor::element_type(filter) == DataType::FLOAT32)
   {
-    LUCI_INTERPRETER_CHECK(raw_bias == nullptr || bias.element_type() == DataType::FLOAT32);
+    LUCI_INTERPRETER_CHECK(bias == nullptr || Tensor::element_type(bias) == DataType::FLOAT32);
   }
 //  else if (input->element_type() == DataType::U8 && filter.element_type() == DataType::U8)
 //  {
@@ -141,22 +135,22 @@ void configure_kernel_CircleConv2D(const circle::Operator *cur_op,
   {
     assert(false && "Unsupported type.");
   }
-  LUCI_INTERPRETER_CHECK(output->element_type() == input->element_type());
+  LUCI_INTERPRETER_CHECK(Tensor::element_type(output) == Tensor::element_type(input));
 
 //  const Shape &input_shape = input()->shape();
 //  const Shape &filter_shape = filter()->shape();
-  LUCI_INTERPRETER_CHECK(input->num_dims() == 4 && filter.num_dims() == 4);
+  LUCI_INTERPRETER_CHECK(Tensor::num_dims(input) == 4 && Tensor::num_dims(filter) == 4);
 
-  const int32_t batches = input->dim(0);
-  const int32_t input_height = input->dim(1);
-  const int32_t input_width = input->dim(2);
-  const int32_t output_depth = filter.dim(0);
-  const int32_t filter_height = filter.dim(1);
-  const int32_t filter_width = filter.dim(2);
-  LUCI_INTERPRETER_CHECK(filter.dim(3) == input->dim(3));
+  const int32_t batches = Tensor::dim(0, input);
+  const int32_t input_height = Tensor::dim(1, input);
+  const int32_t input_width = Tensor::dim(2, input);
+  const int32_t output_depth = Tensor::dim(0, filter);
+  const int32_t filter_height = Tensor::dim(1, filter);
+  const int32_t filter_width = Tensor::dim(2, filter);
+  LUCI_INTERPRETER_CHECK(Tensor::dim(3, filter) == Tensor::dim(3, input));
 
-  LUCI_INTERPRETER_CHECK(raw_bias == nullptr || (bias.num_dims() == 1 &&
-  bias.dim(0) == output_depth));
+  LUCI_INTERPRETER_CHECK(bias == nullptr || (Tensor::num_dims(bias) == 1 &&
+    Tensor::dim(0, bias) == output_depth));
 
 //  const int32_t output_height =
 //    computeOutputSize(static_cast<Padding>(options->padding()), input_height, filter_height, options->stride_h(),
@@ -212,36 +206,30 @@ void execute_kernel_CircleConv2D(const circle::Operator *cur_op,
   assert(weight_index != -1);
   assert(output_index != -1);
 
-  const auto input = runtime_graph->getTensorByIndex(input_index);
+  const auto input = runtime_graph->getCircleTensorByIndex(input_index);
 
-  const auto raw_weights = runtime_graph->getCircleTensorByIndex(weight_index);
-  const auto raw_bias = runtime_graph->getCircleTensorByIndex(bias_index);
+  const auto weights = runtime_graph->getCircleTensorByIndex(weight_index);
+  const auto bias = runtime_graph->getCircleTensorByIndex(bias_index);
 
-  assert(raw_weights != nullptr);
+  assert(weights != nullptr);
 
-  auto weights_data = runtime_graph->getDataBufferFromCircleTensor(raw_weights);
-  auto bias_data = runtime_graph->getDataBufferFromCircleTensor(raw_bias);
+//  auto weights_data = runtime_graph->getDataBufferFromCircleTensor(weights);
+//  auto bias_data = runtime_graph->getDataBufferFromCircleTensor(bias);
 
-  Tensor weights(raw_weights);
-  weights.writeDataWithoutCopy(static_cast<void *>(weights_data));
-
-  Tensor bias(raw_bias);
-  if (bias_data != nullptr)
-    bias.writeDataWithoutCopy(static_cast<void *>(bias_data));
 
   //const auto weights = runtime_graph->getTensorByIndex(weight_index);
   //const auto bias = runtime_graph->getTensorByIndex(bias_index);
 
-  auto output = runtime_graph->getTensorByIndex(output_index);
+  auto output = runtime_graph->getCircleTensorByIndex(output_index);
 
   const auto *options = cur_op->builtin_options_as_Conv2DOptions();
 
-  switch (input->element_type())
+  switch (Tensor::element_type(input))
   {
     case DataType::FLOAT32:
-      if (weights.element_type() == DataType::FLOAT32)
+      if (Tensor::element_type(weights) == DataType::FLOAT32)
       {
-        evalFloat(input, &weights, raw_bias == nullptr ? nullptr : &bias, output, options);
+        evalFloat(input, weights, bias, output, options, runtime_graph);
         break;
       }
       assert(false && "Unsupported type.");

@@ -25,8 +25,8 @@ namespace luci_interpreter
 class SimpleMemoryManager : public IMemoryManager
 {
 public:
-  void allocate_memory(luci_interpreter::Tensor &tensor) final;
-  void release_memory(luci_interpreter::Tensor &tensor) final;
+  uint8_t *allocate_memory(const circle::Tensor &tensor) final;
+  void release_memory(uint8_t *data) final;
 
   void allocate_input_buf() final
   {

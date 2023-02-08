@@ -114,21 +114,21 @@ public:
   int32_t quantized_dimension() const { return _quantization->quantized_dimension; }
 
 #else
-  Tensor(const circle::Tensor *raw_tensor);
+ // Tensor(const circle::Tensor *raw_tensor);
 #endif
 
-  DataType element_type() const
+  static DataType element_type(const circle::Tensor *_raw_tensor)
   {
     return luci_datatype(_raw_tensor->type());
   }
 
-  int num_dims() const
+  static int num_dims(const circle::Tensor *_raw_tensor)
   {
     auto const &const_dims = wrap(_raw_tensor->shape());
     return const_dims.size();
   }
 
-  int32_t dim(int i) const
+  static int32_t dim(int i, const circle::Tensor *_raw_tensor)
   {
     assert(i >= 0);
     auto const &const_dims = wrap(_raw_tensor->shape());
@@ -137,7 +137,7 @@ public:
     return const_dims[i];
   }
 
-  int32_t num_elements() const
+  static int32_t num_elements(const circle::Tensor *_raw_tensor)
   {
     int32_t result = 1;
     auto const &const_dims = wrap(_raw_tensor->shape());
@@ -151,42 +151,42 @@ public:
   //const Shape &shape() const { return _shape; }
 
 
-  template <typename T> const T *data() const
-  {
-    static_assert(std::is_same<uint8_t, char>::value or
-                  std::is_same<uint8_t, unsigned char>::value);
-    return reinterpret_cast<const T *>(_data);
-  }
+//  template <typename T> const T *data() const
+//  {
+//    static_assert(std::is_same<uint8_t, char>::value or
+//                  std::is_same<uint8_t, unsigned char>::value);
+//    return reinterpret_cast<const T *>(_data);
+//  }
+//
+//  template <typename T> T *data()
+//  {
+//    static_assert(std::is_same<uint8_t, char>::value or
+//                  std::is_same<uint8_t, unsigned char>::value);
+//    return reinterpret_cast<T *>(_data);
+//  }
+//
+  //static void readData(const circle::Tensor *raw_tensor, void *data_ptr, size_t data_size);
 
-  template <typename T> T *data()
-  {
-    static_assert(std::is_same<uint8_t, char>::value or
-                  std::is_same<uint8_t, unsigned char>::value);
-    return reinterpret_cast<T *>(_data);
-  }
-
-  void readData(void *data_ptr, size_t data_size) const;
-
-  void writeData(const void *data_ptr, size_t data_size);
-
-  void writeDataWithoutCopy(void *data_ptr)
-  {
-    assert(data_ptr != nullptr);
-    _data = static_cast<uint8_t *>(data_ptr);
-  }
+  //static void writeData(const circle::Tensor *raw_tensor, const void *data_ptr, size_t data_size);
+//
+//  void writeDataWithoutCopy(void *data_ptr)
+//  {
+//    assert(data_ptr != nullptr);
+//    _data = static_cast<uint8_t *>(data_ptr);
+//  }
 
   //void resize(const Shape &new_shape);
 
-  void set_data_buffer(uint8_t *buffer)
-  {
-    _data = buffer;
-  }
+//  void set_data_buffer(uint8_t *buffer)
+//  {
+//    _data = buffer;
+//  }
 
 //  bool is_allocatable() const { return _is_allocatable; }
 
 //  void set_allocatable(bool value) { _is_allocatable = value; }
 
-  bool is_data_allocated() const { return _data != nullptr; }
+  //bool is_data_allocated() const { return _data != nullptr; }
 
   //uint32_t get_offset() const { return _offset; }
 
@@ -197,13 +197,13 @@ private:
 #ifndef DIS_QUANT
   AffineQuantization *_quantization;
 #endif
-  uint8_t *_data;
+  //uint8_t *_data;
   // Memory manager is called for tensor only if it is "allocatable".
   // Kernel configuration could disable allocation of some tensors if they are not needed for
   // particular operation.
  // bool _is_allocatable = true;
   //uint32_t _offset = 0;
-  const circle::Tensor *_raw_tensor;
+ // const circle::Tensor *_raw_tensor;
 };
 
 } // namespace luci_interpreter

@@ -48,10 +48,10 @@ void writeDataToFile(const std::string &filename, const char *data, size_t data_
   }
 }
 
-size_t getTensorSize(const luci_interpreter::Tensor *tensor)
+size_t getTensorSize(const circle::Tensor *tensor)
 {
-  size_t tensor_size = luci_interpreter::size(tensor->element_type());
-  tensor_size *= tensor->num_elements();
+  size_t tensor_size = luci_interpreter::size(luci_interpreter::Tensor::element_type(tensor));
+  tensor_size *= luci_interpreter::Tensor::num_elements(tensor);
 
   return tensor_size;
 }
@@ -107,20 +107,24 @@ int entry(int argc, char **argv)
   // Set input.
   // Data for n'th input is read from ${input_prefix}n
   // (ex: Add.circle.input0, Add.circle.input1 ..)
-  const auto input_tensors = interpreter.getInputTensors();
-  assert(num_inputs == input_tensors.size());
-  for (int32_t i = 0; i < num_inputs; i++)
-  {
-    auto *input_tensor = input_tensors[i];
-    std::vector<char> input_data(getTensorSize(input_tensor));
-    readDataFromFile(std::string(input_prefix) + std::to_string(i), input_data.data(),
-                     input_data.size());
-    luci_interpreter::Interpreter::writeInputTensor(input_tensor, input_data.data(),
-                                                    input_data.size());
-  }
 
-  // Do inference.
-  interpreter.interpret();
+
+  for (int i = 0; i < 1; ++i)
+  {
+    const auto input_tensors = interpreter.getInputTensors();
+    assert(num_inputs == input_tensors.size());
+    for (int32_t i = 0; i < num_inputs; i++)
+    {
+      auto *input_tensor = input_tensors[i];
+      std::vector<char> input_data(getTensorSize(input_tensor));
+      readDataFromFile(std::string(input_prefix) + std::to_string(i), input_data.data(),
+                       input_data.size());
+      interpreter.writeInputTensor(input_tensor, reinterpret_cast<const uint8_t *>(input_data.data()), input_data.size());
+    }
+
+    // Do inference.
+    interpreter.interpret();
+  }
 
   // Get output.
   const auto output_tensors = interpreter.getOutputTensors();
@@ -128,7 +132,7 @@ int entry(int argc, char **argv)
   {
     const auto *output_tensor = output_tensors[i];
     std::vector<char> output_data(getTensorSize(output_tensor));
-    luci_interpreter::Interpreter::readOutputTensor(output_tensor, output_data.data(),
+    interpreter.readOutputTensor(output_tensor, reinterpret_cast<uint8_t *>(output_data.data()),
                                                     output_data.size());
 
     // Output data is written in ${output_file}
@@ -139,21 +143,21 @@ int entry(int argc, char **argv)
                     output_data.size());
     // In case of Tensor output is Scalar value.
     // The output tensor with rank 0 is treated as a scalar with shape (1)
-    if (output_tensor->num_dims() == 0)
-    {
-      writeDataToFile(std::string(output_file) + std::to_string(i) + ".shape", "1", 1);
-    }
-    else
-    {
-      auto shape_str = std::to_string(output_tensor->dim(0));
-      for (int j = 1; j < output_tensor->num_dims(); j++)
-      {
-        shape_str += ",";
-        shape_str += std::to_string(output_tensor->dim(j));
-      }
-      const auto tensor_shape_file = std::string(output_file) + std::to_string(i) + ".shape";
-      writeDataToFile(tensor_shape_file, shape_str.c_str(), shape_str.size());
-    }
+//    if (output_tensor->num_dims() == 0)
+//    {
+//      writeDataToFile(std::string(output_file) + std::to_string(i) + ".shape", "1", 1);
+//    }
+//    else
+//    {
+//      auto shape_str = std::to_string(output_tensor->dim(0));
+//      for (int j = 1; j < output_tensor->num_dims(); j++)
+//      {
+//        shape_str += ",";
+//        shape_str += std::to_string(output_tensor->dim(j));
+//      }
+//      const auto tensor_shape_file = std::string(output_file) + std::to_string(i) + ".shape";
+//      writeDataToFile(tensor_shape_file, shape_str.c_str(), shape_str.size());
+//    }
   }
   return EXIT_SUCCESS;
 }

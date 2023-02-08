@@ -149,7 +149,7 @@ void GraphLoader::loadTensors(CircleReader *reader, IBaseRuntimeGraph *runtime_g
     }
 
     // Get pointer to data from buffer
-    auto tensor = std::make_unique<Tensor>(raw_tensor);
+    //auto tensor = std::make_unique<Tensor>(raw_tensor);
 #endif
 
 
@@ -157,7 +157,7 @@ void GraphLoader::loadTensors(CircleReader *reader, IBaseRuntimeGraph *runtime_g
     // TODO think maybe move _index_to_tensor to RUntimeGraph
     //index_to_tensor->emplace(raw_tensor, tensor.get());
 
-    runtime_graph->addTensor(raw_tensor, std::move(tensor));
+    //runtime_graph->addTensor(raw_tensor, nullptr);
   }
 
  // _runtime_graph->shrink_to_fit_tensors();
@@ -232,8 +232,8 @@ void GraphLoader::loadOperators(CircleReader *reader, IBaseRuntimeGraph *runtime
 //  }
 
   //KernelBuilder kernel_builder(_runtime_graph, _reader);
-  const uint32_t input_size = runtime_graph->getInputTensors().size();
-  const uint32_t output_size = runtime_graph->getOutputTensors().size();
+ // const uint32_t input_size = runtime_graph->getInputTensors().size();
+//  const uint32_t output_size = runtime_graph->getOutputTensors().size();
 
 //  if (use_static_memory_manager)
 //  {
@@ -273,26 +273,28 @@ void GraphLoader::loadOperators(CircleReader *reader, IBaseRuntimeGraph *runtime
       if (input_index != -1)
       {
         const auto raw_tensor = reader->tensors()[input_index];
-        if (index_to_tensor->find(raw_tensor) == index_to_tensor->end())
-        {
-          //assert(false && "Failed import operation input tensor");
-          //return;
-          continue;
-        }
-        auto *input_tensor = index_to_tensor->at(raw_tensor).get();
+//        if (index_to_tensor->find(raw_tensor) == index_to_tensor->end())
+//        {
+//          //assert(false && "Failed import operation input tensor");
+//          //return;
+//          continue;
+//        }
+        //auto *input_tensor = index_to_tensor->at(raw_tensor).get();
        // input_tensors.at(j) = input_tensor;
 
         // TODO: optimize it to remove this vector
-        const auto &graph_input_tensors = runtime_graph->getInputTensors();
+        //const auto &graph_input_tensors = runtime_graph->getInputTensors();
 
-        is_graph_input = (std::find(graph_input_tensors.begin(), graph_input_tensors.end(),
-                                    input_tensor) != graph_input_tensors.end()) or
-                         is_graph_input;
+        const auto &inputs_indexes = reader->inputs();
+
+//        is_graph_input = (std::find(inputs_indexes.begin(), inputs_indexes.end(),
+//                                    input_index) != inputs_indexes.end()) or
+//                         is_graph_input;
 
         // TODO: handle Inplace Optimization with Static Memory Manager
         if (not use_static_memory_manager and
             isCouldBeEmplaceOperation(reader->builtin_code(op)) and op->outputs()->size() == 1 and
-            isCouldBeEmplaceTensor(reader, input_index) and not is_graph_input)
+            isCouldBeEmplaceTensor(reader, input_index))
         {
           is_inplace = true;
           runtime_graph->addInplaceOpIndex(i);

@@ -41,23 +41,26 @@ void execute_kernel_CircleReshape(const circle::Operator *cur_op,
   assert(input_index != -1);
   assert(output_index != -1);
 
-  const auto input = runtime_graph->getTensorByIndex(input_index);
+  const auto input = runtime_graph->getCircleTensorByIndex(input_index);
 
-  auto output = runtime_graph->getTensorByIndex(output_index);
+  auto output = runtime_graph->getCircleTensorByIndex(output_index);
 
   if (is_inplace)
   {
-    auto input_tensor = const_cast<Tensor *>(input);
-    output->set_data_buffer(const_cast<uint8_t *>(input_tensor->data<const uint8_t>()));
-    input_tensor->set_data_buffer(nullptr);
+    //output->set_data_buffer(const_cast<uint8_t *>(input_tensor->data<const uint8_t>()));
+    runtime_graph->setNullDataByCircleTensor(input, output);
+    //input_tensor->set_data_buffer(nullptr);
     return;
   }
 
-  const auto *input_data = input->data<void>();
-  auto *output_data = output->data<void>();
+  auto input_data = (runtime_graph->getDataByCircleTensor(input));
+  auto output_data = (runtime_graph->getDataByCircleTensor(output));
 
-  const size_t element_size = getDataTypeSize(input->element_type());
-  const int32_t num_elements = input->num_elements();
+  assert(input_data != nullptr);
+  assert(output_data != nullptr);
+
+  const size_t element_size = getDataTypeSize(Tensor::element_type(input));
+  const int32_t num_elements = Tensor::num_elements(input);
   std::memcpy(output_data, input_data, num_elements * element_size);
 }
 

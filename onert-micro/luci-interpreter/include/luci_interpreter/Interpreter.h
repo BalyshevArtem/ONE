@@ -40,16 +40,16 @@ public:
 
   ~Interpreter();
 
-  static void writeInputTensor(Tensor *input_tensor, const void *data, size_t data_size);
+  void writeInputTensor(const circle::Tensor *input_tensor, const uint8_t *data, size_t data_size);
 
-  static void writeInputTensorWithoutCopy(Tensor *input_tensor, const void *data);
+  void writeInputTensorWithoutCopy(const circle::Tensor *input_tensor, const uint8_t *data);
 
-  static void readOutputTensor(const Tensor *output_tensor, void *data, size_t data_size);
+  void readOutputTensor(const circle::Tensor *output_tensor, uint8_t *data, size_t data_size);
 
   void interpret();
 
-  std::vector<Tensor *> getInputTensors();
-  std::vector<Tensor *> getOutputTensors();
+  std::vector<const circle::Tensor *> getInputTensors();
+  std::vector<const circle::Tensor *> getOutputTensors();
 
 private:
   // _default_memory_manager should be before _runtime_module due to

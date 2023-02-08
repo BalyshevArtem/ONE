@@ -30,27 +30,24 @@ void configure_kernel_CircleExpandDims(const circle::Operator *cur_op,
   assert(input_index != -1);
   assert(output_index != -1);
 
-  const auto input = runtime_graph->getTensorByIndex(input_index);
-  auto output = runtime_graph->getTensorByIndex(output_index);
+  const auto input = runtime_graph->getCircleTensorByIndex(input_index);
+  auto output = runtime_graph->getCircleTensorByIndex(output_index);
 
   assert(input != nullptr);
   assert(output != nullptr);
 
-  const auto axis_raw = runtime_graph->getCircleTensorByIndex(axis_index);
-  auto axis_data = runtime_graph->getDataBufferFromCircleTensor(axis_raw);
-
-  Tensor axis(axis_raw);
-  axis.writeDataWithoutCopy(static_cast<void *>(axis_data));
+  const auto axis = runtime_graph->getCircleTensorByIndex(axis_index);
+  auto axis_data = runtime_graph->getDataBufferFromCircleTensor(axis);
 
   int32_t axis_value;
 
-  switch (axis.element_type())
+  switch (Tensor::element_type(axis))
   {
     case DataType::S32:
-      axis_value = *kernels::getTensorData<int32_t>(&axis);
+      axis_value = *reinterpret_cast<int32_t *>(axis_data);
       break;
     case DataType::S64:
-      axis_value = static_cast<int32_t>(*kernels::getTensorData<int64_t>(&axis));
+      axis_value = static_cast<int32_t>(*reinterpret_cast<int64_t *>(axis_data));
       break;
     default:
       assert(false && "Unsupported type.");
@@ -58,10 +55,10 @@ void configure_kernel_CircleExpandDims(const circle::Operator *cur_op,
 
   if (axis_value < 0)
   {
-    axis_value += input->num_dims() + 1;
+    axis_value += Tensor::num_dims(input) + 1;
   }
 
-  LUCI_INTERPRETER_CHECK(axis_value <= input->num_dims() and axis_value >= 0);
+  LUCI_INTERPRETER_CHECK(axis_value <= Tensor::num_dims(input) and axis_value >= 0);
 
   // TODO: check needles of it
 //  Shape output_shape(input_shape.num_dims() + 1);
@@ -96,24 +93,25 @@ void execute_kernel_CircleExpandDims(const circle::Operator *cur_op,
   assert(input_index != -1);
   assert(output_index != -1);
 
-  const auto input = runtime_graph->getTensorByIndex(input_index);
+  const auto input = runtime_graph->getCircleTensorByIndex(input_index);
 
-  auto output = runtime_graph->getTensorByIndex(output_index);
+  auto output = runtime_graph->getCircleTensorByIndex(output_index);
 
   if (is_inplace)
   {
-    auto input_tensor = const_cast<Tensor *>(input);
-    output->set_data_buffer(input_tensor->data<uint8_t>());
-    input_tensor->set_data_buffer(nullptr);
+    runtime_graph->setNullDataByCircleTensor(input, output);
     return;
   }
 
   // Just copy input to output
-  const auto *input_data = input->data<void>();
-  auto *output_data = output->data<void>();
+  auto input_data = (runtime_graph->getDataByCircleTensor(input));
+  auto output_data = (runtime_graph->getDataByCircleTensor(output));
 
-  const size_t element_size = getDataTypeSize(input->element_type());
-  const int32_t num_elements = input->num_elements();
+  assert(input_data != nullptr);
+  assert(output_data != nullptr);
+
+  const size_t element_size = getDataTypeSize(Tensor::element_type(input));
+  const int32_t num_elements = Tensor::num_elements(input);
   std::memcpy(output_data, input_data, num_elements * element_size);
 }
 

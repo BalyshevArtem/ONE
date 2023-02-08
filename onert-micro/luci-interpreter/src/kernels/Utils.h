@@ -196,78 +196,78 @@ private:
   int _stride;
 };
 
-inline tflite::RuntimeShape getTensorShape(const Tensor *tensor)
+inline tflite::RuntimeShape getTensorShape(const circle::Tensor *tensor)
 {
   if (tensor == nullptr)
     return tflite::RuntimeShape();
 
   //const Shape &shape = tensor->shape();
-  tflite::RuntimeShape runtime_shape(tensor->num_dims());
-  for (int i = 0; i < tensor->num_dims(); ++i)
+  tflite::RuntimeShape runtime_shape(Tensor::num_dims(tensor));
+  for (int i = 0; i < Tensor::num_dims(tensor); ++i)
   {
-    runtime_shape.SetDim(i, tensor->dim(i));
+    runtime_shape.SetDim(i, Tensor::dim(i, tensor));
   }
   return runtime_shape;
 }
 
-template <typename T> const T *getTensorData(const Tensor *tensor)
-{
-  return tensor != nullptr ? tensor->data<T>() : nullptr;
-}
-
-template <typename T> T *getTensorData(Tensor *tensor)
-{
-  return tensor != nullptr ? tensor->data<T>() : nullptr;
-}
+//template <typename T> const T *getTensorData(const circle::Tensor *tensor)
+//{
+//  return tensor != nullptr ? tensor->data<T>() : nullptr;
+//}
+//
+//template <typename T> T *getTensorData(Tensor *tensor)
+//{
+//  return tensor != nullptr ? tensor->data<T>() : nullptr;
+//}
 
 // A list of tensors in a format that can be used by kernels like split and
 // concatenation.
-template <typename T, bool is_const> class VectorOfTensors
-{
-public:
-  using ElementT = typename std::conditional<is_const, const T, T>::type;
-  using TensorT = typename std::conditional<is_const, const Tensor, Tensor>::type;
-
-  // Build with the tensors in 'tensor_list'.
-  explicit VectorOfTensors(const std::vector<TensorT *> &tensor_list)
-  {
-    const int num_tensors = tensor_list.size();
-
-    all_data_.reserve(num_tensors);
-    all_shape_.reserve(num_tensors);
-    all_shape_ptr_.reserve(num_tensors);
-
-    for (TensorT *tensor : tensor_list)
-    {
-      all_data_.push_back(getTensorData<T>(tensor));
-      all_shape_.push_back(getTensorShape(tensor));
-    }
-
-    // Taking the pointer from inside a std::vector is only OK if the vector is
-    // never modified, so we populate all_shape in the previous loop and then we
-    // are free to grab iterators here.
-    for (tflite::RuntimeShape &shape : all_shape_)
-    {
-      all_shape_ptr_.push_back(&shape);
-    }
-  }
-  // Return a pointer to the data pointers of all tensors in the list. For
-  // example:
-  //   float* const* f = v.data();
-  //   f[0][1] is the second element of the first tensor.
-  ElementT *const *data() const { return all_data_.data(); }
-
-  // Return a pointer the shape pointers of all tensors in the list. For
-  // example:
-  //   const RuntimeShape* const* d = v.dims();
-  //   dims[1] are the dimensions of the second tensor in the list.
-  const tflite::RuntimeShape *const *shapes() const { return all_shape_ptr_.data(); }
-
-private:
-  std::vector<ElementT *> all_data_;
-  std::vector<tflite::RuntimeShape> all_shape_;
-  std::vector<tflite::RuntimeShape *> all_shape_ptr_;
-};
+//template <typename T, bool is_const> class VectorOfTensors
+//{
+//public:
+//  using ElementT = typename std::conditional<is_const, const T, T>::type;
+//  using TensorT = typename std::conditional<is_const, const Tensor, Tensor>::type;
+//
+//  // Build with the tensors in 'tensor_list'.
+//  explicit VectorOfTensors(const std::vector<TensorT *> &tensor_list)
+//  {
+//    const int num_tensors = tensor_list.size();
+//
+//    all_data_.reserve(num_tensors);
+//    all_shape_.reserve(num_tensors);
+//    all_shape_ptr_.reserve(num_tensors);
+//
+//    for (TensorT *tensor : tensor_list)
+//    {
+//      all_data_.push_back(getTensorData<T>(tensor));
+//      all_shape_.push_back(getTensorShape(tensor));
+//    }
+//
+//    // Taking the pointer from inside a std::vector is only OK if the vector is
+//    // never modified, so we populate all_shape in the previous loop and then we
+//    // are free to grab iterators here.
+//    for (tflite::RuntimeShape &shape : all_shape_)
+//    {
+//      all_shape_ptr_.push_back(&shape);
+//    }
+//  }
+//  // Return a pointer to the data pointers of all tensors in the list. For
+//  // example:
+//  //   float* const* f = v.data();
+//  //   f[0][1] is the second element of the first tensor.
+//  ElementT *const *data() const { return all_data_.data(); }
+//
+//  // Return a pointer the shape pointers of all tensors in the list. For
+//  // example:
+//  //   const RuntimeShape* const* d = v.dims();
+//  //   dims[1] are the dimensions of the second tensor in the list.
+//  const tflite::RuntimeShape *const *shapes() const { return all_shape_ptr_.data(); }
+//
+//private:
+//  std::vector<ElementT *> all_data_;
+//  std::vector<tflite::RuntimeShape> all_shape_;
+//  std::vector<tflite::RuntimeShape *> all_shape_ptr_;
+//};
 #ifndef DIS_QUANT
 // A list of quantized tensors in a format that can be used by kernels like
 // split and concatenation.

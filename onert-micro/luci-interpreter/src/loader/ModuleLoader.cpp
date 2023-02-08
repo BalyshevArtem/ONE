@@ -52,7 +52,7 @@ void ModuleLoader::load(RuntimeModule *runtime_module,
     IBaseRuntimeGraph *runtime_graph = runtime_module->getMainGraph(); //_runtime_graphs.at(i);
    // GraphLoader loader(&reader, runtime_graph, memory_manager);//, &_index_to_tensor);
 
-    GraphLoader::loadTensors(&reader, runtime_graph, use_static_memory_manager);
+    //GraphLoader::loadTensors(&reader, runtime_graph, use_static_memory_manager);
    // loader.initInputOutputTensors(use_static_memory_manager);
     GraphLoader::loadOperators(&reader, runtime_graph, use_static_memory_manager);
   //}

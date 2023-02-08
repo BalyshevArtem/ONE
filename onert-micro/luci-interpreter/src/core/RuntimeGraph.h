@@ -68,16 +68,18 @@ public:
   //void addInputTensor(Tensor *input_tensor, int pos);
   //void addOutputTensor(Tensor *output_tensor, int pos);
 
-  void configureAllocations(Tensor *tensor);
+  //void configureAllocations(Tensor *tensor);
 
-  std::unordered_map<const circle::Tensor *, std::unique_ptr<Tensor>> *getIndexToTensor()
+  std::unordered_map<const circle::Tensor *, uint8_t *> *getIndexToTensor()
   {
     return &_index_to_tensor;
   }
 
   const circle::Tensor *getCircleTensorByIndex(int32_t index);
 
-  Tensor *getTensorByIndex(int32_t index);
+  uint8_t *getDataByCircleTensor(const circle::Tensor *raw_tensor);
+
+  void setNullDataByCircleTensor(const circle::Tensor *raw_tensor, const circle::Tensor *output_tensor);
 
   uint8_t *getDataBufferFromCircleTensor(const circle::Tensor *raw_tensor);
 
@@ -88,8 +90,8 @@ public:
     _inplace_op_indexes.insert(index);
   }
 
-  std::vector<Tensor *> getInputTensors() const; //{ return _input_tensors; }
-  std::vector<Tensor *> getOutputTensors() const; //{ return _output_tensors; }
+  std::vector<const circle::Tensor *> getInputTensors() const; //{ return _input_tensors; }
+  std::vector<const circle::Tensor *> getOutputTensors() const; //{ return _output_tensors; }
 
   //void addKernel(std::unique_ptr<Kernel> &&kernel);
 
@@ -104,7 +106,7 @@ public:
 protected:
   IMemoryManager *_memory_manager;
   //std::vector<std::unique_ptr<Tensor>> _tensors;
-  std::unordered_map<const circle::Tensor *, std::unique_ptr<Tensor>> _index_to_tensor;
+  std::unordered_map<const circle::Tensor *, uint8_t *> _index_to_tensor;
 
 
 #ifndef DIS_QUANT
@@ -139,13 +141,13 @@ public:
 
 private:
   void buildAllocDeallocPlan();
-  void allocate(size_t kernel_index) const;
-  void deallocate(size_t kernel_index) const;
+  void allocate(size_t kernel_index);
+  void deallocate(size_t kernel_index);
 
 private:
   // Tensors that are not used anymore after given op
-  std::vector<std::vector<Tensor *>> _alloc_plan;
-  std::vector<std::vector<Tensor *>> _dealloc_plan;
+  std::vector<std::vector<const circle::Tensor *>> _alloc_plan;
+  std::vector<std::vector<const circle::Tensor *>> _dealloc_plan;
 };
 
 //class StaticRuntimeGraph final : public IBaseRuntimeGraph

@@ -91,17 +91,24 @@ namespace
 //}
 //#endif
 
-void evalFloat(const Tensor *input, Tensor *output, bool is_inplace)
+void evalFloat(const circle::Tensor *input, const circle::Tensor *output, bool is_inplace, IBaseRuntimeGraph *runtime_graph)
 {
-  if (is_inplace)
-    output->set_data_buffer(const_cast<uint8_t *>(input->data<uint8_t>()));
+  const float *input_data = reinterpret_cast<const float *>(runtime_graph->getDataByCircleTensor(input));
+  float *output_data = reinterpret_cast<float *>(runtime_graph->getDataByCircleTensor(output));
 
-  tflite::reference_ops::Logistic(kernels::getTensorShape(input), kernels::getTensorData<float>(input),
-                                  kernels::getTensorShape(output), kernels::getTensorData<float>(output));
   if (is_inplace)
   {
-    auto input_tensor = const_cast<Tensor *>(input);
-    input_tensor->set_data_buffer(nullptr);
+    output_data = const_cast<float *>(input_data);
+  }
+
+  assert(input_data != nullptr);
+  assert(output_data != nullptr);
+
+  tflite::reference_ops::Logistic(kernels::getTensorShape(input), input_data,
+                                  kernels::getTensorShape(output), output_data);
+  if (is_inplace)
+  {
+    runtime_graph->setNullDataByCircleTensor(input, output);
   }
 }
 
@@ -129,19 +136,19 @@ void evalQuantized() const
 void configure_kernel_CircleLogistic(const circle::Operator *cur_op,
                                      IBaseRuntimeGraph *runtime_graph)
 {
-  const auto input_index = cur_op->inputs()->operator[](0);
-  const auto output_index = cur_op->outputs()->operator[](0);
-
-  assert(input_index != -1);
-  assert(output_index != -1);
-
-  const auto input = runtime_graph->getTensorByIndex(input_index);
-  auto output = runtime_graph->getTensorByIndex(output_index);
-
-  assert(input != nullptr);
-  assert(output != nullptr);
-
-  LUCI_INTERPRETER_CHECK(input->element_type() == output->element_type());
+//  const auto input_index = cur_op->inputs()->operator[](0);
+//  const auto output_index = cur_op->outputs()->operator[](0);
+//
+//  assert(input_index != -1);
+//  assert(output_index != -1);
+//
+//  const auto input = runtime_graph->getTensorByIndex(input_index);
+//  auto output = runtime_graph->getTensorByIndex(output_index);
+//
+//  assert(input != nullptr);
+//  assert(output != nullptr);
+//
+//  LUCI_INTERPRETER_CHECK(input->element_type() == output->element_type());
 
 #ifndef DIS_QUANT
   if (input()->element_type() == DataType::U8)
@@ -164,16 +171,16 @@ void execute_kernel_CircleLogistic(const circle::Operator *cur_op,
   assert(input_index != -1);
   assert(output_index != -1);
 
-  const auto input = runtime_graph->getTensorByIndex(input_index);
-  auto output = runtime_graph->getTensorByIndex(output_index);
+  const auto input = runtime_graph->getCircleTensorByIndex(input_index);
+  auto output = runtime_graph->getCircleTensorByIndex(output_index);
 
   assert(input != nullptr);
   assert(output != nullptr);
 
-  switch (input->element_type())
+  switch (Tensor::element_type(input))
   {
     case DataType::FLOAT32:
-      evalFloat(input, output, is_inplace);
+      evalFloat(input, output, is_inplace, runtime_graph);
       break;
 #ifndef DIS_QUANT
     case DataType::U8:

@@ -28,25 +28,26 @@ namespace luci_interpreter
 namespace
 {
 using namespace kernels;
-void evalFloat(const Tensor *input, Tensor *output,
-               const circle::Pool2DOptions *options)
+void evalFloat(const circle::Tensor *input, const circle::Tensor *output,
+               const circle::Pool2DOptions *options, IBaseRuntimeGraph* runtime_graph)
 {
-  const int32_t batches = input->dim(0);
-  const int32_t input_height = input->dim(1);
-  const int32_t input_width = input->dim(2);
-  const int32_t depth = input->dim(3);
+  const int32_t batches = Tensor::dim(0, input);
+  const int32_t input_height = Tensor::dim(1, input);
+  const int32_t input_width = Tensor::dim(2, input);
+  const int32_t depth = Tensor::dim(3, input);
 
   const int32_t output_height =
-    kernels::computeOutputSize(static_cast<Padding>(options->padding()), input_height, options->filter_height(), options->stride_h());
+    kernels::computeOutputSize(luci_padding(options->padding()), input_height, options->filter_height(), options->stride_h());
   const int32_t output_width =
-    kernels::computeOutputSize(static_cast<Padding>(options->padding()), input_width, options->filter_width(), options->stride_w());
+    kernels::computeOutputSize(luci_padding(options->padding()), input_width, options->filter_width(), options->stride_w());
 
   const auto padding_height =
     kernels::computePadding(options->stride_h(), 1, input_height, options->filter_height(), output_height);
   const auto padding_width =
     kernels::computePadding(options->stride_w(), 1, input_width, options->filter_width(), output_width);
 
-
+  const float *input_data = reinterpret_cast<const float *>(runtime_graph->getDataByCircleTensor(input));
+  float *output_data = reinterpret_cast<float *>(runtime_graph->getDataByCircleTensor(output));
 
   float activation_min{};
   float activation_max{};
@@ -61,8 +62,8 @@ void evalFloat(const Tensor *input, Tensor *output,
   params.float_activation_min = activation_min;
   params.float_activation_max = activation_max;
 
-  tflite::reference_ops::MaxPool(params, kernels::getTensorShape(input), kernels::getTensorData<float>(input),
-                                 kernels::getTensorShape(output), kernels::getTensorData<float>(output));
+  tflite::reference_ops::MaxPool(params, kernels::getTensorShape(input), input_data,
+                                 kernels::getTensorShape(output), output_data);
 }
 
 } // namespace
@@ -76,12 +77,12 @@ void configure_kernel_CircleMaxPool2D(const circle::Operator *cur_op,
   assert(input_index != -1);
   assert(output_index != -1);
 
-  const auto input = runtime_graph->getTensorByIndex(input_index);
-  auto output = runtime_graph->getTensorByIndex(output_index);
+  const auto input = runtime_graph->getCircleTensorByIndex(input_index);
+  auto output = runtime_graph->getCircleTensorByIndex(output_index);
 
   //const auto *options = cur_op->builtin_options_as_Pool2DOptions();
 
-  LUCI_INTERPRETER_CHECK(input->element_type() == output->element_type());
+  LUCI_INTERPRETER_CHECK(Tensor::element_type(input) == Tensor::element_type(output));
 //  assert(input->shape().num_dims() == 4);
 //  const int32_t batches = input->dim(0);
 //  const int32_t input_height = input->dim(1);
@@ -122,15 +123,15 @@ void execute_kernel_CircleMaxPool2D(const circle::Operator *cur_op,
   assert(input_index != -1);
   assert(output_index != -1);
 
-  const auto input = runtime_graph->getTensorByIndex(input_index);
-  auto output = runtime_graph->getTensorByIndex(output_index);
+  const auto input = runtime_graph->getCircleTensorByIndex(input_index);
+  auto output = runtime_graph->getCircleTensorByIndex(output_index);
 
   const auto *options = cur_op->builtin_options_as_Pool2DOptions();
 
-  switch (input->element_type())
+  switch (Tensor::element_type(input))
   {
     case DataType::FLOAT32:
-      evalFloat(input, output, options);
+      evalFloat(input, output, options, runtime_graph);
       break;
 //    case DataType::U8:
 //      evalQuantized();
