@@ -18,7 +18,6 @@
 #ifndef LUCI_INTERPRETER_PAL_UNIDIRECTIONAL_SEQUENCE_LSTM_H
 #define LUCI_INTERPRETER_PAL_UNIDIRECTIONAL_SEQUENCE_LSTM_H
 
-#include "core/KernelParams.h"
 #include "tensorflow/lite/kernels/internal/reference/integer_ops/logistic.h"
 #include "tensorflow/lite/kernels/internal/reference/integer_ops/tanh.h"
 #include "fixedpoint/fixedpoint.h"
@@ -27,6 +26,81 @@ namespace luci_interpreter_pal
 {
 namespace lstm
 {
+struct IntegerLSTMParams
+{
+  int16_t quantized_cell_clip;
+  int8_t quantized_proj_clip;
+  int cell_scale;
+
+  int32_t effective_input_to_input_scale_a;
+  int32_t effective_input_to_input_scale_b;
+
+  int32_t effective_recurrent_to_input_scale_a;
+  int32_t effective_recurrent_to_input_scale_b;
+
+  int32_t effective_cell_to_input_scale_a;
+  int32_t effective_cell_to_input_scale_b;
+
+  int32_t effective_input_to_forget_scale_a;
+  int32_t effective_input_to_forget_scale_b;
+
+  int32_t effective_recurrent_to_forget_scale_a;
+  int32_t effective_recurrent_to_forget_scale_b;
+
+  int32_t effective_cell_to_forget_scale_a;
+  int32_t effective_cell_to_forget_scale_b;
+
+  int32_t effective_input_to_cell_scale_a;
+  int32_t effective_input_to_cell_scale_b;
+
+  int32_t effective_recurrent_to_cell_scale_a;
+  int32_t effective_recurrent_to_cell_scale_b;
+
+  int32_t effective_input_to_output_scale_a;
+  int32_t effective_input_to_output_scale_b;
+
+  int32_t effective_recurrent_to_output_scale_a;
+  int32_t effective_recurrent_to_output_scale_b;
+
+  int32_t effective_cell_to_output_scale_a;
+  int32_t effective_cell_to_output_scale_b;
+
+  int32_t effective_proj_scale_a;
+  int32_t effective_proj_scale_b;
+
+  int32_t effective_hidden_scale_a;
+  int32_t effective_hidden_scale_b;
+
+  int32_t layer_norm_input_scale_a;
+  int32_t layer_norm_input_scale_b;
+
+  int32_t layer_norm_forget_scale_a;
+  int32_t layer_norm_forget_scale_b;
+
+  int32_t layer_norm_cell_scale_a;
+  int32_t layer_norm_cell_scale_b;
+
+  int32_t layer_norm_output_scale_a;
+  int32_t layer_norm_output_scale_b;
+
+  int32_t hidden_zp;
+
+  int32_t input_variance_guard;
+  int32_t forget_variance_guard;
+  int32_t cell_variance_guard;
+  int32_t output_variance_guard;
+
+  std::vector<int32_t> input_to_forget_effective_bias;
+  std::vector<int32_t> recurrent_to_forget_effective_bias;
+  std::vector<int32_t> input_to_cell_effective_bias;
+  std::vector<int32_t> recurrent_to_cell_effective_bias;
+  std::vector<int32_t> input_to_output_effective_bias;
+  std::vector<int32_t> recurrent_to_output_effective_bias;
+  std::vector<int32_t> input_to_input_effective_bias;
+  std::vector<int32_t> recurrent_to_input_effective_bias;
+  std::vector<int32_t> projection_effective_bias;
+};
+
 // Possible fused activation functions.
 typedef enum
 {
@@ -743,53 +817,56 @@ void lstm_step_integer_8x8_16(
 } // namespace lstm
 
 void eval_integer_8x8_16_lstm(
-  const luci_interpreter::Tensor *input, const luci_interpreter::Tensor *input_to_input_weights,
-  const luci_interpreter::Tensor *input_to_forget_weights,
-  const luci_interpreter::Tensor *input_to_cell_weights,
-  const luci_interpreter::Tensor *input_to_output_weights,
-  const luci_interpreter::Tensor *recurrent_to_input_weights,
-  const luci_interpreter::Tensor *recurrent_to_forget_weights,
-  const luci_interpreter::Tensor *recurrent_to_cell_weights,
-  const luci_interpreter::Tensor *recurrent_to_output_weights,
-  const luci_interpreter::Tensor *cell_to_input_weights,
-  const luci_interpreter::Tensor *cell_to_forget_weights,
-  const luci_interpreter::Tensor *cell_to_output_weights,
-  const luci_interpreter::Tensor *input_layer_norm_coefficients,
-  const luci_interpreter::Tensor *forget_layer_norm_coefficients,
-  const luci_interpreter::Tensor *cell_layer_norm_coefficients,
-  const luci_interpreter::Tensor *output_layer_norm_coefficients,
-  const luci_interpreter::Tensor *input_gate_bias, const luci_interpreter::Tensor *forget_gate_bias,
-  const luci_interpreter::Tensor *cell_gate_bias, const luci_interpreter::Tensor *output_gate_bias,
-  const luci_interpreter::Tensor *projection_weights,
-  const luci_interpreter::Tensor *projection_bias,
-  const luci_interpreter::UnidirectionalSequenceLSTMParams &params, bool forward_sequence,
-  bool time_major, const luci_interpreter::IntegerLSTMParams &integer_lstm_param,
-  int32_t output_state_zp, luci_interpreter::Tensor *output_state,
-  luci_interpreter::Tensor *cell_state, luci_interpreter::Tensor *output, int16_t *scratch0,
-  int16_t *scratch1, int16_t *scratch2, int16_t *scratch3, int8_t *scratch4, int32_t *scratch5)
+  const circle::Tensor *input, const circle::Tensor *input_to_input_weights,
+  const circle::Tensor *input_to_forget_weights,
+  const circle::Tensor *input_to_cell_weights,
+  const circle::Tensor *input_to_output_weights,
+  const circle::Tensor *recurrent_to_input_weights,
+  const circle::Tensor *recurrent_to_forget_weights,
+  const circle::Tensor *recurrent_to_cell_weights,
+  const circle::Tensor *recurrent_to_output_weights,
+  const circle::Tensor *cell_to_input_weights,
+  const circle::Tensor *cell_to_forget_weights,
+  const circle::Tensor *cell_to_output_weights,
+  const circle::Tensor *input_layer_norm_coefficients,
+  const circle::Tensor *forget_layer_norm_coefficients,
+  const circle::Tensor *cell_layer_norm_coefficients,
+  const circle::Tensor *output_layer_norm_coefficients,
+  const circle::Tensor *input_gate_bias, const circle::Tensor *forget_gate_bias,
+  const circle::Tensor *cell_gate_bias, const circle::Tensor *output_gate_bias,
+  const circle::Tensor *projection_weights,
+  const circle::Tensor *projection_bias,
+  const circle::UnidirectionalSequenceLSTMOptions *options, bool forward_sequence,
+  bool time_major, const lstm::IntegerLSTMParams &integer_lstm_param,
+  int32_t output_state_zp, const circle::Tensor *output_state,
+  const circle::Tensor *cell_state, const circle::Tensor *output, int16_t *scratch0,
+  int16_t *scratch1, int16_t *scratch2, int16_t *scratch3, int8_t *scratch4, int32_t *scratch5,
+  luci_interpreter::BaseRuntimeGraph *runtime_graph)
 {
-  const auto input_shape = input->shape();
-  LUCI_INTERPRETER_CHECK(input_shape.num_dims() >= 2 && input_shape.num_dims() <= 3);
+  LUCI_INTERPRETER_CHECK(luci_interpreter::Tensor::num_dims(input) >= 2 && luci_interpreter::Tensor::num_dims(input) <= 3);
 
-  const int n_input = input_shape.dim(input_shape.num_dims() - 1);
+  const int n_input = luci_interpreter::Tensor::dim(input, luci_interpreter::Tensor::num_dims(input) - 1);
   int max_time, n_batch;
-  if (input_shape.num_dims() == 2)
+  if (luci_interpreter::Tensor::num_dims(input) == 2)
   {
     max_time = 1;
-    n_batch = input_shape.dim(0);
+    n_batch = luci_interpreter::Tensor::dim(input, 0);
   }
   else
   {
-    max_time = (time_major) ? input_shape.dim(0) : input_shape.dim(1);
-    n_batch = (time_major) ? input_shape.dim(1) : input_shape.dim(0);
+    max_time = (time_major) ? luci_interpreter::Tensor::dim(input, 0) : luci_interpreter::Tensor::dim(input, 1);
+    n_batch = (time_major) ? luci_interpreter::Tensor::dim(input, 1) : luci_interpreter::Tensor::dim(input, 0);
   }
 
   // n_cell and n_output will be the same size when there is no projection.
-  const int n_cell = input_to_output_weights->shape().dim(0);
-  const int n_output = recurrent_to_output_weights->shape().dim(1);
+  const int n_cell = luci_interpreter::Tensor::dim(input_to_output_weights, 0);
+  const int n_output = luci_interpreter::Tensor::dim(recurrent_to_output_weights, 1);
 
   // Get params for time/batch/sequence.
-  const int output_batch_leading_dim = output->shape().dim(output->shape().num_dims() - 1);
+  const int output_batch_leading_dim = luci_interpreter::Tensor::dim(output, luci_interpreter::Tensor::num_dims(output) - 1);
+
+  const auto input_data = runtime_graph->getDataByTensor(input);
+  auto output_data = runtime_graph->getDataByTensor(output);
 
   if (time_major)
   {
@@ -800,101 +877,101 @@ void eval_integer_8x8_16_lstm(
     {
       const int t_rel = t;
       int8_t *output_ptr =
-        luci_interpreter::kernels::getTensorData<int8_t>(output) + t_rel * output_step;
+        luci_interpreter::kernels::getTensorData<int8_t>(output_data) + t_rel * output_step;
       const int8_t *input_ptr =
-        luci_interpreter::kernels::getTensorData<int8_t>(input) + t_rel * input_step;
+        luci_interpreter::kernels::getTensorData<int8_t>(input_data) + t_rel * input_step;
 
       lstm::lstm_step_integer_8x8_16(
         input_ptr,
         input_to_input_weights == nullptr
           ? nullptr
-          : luci_interpreter::kernels::getTensorData<int8_t>(input_to_input_weights),
+          : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getDataByTensor(input_to_input_weights)),
         integer_lstm_param.effective_input_to_input_scale_a,
         integer_lstm_param.effective_input_to_input_scale_b,
         input_to_forget_weights == nullptr
           ? nullptr
-          : luci_interpreter::kernels::getTensorData<int8_t>(input_to_forget_weights),
+          : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getDataByTensor(input_to_forget_weights)),
         integer_lstm_param.effective_input_to_forget_scale_a,
         integer_lstm_param.effective_input_to_forget_scale_b,
         input_to_cell_weights == nullptr
           ? nullptr
-          : luci_interpreter::kernels::getTensorData<int8_t>(input_to_cell_weights),
+          : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getDataByTensor(input_to_cell_weights)),
         integer_lstm_param.effective_input_to_cell_scale_a,
         integer_lstm_param.effective_input_to_cell_scale_b,
         input_to_output_weights == nullptr
           ? nullptr
-          : luci_interpreter::kernels::getTensorData<int8_t>(input_to_output_weights),
+          : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getDataByTensor(input_to_output_weights)),
         integer_lstm_param.effective_input_to_output_scale_a,
         integer_lstm_param.effective_input_to_output_scale_b,
         recurrent_to_input_weights == nullptr
           ? nullptr
-          : luci_interpreter::kernels::getTensorData<int8_t>(recurrent_to_input_weights),
+          : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getDataByTensor(recurrent_to_input_weights)),
         integer_lstm_param.effective_recurrent_to_input_scale_a,
         integer_lstm_param.effective_recurrent_to_input_scale_b,
         recurrent_to_forget_weights == nullptr
           ? nullptr
-          : luci_interpreter::kernels::getTensorData<int8_t>(recurrent_to_forget_weights),
+          : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getDataByTensor(recurrent_to_forget_weights)),
         integer_lstm_param.effective_recurrent_to_forget_scale_a,
         integer_lstm_param.effective_recurrent_to_forget_scale_b,
         recurrent_to_cell_weights == nullptr
           ? nullptr
-          : luci_interpreter::kernels::getTensorData<int8_t>(recurrent_to_cell_weights),
+          : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getDataByTensor(recurrent_to_cell_weights)),
         integer_lstm_param.effective_recurrent_to_cell_scale_a,
         integer_lstm_param.effective_recurrent_to_cell_scale_b,
         recurrent_to_output_weights == nullptr
           ? nullptr
-          : luci_interpreter::kernels::getTensorData<int8_t>(recurrent_to_output_weights),
+          : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getDataByTensor(recurrent_to_output_weights)),
         integer_lstm_param.effective_recurrent_to_output_scale_a,
         integer_lstm_param.effective_recurrent_to_output_scale_b,
         cell_to_input_weights == nullptr
           ? nullptr
-          : luci_interpreter::kernels::getTensorData<int16_t>(cell_to_input_weights),
+          : luci_interpreter::kernels::getTensorData<int16_t>(runtime_graph->getDataByTensor(cell_to_input_weights)),
         integer_lstm_param.effective_cell_to_input_scale_a,
         integer_lstm_param.effective_cell_to_input_scale_b,
         cell_to_forget_weights == nullptr
           ? nullptr
-          : luci_interpreter::kernels::getTensorData<int16_t>(cell_to_forget_weights),
+          : luci_interpreter::kernels::getTensorData<int16_t>(runtime_graph->getDataByTensor(cell_to_forget_weights)),
         integer_lstm_param.effective_cell_to_forget_scale_a,
         integer_lstm_param.effective_cell_to_forget_scale_b,
         cell_to_output_weights == nullptr
           ? nullptr
-          : luci_interpreter::kernels::getTensorData<int16_t>(cell_to_output_weights),
+          : luci_interpreter::kernels::getTensorData<int16_t>(runtime_graph->getDataByTensor(cell_to_output_weights)),
         integer_lstm_param.effective_cell_to_output_scale_a,
         integer_lstm_param.effective_cell_to_output_scale_b,
         projection_weights == nullptr
           ? nullptr
-          : luci_interpreter::kernels::getTensorData<int8_t>(projection_weights),
+          : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getDataByTensor(projection_weights)),
         integer_lstm_param.effective_proj_scale_a, integer_lstm_param.effective_proj_scale_b,
         integer_lstm_param.hidden_zp, integer_lstm_param.effective_hidden_scale_a,
         integer_lstm_param.effective_hidden_scale_b,
         input_layer_norm_coefficients == nullptr
           ? nullptr
-          : luci_interpreter::kernels::getTensorData<int16_t>(input_layer_norm_coefficients),
+          : luci_interpreter::kernels::getTensorData<int16_t>(runtime_graph->getDataByTensor(input_layer_norm_coefficients)),
         integer_lstm_param.layer_norm_input_scale_a, integer_lstm_param.layer_norm_input_scale_b,
         forget_layer_norm_coefficients == nullptr
           ? nullptr
-          : luci_interpreter::kernels::getTensorData<int16_t>(forget_layer_norm_coefficients),
+          : luci_interpreter::kernels::getTensorData<int16_t>(runtime_graph->getDataByTensor(forget_layer_norm_coefficients)),
         integer_lstm_param.layer_norm_forget_scale_a, integer_lstm_param.layer_norm_forget_scale_b,
         cell_layer_norm_coefficients == nullptr
           ? nullptr
-          : luci_interpreter::kernels::getTensorData<int16_t>(cell_layer_norm_coefficients),
+          : luci_interpreter::kernels::getTensorData<int16_t>(runtime_graph->getDataByTensor(cell_layer_norm_coefficients)),
         integer_lstm_param.layer_norm_cell_scale_a, integer_lstm_param.layer_norm_cell_scale_b,
         output_layer_norm_coefficients == nullptr
           ? nullptr
-          : luci_interpreter::kernels::getTensorData<int16_t>(output_layer_norm_coefficients),
+          : luci_interpreter::kernels::getTensorData<int16_t>(runtime_graph->getDataByTensor(output_layer_norm_coefficients)),
         integer_lstm_param.layer_norm_output_scale_a, integer_lstm_param.layer_norm_output_scale_b,
         input_gate_bias == nullptr
           ? nullptr
-          : luci_interpreter::kernels::getTensorData<int32_t>(input_gate_bias),
+          : luci_interpreter::kernels::getTensorData<int32_t>(runtime_graph->getDataByTensor(input_gate_bias)),
         forget_gate_bias == nullptr
           ? nullptr
-          : luci_interpreter::kernels::getTensorData<int32_t>(forget_gate_bias),
+          : luci_interpreter::kernels::getTensorData<int32_t>(runtime_graph->getDataByTensor(forget_gate_bias)),
         cell_gate_bias == nullptr
           ? nullptr
-          : luci_interpreter::kernels::getTensorData<int32_t>(cell_gate_bias),
+          : luci_interpreter::kernels::getTensorData<int32_t>(runtime_graph->getDataByTensor(cell_gate_bias)),
         output_gate_bias == nullptr
           ? nullptr
-          : luci_interpreter::kernels::getTensorData<int32_t>(output_gate_bias),
+          : luci_interpreter::kernels::getTensorData<int32_t>(runtime_graph->getDataByTensor(output_gate_bias)),
         integer_lstm_param.quantized_cell_clip, integer_lstm_param.quantized_proj_clip,
         integer_lstm_param.cell_scale, integer_lstm_param.input_variance_guard,
         integer_lstm_param.forget_variance_guard, integer_lstm_param.cell_variance_guard,
@@ -908,8 +985,8 @@ void eval_integer_8x8_16_lstm(
         integer_lstm_param.input_to_input_effective_bias.data(),
         integer_lstm_param.recurrent_to_input_effective_bias.data(),
         integer_lstm_param.projection_effective_bias.data(), n_batch, n_cell, n_input, n_output,
-        luci_interpreter::kernels::getTensorData<int8_t>(output_state), output_state_zp,
-        luci_interpreter::kernels::getTensorData<int16_t>(cell_state), output_ptr, scratch0,
+        luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getDataByTensor(output_state)), output_state_zp,
+        luci_interpreter::kernels::getTensorData<int16_t>(runtime_graph->getDataByTensor(cell_state)), output_ptr, scratch0,
         scratch1, scratch2, scratch3, scratch4, scratch5);
     }
   }
@@ -927,109 +1004,109 @@ void eval_integer_8x8_16_lstm(
         const int t_rel = forward_sequence ? t : max_time - t - 1;
         const int time_offset = b * max_time + t_rel;
         const int8_t *input_ptr =
-          luci_interpreter::kernels::getTensorData<int8_t>(input) + time_offset * input_step;
+          luci_interpreter::kernels::getTensorData<int8_t>(input_data) + time_offset * input_step;
         int8_t *output_ptr =
-          luci_interpreter::kernels::getTensorData<int8_t>(output) + time_offset * output_step;
+          luci_interpreter::kernels::getTensorData<int8_t>(output_data) + time_offset * output_step;
 
         // Offset the {output,cell}_state pointers to the right batch.
-        int8_t *output_state_ptr = luci_interpreter::kernels::getTensorData<int8_t>(output_state) +
+        int8_t *output_state_ptr = luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getDataByTensor(output_state)) +
                                    b * output_batch_leading_dim;
         int16_t *cell_state_ptr =
-          luci_interpreter::kernels::getTensorData<int16_t>(cell_state) + b * n_cell;
+          luci_interpreter::kernels::getTensorData<int16_t>(runtime_graph->getDataByTensor(cell_state)) + b * n_cell;
 
         lstm::lstm_step_integer_8x8_16(
           input_ptr,
           input_to_input_weights == nullptr
             ? nullptr
-            : luci_interpreter::kernels::getTensorData<int8_t>(input_to_input_weights),
+            : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getDataByTensor(input_to_input_weights)),
           integer_lstm_param.effective_input_to_input_scale_a,
           integer_lstm_param.effective_input_to_input_scale_b,
           input_to_forget_weights == nullptr
             ? nullptr
-            : luci_interpreter::kernels::getTensorData<int8_t>(input_to_forget_weights),
+            : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getDataByTensor(input_to_forget_weights)),
           integer_lstm_param.effective_input_to_forget_scale_a,
           integer_lstm_param.effective_input_to_forget_scale_b,
           input_to_cell_weights == nullptr
             ? nullptr
-            : luci_interpreter::kernels::getTensorData<int8_t>(input_to_cell_weights),
+            : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getDataByTensor(input_to_cell_weights)),
           integer_lstm_param.effective_input_to_cell_scale_a,
           integer_lstm_param.effective_input_to_cell_scale_b,
           input_to_output_weights == nullptr
             ? nullptr
-            : luci_interpreter::kernels::getTensorData<int8_t>(input_to_output_weights),
+            : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getDataByTensor(input_to_output_weights)),
           integer_lstm_param.effective_input_to_output_scale_a,
           integer_lstm_param.effective_input_to_output_scale_b,
           recurrent_to_input_weights == nullptr
             ? nullptr
-            : luci_interpreter::kernels::getTensorData<int8_t>(recurrent_to_input_weights),
+            : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getDataByTensor(recurrent_to_input_weights)),
           integer_lstm_param.effective_recurrent_to_input_scale_a,
           integer_lstm_param.effective_recurrent_to_input_scale_b,
           recurrent_to_forget_weights == nullptr
             ? nullptr
-            : luci_interpreter::kernels::getTensorData<int8_t>(recurrent_to_forget_weights),
+            : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getDataByTensor(recurrent_to_forget_weights)),
           integer_lstm_param.effective_recurrent_to_forget_scale_a,
           integer_lstm_param.effective_recurrent_to_forget_scale_b,
           recurrent_to_cell_weights == nullptr
             ? nullptr
-            : luci_interpreter::kernels::getTensorData<int8_t>(recurrent_to_cell_weights),
+            : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getDataByTensor(recurrent_to_cell_weights)),
           integer_lstm_param.effective_recurrent_to_cell_scale_a,
           integer_lstm_param.effective_recurrent_to_cell_scale_b,
           recurrent_to_output_weights == nullptr
             ? nullptr
-            : luci_interpreter::kernels::getTensorData<int8_t>(recurrent_to_output_weights),
+            : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getDataByTensor(recurrent_to_output_weights)),
           integer_lstm_param.effective_recurrent_to_output_scale_a,
           integer_lstm_param.effective_recurrent_to_output_scale_b,
           cell_to_input_weights == nullptr
             ? nullptr
-            : luci_interpreter::kernels::getTensorData<int16_t>(cell_to_input_weights),
+            : luci_interpreter::kernels::getTensorData<int16_t>(runtime_graph->getDataByTensor(cell_to_input_weights)),
           integer_lstm_param.effective_cell_to_input_scale_a,
           integer_lstm_param.effective_cell_to_input_scale_b,
           cell_to_forget_weights == nullptr
             ? nullptr
-            : luci_interpreter::kernels::getTensorData<int16_t>(cell_to_forget_weights),
+            : luci_interpreter::kernels::getTensorData<int16_t>(runtime_graph->getDataByTensor(cell_to_forget_weights)),
           integer_lstm_param.effective_cell_to_forget_scale_a,
           integer_lstm_param.effective_cell_to_forget_scale_b,
           cell_to_output_weights == nullptr
             ? nullptr
-            : luci_interpreter::kernels::getTensorData<int16_t>(cell_to_output_weights),
+            : luci_interpreter::kernels::getTensorData<int16_t>(runtime_graph->getDataByTensor(cell_to_output_weights)),
           integer_lstm_param.effective_cell_to_output_scale_a,
           integer_lstm_param.effective_cell_to_output_scale_b,
           projection_weights == nullptr
             ? nullptr
-            : luci_interpreter::kernels::getTensorData<int8_t>(projection_weights),
+            : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getDataByTensor(projection_weights)),
           integer_lstm_param.effective_proj_scale_a, integer_lstm_param.effective_proj_scale_b,
           integer_lstm_param.hidden_zp, integer_lstm_param.effective_hidden_scale_a,
           integer_lstm_param.effective_hidden_scale_b,
           input_layer_norm_coefficients == nullptr
             ? nullptr
-            : luci_interpreter::kernels::getTensorData<int16_t>(input_layer_norm_coefficients),
+            : luci_interpreter::kernels::getTensorData<int16_t>(runtime_graph->getDataByTensor(input_layer_norm_coefficients)),
           integer_lstm_param.layer_norm_input_scale_a, integer_lstm_param.layer_norm_input_scale_b,
           forget_layer_norm_coefficients == nullptr
             ? nullptr
-            : luci_interpreter::kernels::getTensorData<int16_t>(forget_layer_norm_coefficients),
+            : luci_interpreter::kernels::getTensorData<int16_t>(runtime_graph->getDataByTensor(forget_layer_norm_coefficients)),
           integer_lstm_param.layer_norm_forget_scale_a,
           integer_lstm_param.layer_norm_forget_scale_b,
           cell_layer_norm_coefficients == nullptr
             ? nullptr
-            : luci_interpreter::kernels::getTensorData<int16_t>(cell_layer_norm_coefficients),
+            : luci_interpreter::kernels::getTensorData<int16_t>(runtime_graph->getDataByTensor(cell_layer_norm_coefficients)),
           integer_lstm_param.layer_norm_cell_scale_a, integer_lstm_param.layer_norm_cell_scale_b,
           output_layer_norm_coefficients == nullptr
             ? nullptr
-            : luci_interpreter::kernels::getTensorData<int16_t>(output_layer_norm_coefficients),
+            : luci_interpreter::kernels::getTensorData<int16_t>(runtime_graph->getDataByTensor(output_layer_norm_coefficients)),
           integer_lstm_param.layer_norm_output_scale_a,
           integer_lstm_param.layer_norm_output_scale_b,
           input_gate_bias == nullptr
             ? nullptr
-            : luci_interpreter::kernels::getTensorData<int32_t>(input_gate_bias),
+            : luci_interpreter::kernels::getTensorData<int32_t>(runtime_graph->getDataByTensor(input_gate_bias)),
           forget_gate_bias == nullptr
             ? nullptr
-            : luci_interpreter::kernels::getTensorData<int32_t>(forget_gate_bias),
+            : luci_interpreter::kernels::getTensorData<int32_t>(runtime_graph->getDataByTensor(forget_gate_bias)),
           cell_gate_bias == nullptr
             ? nullptr
-            : luci_interpreter::kernels::getTensorData<int32_t>(cell_gate_bias),
+            : luci_interpreter::kernels::getTensorData<int32_t>(runtime_graph->getDataByTensor(cell_gate_bias)),
           output_gate_bias == nullptr
             ? nullptr
-            : luci_interpreter::kernels::getTensorData<int32_t>(output_gate_bias),
+            : luci_interpreter::kernels::getTensorData<int32_t>(runtime_graph->getDataByTensor(output_gate_bias)),
           integer_lstm_param.quantized_cell_clip, integer_lstm_param.quantized_proj_clip,
           integer_lstm_param.cell_scale, integer_lstm_param.input_variance_guard,
           integer_lstm_param.forget_variance_guard, integer_lstm_param.cell_variance_guard,
