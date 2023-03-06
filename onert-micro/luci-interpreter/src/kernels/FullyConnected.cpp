@@ -177,15 +177,12 @@ void configure_kernel_CircleFullyConnected(const circle::Operator *cur_op,
   assert(weights != nullptr);
   assert(output != nullptr);
 
-#ifndef DIS_FLOAT
   if (Tensor::element_type(weights) == DataType::FLOAT32)
   {
     LUCI_INTERPRETER_CHECK(Tensor::element_type(input) == DataType::FLOAT32);
     LUCI_INTERPRETER_CHECK(Tensor::element_type(output) == DataType::FLOAT32);
     LUCI_INTERPRETER_CHECK(!bias || Tensor::element_type(bias) == DataType::FLOAT32)
   }
-#endif // DIS_FLOAT
-#ifndef DIS_QUANT
   else if (Tensor::element_type(weights) == DataType::U8)
   {
     LUCI_INTERPRETER_CHECK(Tensor::element_type(input) == DataType::U8);
@@ -198,7 +195,6 @@ void configure_kernel_CircleFullyConnected(const circle::Operator *cur_op,
     LUCI_INTERPRETER_CHECK(Tensor::element_type(output) == DataType::S8);
     LUCI_INTERPRETER_CHECK(!bias || Tensor::element_type(bias) == DataType::S32)
   }
-#endif // DIS_QUANT
   else
   {
     assert(false && "Unsupported type.");

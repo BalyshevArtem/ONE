@@ -294,6 +294,35 @@ const circle::Tensor *RuntimeGraph::getCircleTensorByIndex(int32_t index)
   return raw_tensor;
 }
 
+std::vector<const circle::Tensor *> RuntimeGraph::getIntermediateTensors()
+{
+  std::vector<const circle::Tensor *> inter_tensors;
+
+  const auto tensors = _reader->tensors();
+
+  for (const auto *tensor : tensors)
+  {
+    auto const buffer = wrap(_reader->buffers()[tensor->buffer()]->data());
+    auto const dims = wrap(tensor->shape()); // in NHWC
+
+    if (not buffer.empty() or dims.empty() or tensor->quantization() == nullptr)
+      continue;
+
+    uint32_t size = 1;
+    for (int dim : dims)
+    {
+      size *= dim;
+    }
+
+    if (size != 0)
+      continue;
+
+    inter_tensors.push_back(tensor);
+  }
+
+  return inter_tensors;
+}
+
 void RuntimeGraph::configure()
 {
   KernelConfigureRegistry kernel_configure;

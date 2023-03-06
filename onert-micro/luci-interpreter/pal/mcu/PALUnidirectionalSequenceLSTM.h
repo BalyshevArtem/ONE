@@ -18,13 +18,55 @@
 #ifndef LUCI_INTERPRETER_PAL_UNIDIRECTIONAL_SEQUENCE_LSTM_H
 #define LUCI_INTERPRETER_PAL_UNIDIRECTIONAL_SEQUENCE_LSTM_H
 
-#include "core/KernelParams.h"
+#include "kernels/UnidirectionalSequenceLSTM.h"
+#include "tensorflow/lite/kernels/internal/reference/fully_connected.h"
 #include "tensorflow/lite/kernels/internal/reference/integer_ops/logistic.h"
+#include "tensorflow/lite/kernels/internal/reference/logistic.h"
 #include "tensorflow/lite/kernels/internal/reference/integer_ops/tanh.h"
+#include "tensorflow/lite/kernels/internal/reference/tanh.h"
 #include "fixedpoint/fixedpoint.h"
 
 namespace luci_interpreter_pal
 {
+
+namespace
+{
+void AddElementWise(const int16_t* input_1, const int16_t* input_2, int n_batch,
+                    int n_input, int16_t* output) {
+  for (int batch = 0; batch < n_batch; ++batch) {
+    for (int i = 0; i < n_input; ++i) {
+      const int index = batch * n_input + i;
+      int32_t sum = input_1[index] + input_2[index];
+      const int32_t sum_clamped = std::min(static_cast<int32_t>(std::numeric_limits<int16_t>::max()), std::max(static_cast<int32_t>(std::numeric_limits<int16_t>::min()), sum));
+      output[index] = static_cast<int16_t>(sum_clamped);
+    }
+  }
+}
+
+void AddElementWise(const float* input_1, const float* input_2, int n_batch,
+                    int n_input, float* output) {
+  for (int batch = 0; batch < n_batch; ++batch) {
+    for (int i = 0; i < n_input; ++i) {
+      const int index = batch * n_input + i;
+      output[index] = input_1[index] + input_2[index];
+    }
+  }
+}
+
+void Sigmoid(const tflite::RuntimeShape& data_shape, int16_t* data) {
+  tflite::reference_integer_ops::Logistic(
+    0 /*data->input_multiplier*/, 0 /*data->input_left_shift */,
+    data_shape.FlatSize() /*NumElements(input->dims)*/,
+    data /* tflite::micro::GetTensorData<int16_t>(input) */,
+    data /*tflite::micro::GetTensorData<int16_t>(output) */);
+}
+
+void Sigmoid(const tflite::RuntimeShape& data_shape, float* data) {
+  tflite::reference_ops::Logistic(data_shape, data, data_shape, data);
+}
+
+} // namespace
+
 namespace lstm
 {
 // Possible fused activation functions.
@@ -739,315 +781,603 @@ void lstm_step_integer_8x8_16(
   // is always contiguous.
   std::copy_n(output_state_ptr, n_batch * n_output, output_ptr);
 }
-
 } // namespace lstm
 
-void eval_integer_8x8_16_lstm(
-  const luci_interpreter::Tensor *input, const luci_interpreter::Tensor *input_to_input_weights,
-  const luci_interpreter::Tensor *input_to_forget_weights,
-  const luci_interpreter::Tensor *input_to_cell_weights,
-  const luci_interpreter::Tensor *input_to_output_weights,
-  const luci_interpreter::Tensor *recurrent_to_input_weights,
-  const luci_interpreter::Tensor *recurrent_to_forget_weights,
-  const luci_interpreter::Tensor *recurrent_to_cell_weights,
-  const luci_interpreter::Tensor *recurrent_to_output_weights,
-  const luci_interpreter::Tensor *cell_to_input_weights,
-  const luci_interpreter::Tensor *cell_to_forget_weights,
-  const luci_interpreter::Tensor *cell_to_output_weights,
-  const luci_interpreter::Tensor *input_layer_norm_coefficients,
-  const luci_interpreter::Tensor *forget_layer_norm_coefficients,
-  const luci_interpreter::Tensor *cell_layer_norm_coefficients,
-  const luci_interpreter::Tensor *output_layer_norm_coefficients,
-  const luci_interpreter::Tensor *input_gate_bias, const luci_interpreter::Tensor *forget_gate_bias,
-  const luci_interpreter::Tensor *cell_gate_bias, const luci_interpreter::Tensor *output_gate_bias,
-  const luci_interpreter::Tensor *projection_weights,
-  const luci_interpreter::Tensor *projection_bias,
-  const luci_interpreter::UnidirectionalSequenceLSTMParams &params, bool forward_sequence,
-  bool time_major, const luci_interpreter::IntegerLSTMParams &integer_lstm_param,
-  int32_t output_state_zp, luci_interpreter::Tensor *output_state,
-  luci_interpreter::Tensor *cell_state, luci_interpreter::Tensor *output, int16_t *scratch0,
-  int16_t *scratch1, int16_t *scratch2, int16_t *scratch3, int8_t *scratch4, int32_t *scratch5)
+
+namespace lstm_internal
 {
-  const auto input_shape = input->shape();
-  LUCI_INTERPRETER_CHECK(input_shape.num_dims() >= 2 && input_shape.num_dims() <= 3);
+// Size information about the LSTM kernel, which is deduced from tensors stored
+// in the flat buffer file.
+struct LstmSizeInfo
+{
+  bool time_major;
+  int32_t batch_size;
+  int32_t time_steps;
+  int32_t input_dimension;
+  int32_t state_dimension;
+};
 
-  const int n_input = input_shape.dim(input_shape.num_dims() - 1);
-  int max_time, n_batch;
-  if (input_shape.num_dims() == 2)
+class LstmStepManager
+{
+public:
+  LstmStepManager() = delete;
+  // Does not take any ownership, and all pointers must refer to valid objects
+  // that outlive the one constructed.
+  explicit LstmStepManager(const LstmSizeInfo *size_info) : size_info_(*size_info) {}
+
+  void UpdateTime();
+  void UpdateBatch();
+
+  void ResetTime() { current_time_ = 0; }
+  tflite::RuntimeShape InputShape() const;
+  tflite::RuntimeShape StateShape() const;
+
+  int InputOffset() const { return input_offset_; }
+  int OutputOffset() const { return output_offset_; }
+  int HiddenStateOffset() const { return hidden_state_offset_; }
+  int CellStateOffset() const { return cell_state_offset_; }
+
+private:
+  int32_t current_time_ = 0;
+  int32_t current_batch_ = 0;
+  int32_t input_offset_ = 0;
+  int32_t output_offset_ = 0;
+  int32_t hidden_state_offset_ = 0;
+  int32_t cell_state_offset_ = 0;
+  // Sizeinfo is from LstmOpData, which reside in the memory arena
+  // (guarante to outlast LSTMStepManager, which reside in stack)
+  const LstmSizeInfo &size_info_;
+};
+
+struct CellStateInfo
+{
+  float cell_clip;
+  // clipping range for cell state only 16 bits cell is supported (could be
+  // generalized through templatation)
+  int16_t quantized_cell_clip;
+  // 2^-cell_state_scale_power = cell state scale, required by integer tanh
+  // computation
+  int32_t cell_state_scale_power;
+};
+
+
+// Create the additional information about the cell state, which include:
+// cell_state_scale_power: used in integer nonlinear function (e.g., tanh)
+// quantized_cell_clip: quantized cell clip range
+CellStateInfo CreateLstmCellStateInfo(const float cell_state_scale,
+                                      const float cell_clip) {
+  CellStateInfo cell_state_info;
+  // cell_state_scale_power: 2^-cell_state_scale_power = cell state scale
+  int buffer;
+  tflite::CheckedLog2(cell_state_scale, &buffer);
+  cell_state_info.cell_state_scale_power = buffer;
+  // Cell state specifics
+  cell_state_info.cell_clip = cell_clip;
+  cell_state_info.quantized_cell_clip = static_cast<int16_t>(
+    std::min(std::max(static_cast<double>(cell_clip) /
+                      static_cast<double>(cell_state_scale),
+                      -32768.0),
+             32767.0));
+  return cell_state_info;
+}
+
+// Calculates a single LSTM gate.
+// Implements the following formula:
+//   gate = activate(FC(input) + FC(recurrent))
+// Activation is sigmoid except for the "cell" gate (configurable, usually tanh)
+template <typename ActivationType, typename WeightType, typename CellType,
+  typename BiasType>
+void calculate_lstm_gate(const LstmStepManager *step_info, const luci_interpreter::lstm::GateParameters *gate_params,
+                         // Input FC
+                         ActivationType *input_data, const circle::Tensor *input_weight, const circle::Tensor *input_bias,
+                         // Recurrent FC
+                         ActivationType *recurrent_data, const circle::Tensor *recurrent_weight, const circle::Tensor *recurrent_bias,
+                         // Output
+                         CellType *gate_output,
+                         // Scratch arrays
+                         CellType *fc_output_buffer, const lstm::TfLiteFusedActivation activation,
+                         luci_interpreter::BaseRuntimeGraph *runtime_graph)
+{
+//  // Check offset validity to avoid memory overflow
+//  LUCI_INTERPRETER_CHECK(step_info->InputOffset() + step_info->InputShape().FlatSize() <= luci_interpreter::Tensor::num_elements(input));
+//  LUCI_INTERPRETER_CHECK(step_info->HiddenStateOffset() + step_info->StateShape().FlatSize() <= luci_interpreter::Tensor::num_elements(recurrent));
+
+  const auto gate_output_shape = step_info->StateShape();
   {
-    max_time = 1;
-    n_batch = input_shape.dim(0);
+    tflite::FullyConnectedParams op_params{};
+    op_params.input_offset = gate_params->input_fc_params.input_offset;
+    op_params.weights_offset = gate_params->input_fc_params.weights_offset;
+    op_params.output_offset = gate_params->input_fc_params.output_offset;
+    op_params.output_multiplier = gate_params->input_fc_params.output_multiplier;
+    op_params.output_shift = gate_params->input_fc_params.output_shift;
+    op_params.quantized_activation_min = gate_params->input_fc_params.quantized_activation_min;
+    op_params.quantized_activation_max = gate_params->input_fc_params.quantized_activation_max;
+
+    tflite::reference_ops::FullyConnected(&op_params, step_info->InputShape(),
+                                            input_data + step_info->InputOffset(),
+                                          luci_interpreter::kernels::getTensorShape(input_weight),
+                                          luci_interpreter::kernels::getTensorData<WeightType>(
+                                            runtime_graph->getConstDataByTensor(input_weight)),
+                                          luci_interpreter::kernels::getTensorShape(input_bias),
+                                          luci_interpreter::kernels::getTensorData<BiasType>(
+                                            runtime_graph->getDataByTensor(input_bias)),
+                                          gate_output_shape,
+                                          gate_output);
   }
-  else
+
   {
-    max_time = (time_major) ? input_shape.dim(0) : input_shape.dim(1);
-    n_batch = (time_major) ? input_shape.dim(1) : input_shape.dim(0);
-  }
+    tflite::FullyConnectedParams op_params{};
+    op_params.input_offset = gate_params->recurrent_fc_params.input_offset;
+    op_params.weights_offset = gate_params->recurrent_fc_params.weights_offset;
+    op_params.output_offset = gate_params->recurrent_fc_params.output_offset;
+    op_params.output_multiplier = gate_params->recurrent_fc_params.output_multiplier;
+    op_params.output_shift = gate_params->recurrent_fc_params.output_shift;
+    op_params.quantized_activation_min = gate_params->recurrent_fc_params.quantized_activation_min;
+    op_params.quantized_activation_max = gate_params->recurrent_fc_params.quantized_activation_max;
 
-  // n_cell and n_output will be the same size when there is no projection.
-  const int n_cell = input_to_output_weights->shape().dim(0);
-  const int n_output = recurrent_to_output_weights->shape().dim(1);
+    tflite::reference_ops::FullyConnected(&op_params, step_info->StateShape(),
+                                          recurrent_data + step_info->HiddenStateOffset(),
+                                          luci_interpreter::kernels::getTensorShape(recurrent_weight),
+                                          luci_interpreter::kernels::getTensorData<WeightType>(
+                                            runtime_graph->getConstDataByTensor(recurrent_weight)),
+                                          luci_interpreter::kernels::getTensorShape(recurrent_bias),
+                                          luci_interpreter::kernels::getTensorData<BiasType>(
+                                            runtime_graph->getDataByTensor(recurrent_bias)),
+                                          gate_output_shape, fc_output_buffer);
 
-  // Get params for time/batch/sequence.
-  const int output_batch_leading_dim = output->shape().dim(output->shape().num_dims() - 1);
+    AddElementWise(gate_output, fc_output_buffer, /*n_batch=*/ gate_output_shape.DimsData()[0],
+                  /*n_state=*/gate_output_shape.DimsData()[1], gate_output);
 
-  if (time_major)
-  {
-    const int input_step = n_batch * n_input;
-    const int output_step = n_batch * output_batch_leading_dim;
-
-    for (int t = 0; t < max_time; t++)
-    {
-      const int t_rel = t;
-      int8_t *output_ptr =
-        luci_interpreter::kernels::getTensorData<int8_t>(output) + t_rel * output_step;
-      const int8_t *input_ptr =
-        luci_interpreter::kernels::getTensorData<int8_t>(input) + t_rel * input_step;
-
-      lstm::lstm_step_integer_8x8_16(
-        input_ptr,
-        input_to_input_weights == nullptr
-          ? nullptr
-          : luci_interpreter::kernels::getTensorData<int8_t>(input_to_input_weights),
-        integer_lstm_param.effective_input_to_input_scale_a,
-        integer_lstm_param.effective_input_to_input_scale_b,
-        input_to_forget_weights == nullptr
-          ? nullptr
-          : luci_interpreter::kernels::getTensorData<int8_t>(input_to_forget_weights),
-        integer_lstm_param.effective_input_to_forget_scale_a,
-        integer_lstm_param.effective_input_to_forget_scale_b,
-        input_to_cell_weights == nullptr
-          ? nullptr
-          : luci_interpreter::kernels::getTensorData<int8_t>(input_to_cell_weights),
-        integer_lstm_param.effective_input_to_cell_scale_a,
-        integer_lstm_param.effective_input_to_cell_scale_b,
-        input_to_output_weights == nullptr
-          ? nullptr
-          : luci_interpreter::kernels::getTensorData<int8_t>(input_to_output_weights),
-        integer_lstm_param.effective_input_to_output_scale_a,
-        integer_lstm_param.effective_input_to_output_scale_b,
-        recurrent_to_input_weights == nullptr
-          ? nullptr
-          : luci_interpreter::kernels::getTensorData<int8_t>(recurrent_to_input_weights),
-        integer_lstm_param.effective_recurrent_to_input_scale_a,
-        integer_lstm_param.effective_recurrent_to_input_scale_b,
-        recurrent_to_forget_weights == nullptr
-          ? nullptr
-          : luci_interpreter::kernels::getTensorData<int8_t>(recurrent_to_forget_weights),
-        integer_lstm_param.effective_recurrent_to_forget_scale_a,
-        integer_lstm_param.effective_recurrent_to_forget_scale_b,
-        recurrent_to_cell_weights == nullptr
-          ? nullptr
-          : luci_interpreter::kernels::getTensorData<int8_t>(recurrent_to_cell_weights),
-        integer_lstm_param.effective_recurrent_to_cell_scale_a,
-        integer_lstm_param.effective_recurrent_to_cell_scale_b,
-        recurrent_to_output_weights == nullptr
-          ? nullptr
-          : luci_interpreter::kernels::getTensorData<int8_t>(recurrent_to_output_weights),
-        integer_lstm_param.effective_recurrent_to_output_scale_a,
-        integer_lstm_param.effective_recurrent_to_output_scale_b,
-        cell_to_input_weights == nullptr
-          ? nullptr
-          : luci_interpreter::kernels::getTensorData<int16_t>(cell_to_input_weights),
-        integer_lstm_param.effective_cell_to_input_scale_a,
-        integer_lstm_param.effective_cell_to_input_scale_b,
-        cell_to_forget_weights == nullptr
-          ? nullptr
-          : luci_interpreter::kernels::getTensorData<int16_t>(cell_to_forget_weights),
-        integer_lstm_param.effective_cell_to_forget_scale_a,
-        integer_lstm_param.effective_cell_to_forget_scale_b,
-        cell_to_output_weights == nullptr
-          ? nullptr
-          : luci_interpreter::kernels::getTensorData<int16_t>(cell_to_output_weights),
-        integer_lstm_param.effective_cell_to_output_scale_a,
-        integer_lstm_param.effective_cell_to_output_scale_b,
-        projection_weights == nullptr
-          ? nullptr
-          : luci_interpreter::kernels::getTensorData<int8_t>(projection_weights),
-        integer_lstm_param.effective_proj_scale_a, integer_lstm_param.effective_proj_scale_b,
-        integer_lstm_param.hidden_zp, integer_lstm_param.effective_hidden_scale_a,
-        integer_lstm_param.effective_hidden_scale_b,
-        input_layer_norm_coefficients == nullptr
-          ? nullptr
-          : luci_interpreter::kernels::getTensorData<int16_t>(input_layer_norm_coefficients),
-        integer_lstm_param.layer_norm_input_scale_a, integer_lstm_param.layer_norm_input_scale_b,
-        forget_layer_norm_coefficients == nullptr
-          ? nullptr
-          : luci_interpreter::kernels::getTensorData<int16_t>(forget_layer_norm_coefficients),
-        integer_lstm_param.layer_norm_forget_scale_a, integer_lstm_param.layer_norm_forget_scale_b,
-        cell_layer_norm_coefficients == nullptr
-          ? nullptr
-          : luci_interpreter::kernels::getTensorData<int16_t>(cell_layer_norm_coefficients),
-        integer_lstm_param.layer_norm_cell_scale_a, integer_lstm_param.layer_norm_cell_scale_b,
-        output_layer_norm_coefficients == nullptr
-          ? nullptr
-          : luci_interpreter::kernels::getTensorData<int16_t>(output_layer_norm_coefficients),
-        integer_lstm_param.layer_norm_output_scale_a, integer_lstm_param.layer_norm_output_scale_b,
-        input_gate_bias == nullptr
-          ? nullptr
-          : luci_interpreter::kernels::getTensorData<int32_t>(input_gate_bias),
-        forget_gate_bias == nullptr
-          ? nullptr
-          : luci_interpreter::kernels::getTensorData<int32_t>(forget_gate_bias),
-        cell_gate_bias == nullptr
-          ? nullptr
-          : luci_interpreter::kernels::getTensorData<int32_t>(cell_gate_bias),
-        output_gate_bias == nullptr
-          ? nullptr
-          : luci_interpreter::kernels::getTensorData<int32_t>(output_gate_bias),
-        integer_lstm_param.quantized_cell_clip, integer_lstm_param.quantized_proj_clip,
-        integer_lstm_param.cell_scale, integer_lstm_param.input_variance_guard,
-        integer_lstm_param.forget_variance_guard, integer_lstm_param.cell_variance_guard,
-        integer_lstm_param.output_variance_guard,
-        integer_lstm_param.input_to_forget_effective_bias.data(),
-        integer_lstm_param.recurrent_to_forget_effective_bias.data(),
-        integer_lstm_param.input_to_cell_effective_bias.data(),
-        integer_lstm_param.recurrent_to_cell_effective_bias.data(),
-        integer_lstm_param.input_to_output_effective_bias.data(),
-        integer_lstm_param.recurrent_to_output_effective_bias.data(),
-        integer_lstm_param.input_to_input_effective_bias.data(),
-        integer_lstm_param.recurrent_to_input_effective_bias.data(),
-        integer_lstm_param.projection_effective_bias.data(), n_batch, n_cell, n_input, n_output,
-        luci_interpreter::kernels::getTensorData<int8_t>(output_state), output_state_zp,
-        luci_interpreter::kernels::getTensorData<int16_t>(cell_state), output_ptr, scratch0,
-        scratch1, scratch2, scratch3, scratch4, scratch5);
+    switch (activation) {
+      case lstm::TfLiteFusedActivation::kTfLiteActSigmoid:
+        Sigmoid(gate_output_shape, gate_output);
+        break;
+      case lstm::TfLiteFusedActivation::kTfLiteActTanh: {
+        // Set the scale power to -12 to avoid shift
+        Tanh(/*cell_state_scale_power=*/-12, gate_output_shape, gate_output,
+                                        gate_output_shape, gate_output);
+      } break;
+      default:
+        // Only Sigmoid or Tanh is used.
+        assert(false && "Only Sigmoid or Tanh is used");
     }
   }
-  else
+}
+
+// Update the cell state using the output from the forget gate, input gate, and
+// cell gate Formula: updated_cell_state = forget_gate_output*cell_state +
+// input_gate_output * cell_gate_output, where * denotes element wise
+// multiplication
+template <typename CellType>
+void update_lstm_cell(const LstmStepManager& step_info,
+                      CellType* cell_state_data,
+                      // Gate outputs
+                      CellType* forget_gate_output,
+                      const CellType* input_gate_output,
+                      const CellType* cell_gate_output,
+                      // Mul parameters
+                      const luci_interpreter::lstm::ArithmeticParams& forget_cell_mul_params,
+                      const luci_interpreter::lstm::ArithmeticParams& input_mul_params,
+                      const CellStateInfo& cell_state_info, CellType* buffer)
+{
+//  // Check offset validity to avoid memory overflow
+//  LUCI_INTERPRETER_CHECK(step_info.CellStateOffset() + step_info.StateShape().FlatSize() <=
+//                          luci_interpreter::kernels::getTensorShape(cell_state).FlatSize());
+
+  auto cell_state_shape = step_info.StateShape();
+  // Forget Gate x Cell State
+  Mul(cell_state_shape, forget_cell_mul_params, forget_gate_output,
+      cell_state_data + step_info.CellStateOffset(),
+      cell_state_data + step_info.CellStateOffset());
+  // Input Gate x Cell Gate
+  Mul(cell_state_shape, input_mul_params, input_gate_output, cell_gate_output, buffer);
+
+  // Update the cell state
+  AddElementWise(cell_state_data + step_info.CellStateOffset(),
+                 buffer,
+                 /*n_batch=*/cell_state_shape.DimsData()[0],
+                 /*n_state=*/cell_state_shape.DimsData()[1],
+                 cell_state_data + step_info.CellStateOffset());
+
+  if (cell_state_info.cell_clip > 0)
   {
-    for (int b = 0; b < n_batch; b++)
-    {
-      const int input_step = n_input;
-      const int output_step = output_batch_leading_dim;
+    Clipping(cell_state_shape.FlatSize(), cell_state_info,
+             tflite::micro::GetTensorData<CellType>(cell_state) + step_info.CellStateOffset());
+  }
+}
 
-      for (int t = 0; t < max_time; t++)
-      {
-        // If this is the forward_sequence, step forward, otherwise step
-        // backwards.
-        const int t_rel = forward_sequence ? t : max_time - t - 1;
-        const int time_offset = b * max_time + t_rel;
-        const int8_t *input_ptr =
-          luci_interpreter::kernels::getTensorData<int8_t>(input) + time_offset * input_step;
-        int8_t *output_ptr =
-          luci_interpreter::kernels::getTensorData<int8_t>(output) + time_offset * output_step;
+template <typename ActivationType, typename WeightType, typename CellType,
+  typename BiasType>
+void lstm_step(luci_interpreter::lstm::LSTMStruct *lstm_struct, luci_interpreter::lstm::QuantLSTMParameters *quant_lstm_params, LstmSizeInfo *step_info,
+               CellStateInfo *cell_state_info,
+               ActivationType *output_state_data, CellType *cell_state_data, CellType *scratch0,
+               CellType *scratch1, CellType *scratch2, CellType *scratch3, luci_interpreter::BaseRuntimeGraph *runtime_graph)
+{
+  /*Step1: Calculate gate outputs to prepare cell state update*/
+  CellType *gate_internal_buffer = scratch3;
+  CellType *forget_gate_output = scratch0;
+  calculate_lstm_gate<ActivationType, WeightType, CellType, BiasType>(
+    step_info, &quant_lstm_params->forget_gate_parameters,
+    // Input FC
+    runtime_graph->getDataByTensor(lstm_struct->input()), lstm_struct->input_to_forget_weights(),
+    lstm_struct->forget_gate_bias(),
+    // Recurrent FC
+    output_state_data, lstm_struct->recurrent_to_forget_weights(), nullptr,
+    // Output
+    forget_gate_output, gate_internal_buffer, lstm::TfLiteFusedActivation::kTfLiteActSigmoid);
 
-        // Offset the {output,cell}_state pointers to the right batch.
-        int8_t *output_state_ptr = luci_interpreter::kernels::getTensorData<int8_t>(output_state) +
-                                   b * output_batch_leading_dim;
-        int16_t *cell_state_ptr =
-          luci_interpreter::kernels::getTensorData<int16_t>(cell_state) + b * n_cell;
+  // Input Gate calculation;
+  CellType *input_gate_output = scratch1;
+  calculate_lstm_gate<ActivationType, WeightType, CellType, BiasType>(
+    step_info, &quant_lstm_params->input_gate_parameters,
+    // Input FC
+    runtime_graph->getDataByTensor(lstm_struct->input()), lstm_struct->input_to_input_weights(),
+    lstm_struct->input_gate_bias(),
+    // Recurrent FC
+    output_state_data, lstm_struct->recurrent_to_input_weights(),
+    /*recurrent_bias*/ nullptr,
+    // Output
+    input_gate_output,
+    // Scratch arrays
+    gate_internal_buffer, lstm::TfLiteFusedActivation::kTfLiteActSigmoid);
 
-        lstm::lstm_step_integer_8x8_16(
-          input_ptr,
-          input_to_input_weights == nullptr
-            ? nullptr
-            : luci_interpreter::kernels::getTensorData<int8_t>(input_to_input_weights),
-          integer_lstm_param.effective_input_to_input_scale_a,
-          integer_lstm_param.effective_input_to_input_scale_b,
-          input_to_forget_weights == nullptr
-            ? nullptr
-            : luci_interpreter::kernels::getTensorData<int8_t>(input_to_forget_weights),
-          integer_lstm_param.effective_input_to_forget_scale_a,
-          integer_lstm_param.effective_input_to_forget_scale_b,
-          input_to_cell_weights == nullptr
-            ? nullptr
-            : luci_interpreter::kernels::getTensorData<int8_t>(input_to_cell_weights),
-          integer_lstm_param.effective_input_to_cell_scale_a,
-          integer_lstm_param.effective_input_to_cell_scale_b,
-          input_to_output_weights == nullptr
-            ? nullptr
-            : luci_interpreter::kernels::getTensorData<int8_t>(input_to_output_weights),
-          integer_lstm_param.effective_input_to_output_scale_a,
-          integer_lstm_param.effective_input_to_output_scale_b,
-          recurrent_to_input_weights == nullptr
-            ? nullptr
-            : luci_interpreter::kernels::getTensorData<int8_t>(recurrent_to_input_weights),
-          integer_lstm_param.effective_recurrent_to_input_scale_a,
-          integer_lstm_param.effective_recurrent_to_input_scale_b,
-          recurrent_to_forget_weights == nullptr
-            ? nullptr
-            : luci_interpreter::kernels::getTensorData<int8_t>(recurrent_to_forget_weights),
-          integer_lstm_param.effective_recurrent_to_forget_scale_a,
-          integer_lstm_param.effective_recurrent_to_forget_scale_b,
-          recurrent_to_cell_weights == nullptr
-            ? nullptr
-            : luci_interpreter::kernels::getTensorData<int8_t>(recurrent_to_cell_weights),
-          integer_lstm_param.effective_recurrent_to_cell_scale_a,
-          integer_lstm_param.effective_recurrent_to_cell_scale_b,
-          recurrent_to_output_weights == nullptr
-            ? nullptr
-            : luci_interpreter::kernels::getTensorData<int8_t>(recurrent_to_output_weights),
-          integer_lstm_param.effective_recurrent_to_output_scale_a,
-          integer_lstm_param.effective_recurrent_to_output_scale_b,
-          cell_to_input_weights == nullptr
-            ? nullptr
-            : luci_interpreter::kernels::getTensorData<int16_t>(cell_to_input_weights),
-          integer_lstm_param.effective_cell_to_input_scale_a,
-          integer_lstm_param.effective_cell_to_input_scale_b,
-          cell_to_forget_weights == nullptr
-            ? nullptr
-            : luci_interpreter::kernels::getTensorData<int16_t>(cell_to_forget_weights),
-          integer_lstm_param.effective_cell_to_forget_scale_a,
-          integer_lstm_param.effective_cell_to_forget_scale_b,
-          cell_to_output_weights == nullptr
-            ? nullptr
-            : luci_interpreter::kernels::getTensorData<int16_t>(cell_to_output_weights),
-          integer_lstm_param.effective_cell_to_output_scale_a,
-          integer_lstm_param.effective_cell_to_output_scale_b,
-          projection_weights == nullptr
-            ? nullptr
-            : luci_interpreter::kernels::getTensorData<int8_t>(projection_weights),
-          integer_lstm_param.effective_proj_scale_a, integer_lstm_param.effective_proj_scale_b,
-          integer_lstm_param.hidden_zp, integer_lstm_param.effective_hidden_scale_a,
-          integer_lstm_param.effective_hidden_scale_b,
-          input_layer_norm_coefficients == nullptr
-            ? nullptr
-            : luci_interpreter::kernels::getTensorData<int16_t>(input_layer_norm_coefficients),
-          integer_lstm_param.layer_norm_input_scale_a, integer_lstm_param.layer_norm_input_scale_b,
-          forget_layer_norm_coefficients == nullptr
-            ? nullptr
-            : luci_interpreter::kernels::getTensorData<int16_t>(forget_layer_norm_coefficients),
-          integer_lstm_param.layer_norm_forget_scale_a,
-          integer_lstm_param.layer_norm_forget_scale_b,
-          cell_layer_norm_coefficients == nullptr
-            ? nullptr
-            : luci_interpreter::kernels::getTensorData<int16_t>(cell_layer_norm_coefficients),
-          integer_lstm_param.layer_norm_cell_scale_a, integer_lstm_param.layer_norm_cell_scale_b,
-          output_layer_norm_coefficients == nullptr
-            ? nullptr
-            : luci_interpreter::kernels::getTensorData<int16_t>(output_layer_norm_coefficients),
-          integer_lstm_param.layer_norm_output_scale_a,
-          integer_lstm_param.layer_norm_output_scale_b,
-          input_gate_bias == nullptr
-            ? nullptr
-            : luci_interpreter::kernels::getTensorData<int32_t>(input_gate_bias),
-          forget_gate_bias == nullptr
-            ? nullptr
-            : luci_interpreter::kernels::getTensorData<int32_t>(forget_gate_bias),
-          cell_gate_bias == nullptr
-            ? nullptr
-            : luci_interpreter::kernels::getTensorData<int32_t>(cell_gate_bias),
-          output_gate_bias == nullptr
-            ? nullptr
-            : luci_interpreter::kernels::getTensorData<int32_t>(output_gate_bias),
-          integer_lstm_param.quantized_cell_clip, integer_lstm_param.quantized_proj_clip,
-          integer_lstm_param.cell_scale, integer_lstm_param.input_variance_guard,
-          integer_lstm_param.forget_variance_guard, integer_lstm_param.cell_variance_guard,
-          integer_lstm_param.output_variance_guard,
-          integer_lstm_param.input_to_forget_effective_bias.data(),
-          integer_lstm_param.recurrent_to_forget_effective_bias.data(),
-          integer_lstm_param.input_to_cell_effective_bias.data(),
-          integer_lstm_param.recurrent_to_cell_effective_bias.data(),
-          integer_lstm_param.input_to_output_effective_bias.data(),
-          integer_lstm_param.recurrent_to_output_effective_bias.data(),
-          integer_lstm_param.input_to_input_effective_bias.data(),
-          integer_lstm_param.recurrent_to_input_effective_bias.data(),
-          integer_lstm_param.projection_effective_bias.data(), /*n_batch=*/1, n_cell, n_input,
-          n_output, output_state_ptr, output_state_zp, cell_state_ptr, output_ptr, scratch0,
-          scratch1, scratch2, scratch3, scratch4, scratch5);
+  // Cell Gate calculation
+  CellType* cell_gate_output = scratch2;
+  calculate_lstm_gate<ActivationType, WeightType, CellType, BiasType>(
+    step_info, &quant_lstm_params->cell_gate_parameters,
+    // Input FC
+    runtime_graph->getDataByTensor(lstm_struct->input()),
+    lstm_struct->input_to_cell_weights(),
+    lstm_struct->cell_gate_bias(),
+    // Recurrent FC
+    output_state_data,
+    lstm_struct->recurrent_to_cell_weights(),
+    /*recurrent_bias*/ nullptr,
+    // Output
+    cell_gate_output,
+    // Scratch arrays
+    gate_internal_buffer, lstm::TfLiteFusedActivation::kTfLiteActTanh);
+
+  /*Step2: update the cell state */
+  //const InterGateParameters& inter_gate_params = op_data.inter_gate_parameters;
+  CellType* updated_input_buffer = scratch1;  // reuse buffer
+
+  UpdateLstmCell<CellType>(step_info, kernel_content.CellStateTensor(),
+                           forget_gate_output, input_gate_output,
+                           cell_gate_output,
+                           inter_gate_params.forget_cell_mul_params,
+                           inter_gate_params.input_mul_params,
+                           cell_state_info, updated_input_buffer);
+
+
+}
+
+} // namespace lstm_internal
+
+
+void eval_integer_8x8_16_lstm(
+  luci_interpreter::lstm::LSTMStruct *lstm_struct, luci_interpreter::lstm::QuantLSTMParameters *quant_lstm_params,
+  int8_t *output_state_data, int16_t *cell_state_data, int16_t *scratch0,
+  int16_t *scratch1, int16_t *scratch2, int16_t *scratch3, luci_interpreter::BaseRuntimeGraph *runtime_graph)
+{
+  lstm_internal::LstmSizeInfo size_info;
+
+  size_info.time_major = lstm_struct->options->time_major();
+  size_info.batch_size = size_info.time_major ? luci_interpreter::Tensor::dim(lstm_struct->input(), 1) : luci_interpreter::Tensor::dim(lstm_struct->input(), 0);
+  size_info.time_steps = size_info.time_major ? luci_interpreter::Tensor::dim(lstm_struct->input(), 0) : luci_interpreter::Tensor::dim(lstm_struct->input(), 1);
+  size_info.input_dimension = luci_interpreter::Tensor::dim(lstm_struct->input(), 2);
+  size_info.state_dimension = luci_interpreter::Tensor::dim(lstm_struct->output_state(), 1);
+
+  lstm_internal::LstmStepManager step_info(&size_info);
+
+  lstm_internal::CellStateInfo cell_state_info = lstm_internal::CreateLstmCellStateInfo(luci_interpreter::Tensor::scale(lstm_struct->cell_state()), lstm_struct->options->cell_clip());
+
+  // time is the first dimention, enable batch computation
+  if (size_info.time_major) {
+    for (int t = 0; t < size_info.time_steps; t++) {
+      lstm_internal::LstmStep<ActivationType, WeightType, CellType, BiasType>(
+        step_info, op_data, kernel_content, buffers);
+      // prepare for the next time step
+      step_info.UpdateTime();
+    }
+  } else {
+    // batch first, unable to size the input data. single batch inference
+    for (int b = 0; b < size_info.batch_size; b++) {
+      for (int t = 0; t < size_info.time_steps; t++) {
+        lstm_internal::LstmStep<ActivationType, WeightType, CellType, BiasType>(
+          step_info, op_data, kernel_content, buffers);
+        // prepare for the next time step
+        step_info.UpdateTime();
       }
+      // prepare for the next batch
+      step_info.UpdateBatch();
+      step_info.ResetTime();
     }
   }
+
+
+
+//
+//  const int n_input = luci_interpreter::Tensor::dim(lstm_struct->input, luci_interpreter::Tensor::num_dims(lstm_struct->input) - 1);
+//  int max_time, n_batch;
+//  if (luci_interpreter::Tensor::num_dims(lstm_struct->input) == 2)
+//  {
+//    max_time = 1;
+//    n_batch = luci_interpreter::Tensor::dim(lstm_struct->input, 0);
+//  }
+//  else
+//  {
+//    max_time = (time_major) ? luci_interpreter::Tensor::dim(lstm_struct->input, 0) : luci_interpreter::Tensor::dim(lstm_struct->input, 1);
+//    n_batch = (time_major) ? luci_interpreter::Tensor::dim(lstm_struct->input, 1) : luci_interpreter::Tensor::dim(lstm_struct->input, 0);
+//  }
+//
+//  // n_cell and n_output will be the same size when there is no projection.
+//  const int n_cell = luci_interpreter::Tensor::dim(lstm_struct->input_to_output_weights, 0);
+//  const int n_output = luci_interpreter::Tensor::dim(lstm_struct->recurrent_to_output_weights, 1);
+//
+//  // Get params for time/batch/sequence.
+//  const int output_batch_leading_dim = luci_interpreter::Tensor::dim(lstm_struct->output, luci_interpreter::Tensor::num_dims(lstm_struct->output) - 1);
+//
+//  const auto input_data = runtime_graph->getDataByTensor(lstm_struct->input);
+//  auto output_data = runtime_graph->getDataByTensor(lstm_struct->output);
+//
+//  if (time_major)
+//  {
+//    const int input_step = n_batch * n_input;
+//    const int output_step = n_batch * output_batch_leading_dim;
+//
+//    for (int t = 0; t < max_time; t++)
+//    {
+//      const int t_rel = t;
+//      int8_t *output_ptr =
+//        luci_interpreter::kernels::getTensorData<int8_t>(output_data) + t_rel * output_step;
+//      const int8_t *input_ptr =
+//        luci_interpreter::kernels::getTensorData<int8_t>(input_data) + t_rel * input_step;
+//
+//      lstm::lstm_step_integer_8x8_16(
+//        input_ptr,
+//        lstm_struct->input_to_input_weights == nullptr
+//          ? nullptr
+//          : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getConstDataByTensor(lstm_struct->input_to_input_weights)),
+//        integer_lstm_param.effective_input_to_input_scale_a,
+//        integer_lstm_param.effective_input_to_input_scale_b,
+//        lstm_struct->input_to_forget_weights == nullptr
+//          ? nullptr
+//          : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getConstDataByTensor(lstm_struct->input_to_forget_weights)),
+//        integer_lstm_param.effective_input_to_forget_scale_a,
+//        integer_lstm_param.effective_input_to_forget_scale_b,
+//        lstm_struct->input_to_cell_weights == nullptr
+//          ? nullptr
+//          : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getConstDataByTensor(lstm_struct->input_to_cell_weights)),
+//        integer_lstm_param.effective_input_to_cell_scale_a,
+//        integer_lstm_param.effective_input_to_cell_scale_b,
+//        lstm_struct->input_to_output_weights == nullptr
+//          ? nullptr
+//          : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getConstDataByTensor(lstm_struct->input_to_output_weights)),
+//        integer_lstm_param.effective_input_to_output_scale_a,
+//        integer_lstm_param.effective_input_to_output_scale_b,
+//        lstm_struct->recurrent_to_input_weights == nullptr
+//          ? nullptr
+//          : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getConstDataByTensor(lstm_struct->recurrent_to_input_weights)),
+//        integer_lstm_param.effective_recurrent_to_input_scale_a,
+//        integer_lstm_param.effective_recurrent_to_input_scale_b,
+//        lstm_struct->recurrent_to_forget_weights == nullptr
+//          ? nullptr
+//          : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getConstDataByTensor(lstm_struct->recurrent_to_forget_weights)),
+//        integer_lstm_param.effective_recurrent_to_forget_scale_a,
+//        integer_lstm_param.effective_recurrent_to_forget_scale_b,
+//        lstm_struct->recurrent_to_cell_weights == nullptr
+//          ? nullptr
+//          : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getConstDataByTensor(lstm_struct->recurrent_to_cell_weights)),
+//        integer_lstm_param.effective_recurrent_to_cell_scale_a,
+//        integer_lstm_param.effective_recurrent_to_cell_scale_b,
+//        lstm_struct->recurrent_to_output_weights == nullptr
+//          ? nullptr
+//          : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getConstDataByTensor(lstm_struct->recurrent_to_output_weights)),
+//        integer_lstm_param.effective_recurrent_to_output_scale_a,
+//        integer_lstm_param.effective_recurrent_to_output_scale_b,
+//        lstm_struct->cell_to_input_weights == nullptr
+//          ? nullptr
+//          : luci_interpreter::kernels::getTensorData<int16_t>(runtime_graph->getConstDataByTensor(lstm_struct->cell_to_input_weights)),
+//        integer_lstm_param.effective_cell_to_input_scale_a,
+//        integer_lstm_param.effective_cell_to_input_scale_b,
+//        lstm_struct->cell_to_forget_weights == nullptr
+//          ? nullptr
+//          : luci_interpreter::kernels::getTensorData<int16_t>(runtime_graph->getConstDataByTensor(lstm_struct->cell_to_forget_weights)),
+//        integer_lstm_param.effective_cell_to_forget_scale_a,
+//        integer_lstm_param.effective_cell_to_forget_scale_b,
+//        lstm_struct->cell_to_output_weights == nullptr
+//          ? nullptr
+//          : luci_interpreter::kernels::getTensorData<int16_t>(runtime_graph->getConstDataByTensor(lstm_struct->cell_to_output_weights)),
+//        integer_lstm_param.effective_cell_to_output_scale_a,
+//        integer_lstm_param.effective_cell_to_output_scale_b,
+//        lstm_struct->projection_weights == nullptr
+//          ? nullptr
+//          : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getConstDataByTensor(lstm_struct->projection_weights)),
+//        integer_lstm_param.effective_proj_scale_a, integer_lstm_param.effective_proj_scale_b,
+//        integer_lstm_param.hidden_zp, integer_lstm_param.effective_hidden_scale_a,
+//        integer_lstm_param.effective_hidden_scale_b,
+//        lstm_struct->input_layer_norm_coefficients == nullptr
+//          ? nullptr
+//          : luci_interpreter::kernels::getTensorData<int16_t>(runtime_graph->getConstDataByTensor(lstm_struct->input_layer_norm_coefficients)),
+//        integer_lstm_param.layer_norm_input_scale_a, integer_lstm_param.layer_norm_input_scale_b,
+//        lstm_struct->forget_layer_norm_coefficients == nullptr
+//          ? nullptr
+//          : luci_interpreter::kernels::getTensorData<int16_t>(runtime_graph->getConstDataByTensor(lstm_struct->forget_layer_norm_coefficients)),
+//        integer_lstm_param.layer_norm_forget_scale_a, integer_lstm_param.layer_norm_forget_scale_b,
+//        lstm_struct->cell_layer_norm_coefficients == nullptr
+//          ? nullptr
+//          : luci_interpreter::kernels::getTensorData<int16_t>(runtime_graph->getConstDataByTensor(lstm_struct->cell_layer_norm_coefficients)),
+//        integer_lstm_param.layer_norm_cell_scale_a, integer_lstm_param.layer_norm_cell_scale_b,
+//        lstm_struct->output_layer_norm_coefficients == nullptr
+//          ? nullptr
+//          : luci_interpreter::kernels::getTensorData<int16_t>(runtime_graph->getConstDataByTensor(lstm_struct->output_layer_norm_coefficients)),
+//        integer_lstm_param.layer_norm_output_scale_a, integer_lstm_param.layer_norm_output_scale_b,
+//        lstm_struct->input_gate_bias == nullptr
+//          ? nullptr
+//          : luci_interpreter::kernels::getTensorData<int32_t>(runtime_graph->getConstDataByTensor(lstm_struct->input_gate_bias)),
+//        lstm_struct->forget_gate_bias == nullptr
+//          ? nullptr
+//          : luci_interpreter::kernels::getTensorData<int32_t>(runtime_graph->getConstDataByTensor(lstm_struct->forget_gate_bias)),
+//        lstm_struct->cell_gate_bias == nullptr
+//          ? nullptr
+//          : luci_interpreter::kernels::getTensorData<int32_t>(runtime_graph->getConstDataByTensor(lstm_struct->cell_gate_bias)),
+//        lstm_struct->output_gate_bias == nullptr
+//          ? nullptr
+//          : luci_interpreter::kernels::getTensorData<int32_t>(runtime_graph->getConstDataByTensor(lstm_struct->output_gate_bias)),
+//        integer_lstm_param.quantized_cell_clip, integer_lstm_param.quantized_proj_clip,
+//        integer_lstm_param.cell_scale, integer_lstm_param.input_variance_guard,
+//        integer_lstm_param.forget_variance_guard, integer_lstm_param.cell_variance_guard,
+//        integer_lstm_param.output_variance_guard,
+//        integer_lstm_param.input_to_forget_effective_bias.data(),
+//        integer_lstm_param.recurrent_to_forget_effective_bias.data(),
+//        integer_lstm_param.input_to_cell_effective_bias.data(),
+//        integer_lstm_param.recurrent_to_cell_effective_bias.data(),
+//        integer_lstm_param.input_to_output_effective_bias.data(),
+//        integer_lstm_param.recurrent_to_output_effective_bias.data(),
+//        integer_lstm_param.input_to_input_effective_bias.data(),
+//        integer_lstm_param.recurrent_to_input_effective_bias.data(),
+//        integer_lstm_param.projection_effective_bias.data(), n_batch, n_cell, n_input, n_output,
+//        (output_state_data), output_state_zp,
+//        (cell_state_data), output_ptr, scratch0,
+//        scratch1, scratch2, scratch3, scratch4, scratch5);
+//    }
+//  }
+//  else
+//  {
+//    for (int b = 0; b < n_batch; b++)
+//    {
+//      const int input_step = n_input;
+//      const int output_step = output_batch_leading_dim;
+//
+//      for (int t = 0; t < max_time; t++)
+//      {
+//        // If this is the forward_sequence, step forward, otherwise step
+//        // backwards.
+//        const int t_rel = forward_sequence ? t : max_time - t - 1;
+//        const int time_offset = b * max_time + t_rel;
+//        const int8_t *input_ptr =
+//          luci_interpreter::kernels::getTensorData<int8_t>(input_data) + time_offset * input_step;
+//        int8_t *output_ptr =
+//          luci_interpreter::kernels::getTensorData<int8_t>(output_data) + time_offset * output_step;
+//
+//        // Offset the {output,cell}_state pointers to the right batch.
+//        int8_t *output_state_ptr = output_state_data +
+//                                   b * output_batch_leading_dim;
+//        int16_t *cell_state_ptr =
+//          cell_state_data + b * n_cell;
+//
+//        lstm::lstm_step_integer_8x8_16(
+//          input_ptr,
+//          lstm_struct->input_to_input_weights == nullptr
+//            ? nullptr
+//            : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getConstDataByTensor(lstm_struct->input_to_input_weights)),
+//          integer_lstm_param.effective_input_to_input_scale_a,
+//          integer_lstm_param.effective_input_to_input_scale_b,
+//          lstm_struct->input_to_forget_weights == nullptr
+//            ? nullptr
+//            : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getConstDataByTensor(lstm_struct->input_to_forget_weights)),
+//          integer_lstm_param.effective_input_to_forget_scale_a,
+//          integer_lstm_param.effective_input_to_forget_scale_b,
+//          lstm_struct->input_to_cell_weights == nullptr
+//            ? nullptr
+//            : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getConstDataByTensor(lstm_struct->input_to_cell_weights)),
+//          integer_lstm_param.effective_input_to_cell_scale_a,
+//          integer_lstm_param.effective_input_to_cell_scale_b,
+//          lstm_struct->input_to_output_weights == nullptr
+//            ? nullptr
+//            : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getConstDataByTensor(lstm_struct->input_to_output_weights)),
+//          integer_lstm_param.effective_input_to_output_scale_a,
+//          integer_lstm_param.effective_input_to_output_scale_b,
+//          lstm_struct->recurrent_to_input_weights == nullptr
+//            ? nullptr
+//            : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getConstDataByTensor(lstm_struct->recurrent_to_input_weights)),
+//          integer_lstm_param.effective_recurrent_to_input_scale_a,
+//          integer_lstm_param.effective_recurrent_to_input_scale_b,
+//          lstm_struct->recurrent_to_forget_weights == nullptr
+//            ? nullptr
+//            : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getConstDataByTensor(lstm_struct->recurrent_to_forget_weights)),
+//          integer_lstm_param.effective_recurrent_to_forget_scale_a,
+//          integer_lstm_param.effective_recurrent_to_forget_scale_b,
+//          lstm_struct->recurrent_to_cell_weights == nullptr
+//            ? nullptr
+//            : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getConstDataByTensor(lstm_struct->recurrent_to_cell_weights)),
+//          integer_lstm_param.effective_recurrent_to_cell_scale_a,
+//          integer_lstm_param.effective_recurrent_to_cell_scale_b,
+//          lstm_struct->recurrent_to_output_weights == nullptr
+//            ? nullptr
+//            : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getConstDataByTensor(lstm_struct->recurrent_to_output_weights)),
+//          integer_lstm_param.effective_recurrent_to_output_scale_a,
+//          integer_lstm_param.effective_recurrent_to_output_scale_b,
+//          lstm_struct->cell_to_input_weights == nullptr
+//            ? nullptr
+//            : luci_interpreter::kernels::getTensorData<int16_t>(runtime_graph->getConstDataByTensor(lstm_struct->cell_to_input_weights)),
+//          integer_lstm_param.effective_cell_to_input_scale_a,
+//          integer_lstm_param.effective_cell_to_input_scale_b,
+//          lstm_struct->cell_to_forget_weights == nullptr
+//            ? nullptr
+//            : luci_interpreter::kernels::getTensorData<int16_t>(runtime_graph->getConstDataByTensor(lstm_struct->cell_to_forget_weights)),
+//          integer_lstm_param.effective_cell_to_forget_scale_a,
+//          integer_lstm_param.effective_cell_to_forget_scale_b,
+//          lstm_struct->cell_to_output_weights == nullptr
+//            ? nullptr
+//            : luci_interpreter::kernels::getTensorData<int16_t>(runtime_graph->getConstDataByTensor(lstm_struct->cell_to_output_weights)),
+//          integer_lstm_param.effective_cell_to_output_scale_a,
+//          integer_lstm_param.effective_cell_to_output_scale_b,
+//          lstm_struct->projection_weights == nullptr
+//            ? nullptr
+//            : luci_interpreter::kernels::getTensorData<int8_t>(runtime_graph->getConstDataByTensor(lstm_struct->projection_weights)),
+//          integer_lstm_param.effective_proj_scale_a, integer_lstm_param.effective_proj_scale_b,
+//          integer_lstm_param.hidden_zp, integer_lstm_param.effective_hidden_scale_a,
+//          integer_lstm_param.effective_hidden_scale_b,
+//          lstm_struct->input_layer_norm_coefficients == nullptr
+//            ? nullptr
+//            : luci_interpreter::kernels::getTensorData<int16_t>(runtime_graph->getConstDataByTensor(lstm_struct->input_layer_norm_coefficients)),
+//          integer_lstm_param.layer_norm_input_scale_a, integer_lstm_param.layer_norm_input_scale_b,
+//          lstm_struct->forget_layer_norm_coefficients == nullptr
+//            ? nullptr
+//            : luci_interpreter::kernels::getTensorData<int16_t>(runtime_graph->getConstDataByTensor(lstm_struct->forget_layer_norm_coefficients)),
+//          integer_lstm_param.layer_norm_forget_scale_a,
+//          integer_lstm_param.layer_norm_forget_scale_b,
+//          lstm_struct->cell_layer_norm_coefficients == nullptr
+//            ? nullptr
+//            : luci_interpreter::kernels::getTensorData<int16_t>(runtime_graph->getConstDataByTensor(lstm_struct->cell_layer_norm_coefficients)),
+//          integer_lstm_param.layer_norm_cell_scale_a, integer_lstm_param.layer_norm_cell_scale_b,
+//          lstm_struct->output_layer_norm_coefficients == nullptr
+//            ? nullptr
+//            : luci_interpreter::kernels::getTensorData<int16_t>(runtime_graph->getConstDataByTensor(lstm_struct->output_layer_norm_coefficients)),
+//          integer_lstm_param.layer_norm_output_scale_a,
+//          integer_lstm_param.layer_norm_output_scale_b,
+//          lstm_struct->input_gate_bias == nullptr
+//            ? nullptr
+//            : luci_interpreter::kernels::getTensorData<int32_t>(runtime_graph->getConstDataByTensor(lstm_struct->input_gate_bias)),
+//          lstm_struct->forget_gate_bias == nullptr
+//            ? nullptr
+//            : luci_interpreter::kernels::getTensorData<int32_t>(runtime_graph->getConstDataByTensor(lstm_struct->forget_gate_bias)),
+//          lstm_struct->cell_gate_bias == nullptr
+//            ? nullptr
+//            : luci_interpreter::kernels::getTensorData<int32_t>(runtime_graph->getConstDataByTensor(lstm_struct->cell_gate_bias)),
+//          lstm_struct->output_gate_bias == nullptr
+//            ? nullptr
+//            : luci_interpreter::kernels::getTensorData<int32_t>(runtime_graph->getConstDataByTensor(lstm_struct->output_gate_bias)),
+//          integer_lstm_param.quantized_cell_clip, integer_lstm_param.quantized_proj_clip,
+//          integer_lstm_param.cell_scale, integer_lstm_param.input_variance_guard,
+//          integer_lstm_param.forget_variance_guard, integer_lstm_param.cell_variance_guard,
+//          integer_lstm_param.output_variance_guard,
+//          integer_lstm_param.input_to_forget_effective_bias.data(),
+//          integer_lstm_param.recurrent_to_forget_effective_bias.data(),
+//          integer_lstm_param.input_to_cell_effective_bias.data(),
+//          integer_lstm_param.recurrent_to_cell_effective_bias.data(),
+//          integer_lstm_param.input_to_output_effective_bias.data(),
+//          integer_lstm_param.recurrent_to_output_effective_bias.data(),
+//          integer_lstm_param.input_to_input_effective_bias.data(),
+//          integer_lstm_param.recurrent_to_input_effective_bias.data(),
+//          integer_lstm_param.projection_effective_bias.data(), /*n_batch=*/1, n_cell, n_input,
+//          n_output, output_state_ptr, output_state_zp, cell_state_ptr, output_ptr, scratch0,
+//          scratch1, scratch2, scratch3, scratch4, scratch5);
+//      }
+//    }
+//  }
 }
 
 } // namespace luci_interpreter_pal

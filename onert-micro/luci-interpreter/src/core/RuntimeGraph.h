@@ -60,8 +60,6 @@ public:
   explicit RuntimeGraph(SimpleMemoryManager *memory_manager, CircleReader *circle_reader);
   ~RuntimeGraph();
 
-  Tensor *addTensor(const circle::Tensor *raw_tensor, std::unique_ptr<Tensor> &&tensor);
-
   const circle::Tensor *getCircleTensorByIndex(int32_t index);
 
   void makeInplaceOperation(const circle::Tensor *src_tensor, const circle::Tensor *dst_tensor);
@@ -74,6 +72,8 @@ public:
 
   int32_t getInputDataSizeByIndex(int32_t input_index);
   int32_t getOutputDataSizeByIndex(int32_t output_index);
+
+  std::vector<const circle::Tensor *> getIntermediateTensors();
 
   uint8_t *getOutputDataByIndex(int32_t output_index);
 
