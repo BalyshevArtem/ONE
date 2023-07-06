@@ -60,6 +60,11 @@ inline std::int32_t saturatingRoundingDoublingHighMul(std::int32_t a, std::int32
   return overflow ? std::numeric_limits<std::int32_t>::max() : ab_x2_high32;
 }
 
+inline int offset(const luci_interpreter::RuntimeShape& shape, int i0, int i1, int i2, int i3) {
+  const int* dims_data = reinterpret_cast<const int*>(shape.dimsData());
+  return ((i0 * dims_data[1] + i1) * dims_data[2] + i2) * dims_data[3] + i3;
+}
+
 // Correctly-rounded-to-nearest division by a power-of-two.
 // Also known as a rounding arithmetic right shift.
 inline int32_t roundingDivideByPOT(int32_t x, int32_t exponent)
