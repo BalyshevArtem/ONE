@@ -78,6 +78,9 @@ struct ConvParams
   // float activation params.
   float float_activation_min;
   float float_activation_max;
+
+  std::vector<int> per_channel_output_multiplier;
+  std::vector<int> per_channel_output_shift;
 };
 
 enum class BroadcastableOpCategory : uint8_t

@@ -1,23 +1,39 @@
 operand {
   name: "in"
-  type: FLOAT32
-  shape { dim: 1 dim: 64 }
+  type: INT16
+  shape { dim: 1 dim: 16 }
+  quant { min: 0 max: 1 scale: 0.100556869 zero_point: 0 }
 }
 operand {
   name: "weight"
-  type: UINT8
-  shape { dim: 8 dim: 64 }
-  quant { min: 0 max: 1 scale: 0.000553869 zero_point: 0 }
-}
-operand {
-  name: "bias"
-  type: FLOAT32
-  shape { dim: 8 }
+  type: INT8
+  shape { dim: 4 dim: 16 }
+  filler {
+    tag: "explicit"
+    arg: "1" arg: "2" arg: "-3" arg: "-4"
+    arg: "-5" arg: "6" arg: "-7" arg: "8"
+    arg: "4" arg: "-2" arg: "3" arg: "-1"
+    arg: "-8" arg: "-6" arg: "7" arg: "5"
+    arg: "1" arg: "2" arg: "-3" arg: "-4"
+    arg: "-5" arg: "6" arg: "-7" arg: "8"
+    arg: "4" arg: "-2" arg: "3" arg: "-1"
+    arg: "-8" arg: "-6" arg: "7" arg: "5"
+    arg: "1" arg: "2" arg: "-3" arg: "-4"
+    arg: "-5" arg: "6" arg: "-7" arg: "8"
+    arg: "4" arg: "-2" arg: "3" arg: "-1"
+    arg: "-8" arg: "-6" arg: "7" arg: "5"
+    arg: "1" arg: "2" arg: "-3" arg: "-4"
+    arg: "-5" arg: "6" arg: "-7" arg: "8"
+    arg: "4" arg: "-2" arg: "3" arg: "-1"
+    arg: "-8" arg: "-6" arg: "7" arg: "5"
+  }
+  quant { min: 0 max: 1 scale: 0.400565869 zero_point: 0 }
 }
 operand {
   name: "out"
-  type: FLOAT32
-  shape { dim: 1 dim: 8 }
+  type: INT16
+  shape { dim: 1 dim: 4 }
+  quant { min: 0 max: 1 scale: 0.700573869 zero_point: 0 }
 }
 operation {
   type: "FullyConnected"
@@ -26,10 +42,7 @@ operation {
   }
   input: "in"
   input: "weight"
-  input: "bias"
   output: "out"
 }
 input: "in"
-input: "weight"
-input: "bias"
 output: "out"

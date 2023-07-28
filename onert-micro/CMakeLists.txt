@@ -56,8 +56,8 @@ add_subdirectory(luci-interpreter/src/core/reader)
 
 # Choosing Kernel: reference mcu, optimized cmsisnn, optimized linux
 if (NOT KERNELS)
-    message(STATUS "KERNEL variable is not defined, default reference mcu kernels will be used")
-    set(LUCI_INTERPRETER_PAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/luci-interpreter/pal/mcu")
+    message(STATUS "KERNEL variable is not defined, default reference cmsisnn kernels will be used")
+    set(LUCI_INTERPRETER_PAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/luci-interpreter/pal/cmsisnn")
 elseif("${KERNELS}" STREQUAL "mcu")
     message(STATUS "ONERT_MICRO will use reference mcu kernels")
     set(LUCI_INTERPRETER_PAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/luci-interpreter/pal/mcu")

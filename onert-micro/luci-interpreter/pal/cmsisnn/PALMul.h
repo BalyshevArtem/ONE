@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Samsung Electronics Co., Ltd. All Rights Reserved
+ * Copyright 2019 The TensorFlow Authors. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,29 +18,11 @@
 #ifndef LUCI_INTERPRETER_PAL_MUL_H
 #define LUCI_INTERPRETER_PAL_MUL_H
 
-#include <tensorflow/lite/kernels/internal/reference/mul.h>
+#include "PALMulCommon.h"
 
 namespace luci_interpreter_pal
 {
-template <typename T>
-static inline void Mul(tflite::ArithmeticParams &params, const tflite::RuntimeShape &input1_shape,
-                       const T *input1_data, const tflite::RuntimeShape &input2_shape,
-                       const T *input2_data, const tflite::RuntimeShape &output_shape,
-                       T *output_data)
-{
-  tflite::reference_ops::BroadcastMul4DSlow(params, input1_shape, input1_data, input2_shape,
-                                            input2_data, output_shape, output_data);
-}
 
-template <typename T>
-static inline void
-BroadcastMul4DSlow(tflite::ArithmeticParams &params, const tflite::RuntimeShape &input1_shape,
-                   const T *input1_data, const tflite::RuntimeShape &input2_shape,
-                   const T *input2_data, const tflite::RuntimeShape &output_shape, T *output_data)
-{
-  tflite::reference_ops::BroadcastMul4DSlow(params, input1_shape, input1_data, input2_shape,
-                                            input2_data, output_shape, output_data);
-}
 } // namespace luci_interpreter_pal
 
 #endif // LUCI_INTERPRETER_PAL_MUL_H
