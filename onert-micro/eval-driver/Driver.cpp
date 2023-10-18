@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <luci_interpreter/Interpreter.h>
+#include "OMInterpreter.h"
 
 #include <stdexcept>
 #include <cstdlib>

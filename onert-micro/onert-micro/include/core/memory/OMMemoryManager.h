@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2023 Samsung Electronics Co., Ltd. All Rights Reserved
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef ONERT_MICRO_CORE_MEMORY_MEMORY_MANAGER_H
+#define ONERT_MICRO_CORE_MEMORY_MEMORY_MANAGER_H
+
+#include "OMStatus.h"
+#include "core/OMRuntimeShape.h"
+
+namespace onert_micro
+{
+namespace core
+{
+namespace memory
+{
+
+class OMMemoryManager
+{
+  static OMStatus allocateMemory(uint32_t size, DataType type, uint8_t *data);
+  static OMStatus deallocateMemory(uint8_t *data);
+};
+
+} // memory
+} // core
+} // namespace onert_micro
+
+#endif // ONERT_MICRO_CORE_MEMORY_MEMORY_MANAGER_H

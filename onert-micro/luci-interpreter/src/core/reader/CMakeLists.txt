@@ -6,7 +6,7 @@ set(MICRO_READER_SOURCE
         )
 
 add_library("luci_micro_circle_reader${READER_SUFFIX}" STATIC ${MICRO_READER_SOURCE})
-target_link_libraries("luci_micro_circle_reader${READER_SUFFIX}" PUBLIC luci_micro_circle_schema)
+target_link_libraries("luci_micro_circle_reader${READER_SUFFIX}" PUBLIC ${OM_CIRCLE_SCHEMA})
 
 target_include_directories("luci_micro_circle_reader${READER_SUFFIX}" PUBLIC "${GENERATED_INCLUDE_DIR}")
 target_include_directories("luci_micro_circle_reader${READER_SUFFIX}" PUBLIC "${LUCI_INTERPRETER_INCLUDE_DIR}")

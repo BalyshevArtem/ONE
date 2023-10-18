@@ -1,0 +1,8 @@
+//
+// Created by balyshev on 17.10.2023.
+//
+
+#ifndef NNCC_OMFINDINPLACEOPPASS_H
+#define NNCC_OMFINDINPLACEOPPASS_H
+
+#endif // NNCC_OMFINDINPLACEOPPASS_H
