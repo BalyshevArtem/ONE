@@ -135,6 +135,8 @@ public:
   void removeDynamicShapeTensor(const circle::Tensor *tensor);
 #endif // DIS_DYN_SHAPES
 
+  const circle::Operator *getOpAt(uint32_t index);
+
 private:
   void buildAllocDeallocPlan(bool dealloc_input);
   void allocate(size_t kernel_index);
