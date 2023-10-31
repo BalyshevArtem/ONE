@@ -19,6 +19,7 @@
 
 #include "OMStatus.h"
 #include "core/OMRuntimeContext.h"
+#include "core/OMRuntimeStorage.h"
 
 #include <vector>
 #include <cstdint>
@@ -39,21 +40,23 @@ private:
 public:
   OMRuntimeAllocator() = default;
   OMRuntimeAllocator(const OMRuntimeAllocator &) = delete;
+  OMRuntimeAllocator &operator=(const OMRuntimeAllocator &) = delete;
+  OMRuntimeAllocator &&operator=(const OMRuntimeAllocator &&) = delete;
   OMRuntimeAllocator(OMRuntimeAllocator &&) = delete;
   ~OMRuntimeAllocator() = default;
 
-  void moveAllocPlan(std::vector<std::vector<uint16_t>> &&alloc_plan)
+  void saveAllocPlan(std::vector<std::vector<uint16_t>> &&alloc_plan)
   {
-    _alloc_plan = alloc_plan;
+    _alloc_plan = std::move(alloc_plan);
   }
 
-  void moveDeallocPlan(std::vector<std::vector<uint16_t>> &&dealloc_plan)
+  void saveDeallocPlan(std::vector<std::vector<uint16_t>> &&dealloc_plan)
   {
-    _dealloc_plan = dealloc_plan;
+    _dealloc_plan = std::move(dealloc_plan);
   }
 
   OMStatus allocate(size_t kernel_index, OMRuntimeContext *context, OMRuntimeStorage *storage);
-  OMStatus deallocate(size_t kernel_index, OMRuntimeContext *context, OMRuntimeStorage *storage);
+  OMStatus deallocate(size_t kernel_index, OMRuntimeStorage *storage);
 };
 
 } // memory

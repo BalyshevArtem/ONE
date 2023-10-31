@@ -46,13 +46,18 @@ public:
   OMRuntimeGraph() = delete;
   OMRuntimeGraph(const OMRuntimeGraph &) = delete;
   OMRuntimeGraph(OMRuntimeGraph &&) = delete;
+  OMRuntimeGraph &operator=(const OMRuntimeGraph &) = delete;
+  OMRuntimeGraph &&operator=(const OMRuntimeGraph &&) = delete;
   ~OMRuntimeGraph() = default;
 
-  int getNumberOfInputs();
-  int getNumberOfOutput();
+  uint32_t getNumberOfInputs();
+  uint32_t getNumberOfOutputs();
 
-  uint8_t *getInputDataAt(int position);
-  uint8_t *getOutputDataAt(int position);
+  uint32_t getInputSizeAt(uint32_t position);
+  uint32_t getOutputSizeAt(uint32_t position);
+
+  void *getInputDataAt(int position);
+  void *getOutputDataAt(int position);
 
   OMStatus run();
   OMStatus configure();

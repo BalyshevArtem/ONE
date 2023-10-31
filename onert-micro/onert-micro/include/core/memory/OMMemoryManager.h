@@ -20,6 +20,9 @@
 #include "OMStatus.h"
 #include "core/OMRuntimeShape.h"
 
+#include <cstdint>
+#include <malloc.h>
+
 namespace onert_micro
 {
 namespace core
@@ -27,10 +30,10 @@ namespace core
 namespace memory
 {
 
-class OMMemoryManager
+struct OMMemoryManager
 {
-  static OMStatus allocateMemory(uint32_t size, DataType type, uint8_t *data);
-  static OMStatus deallocateMemory(uint8_t *data);
+  static OMStatus allocateMemory(uint32_t size, void *data);
+  static OMStatus deallocateMemory(void *data);
 };
 
 } // memory

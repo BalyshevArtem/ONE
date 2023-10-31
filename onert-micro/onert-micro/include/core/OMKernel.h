@@ -30,20 +30,37 @@ namespace core
 class OMKernel
 {
 private:
-  std::vector<uint8_t> _operators;
-  std::vector<uint16_t> _inputs_indexes;
-  std::vector<uint16_t> _outputs_indexes;
+  std::vector<uint8_t> _operators{};
+  std::vector<uint16_t> _inputs_indexes{};
+  std::vector<uint16_t> _outputs_indexes{};
   // TODO: pointer to configure function
-  // TODO: pointer to excut function
-  OMKernelType _kernel_type;
-  bool _is_inplace;
-  uint8_t *_data;
+  // TODO: pointer to execute function
+  OMKernelType _kernel_type = Normal;
+  bool _is_inplace = false;
+  void *_data = nullptr;
 
 public:
   OMKernel() = default;
   OMKernel(const OMKernel&) = delete;
   OMKernel(OMKernel &&) = delete;
+  OMKernel &operator=(const OMKernel &) = delete;
+  OMKernel &&operator=(const OMKernel &&) = delete;
   ~OMKernel() = default;
+
+  const std::vector<uint8_t> &getKernelOperators()
+  {
+    return _operators;
+  }
+
+  const std::vector<uint16_t> &getKernelInputs()
+  {
+    return _inputs_indexes;
+  }
+
+  const std::vector<uint16_t> &getKernelOutputs()
+  {
+    return _outputs_indexes;
+  }
 };
 
 } // core

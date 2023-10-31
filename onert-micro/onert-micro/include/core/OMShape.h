@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-#ifndef ONERT_MICRO_CORE_RUNTIME_CONTEXT_H
-#define ONERT_MICRO_CORE_RUNTIME_CONTEXT_H
+#ifndef ONERT_MICRO_CORE_SHAPE_H
+#define ONERT_MICRO_CORE_SHAPE_H
 
-#include "OMStatus.h"
-
-#include "reader/OMCircleReader.h"
+#include "core/reader/OMCircleReader.h"
 
 #include <cstdint>
 
@@ -28,29 +26,29 @@ namespace onert_micro
 namespace core
 {
 
-class OMRuntimeContext
+class OMShape
 {
 private:
-  reader::OMCircleReader *_reader;
-  uint32_t _graph_index;
+  const reader::CircleValues *_shape;
 
 public:
-  explicit OMRuntimeContext(uint32_t graph_index): _graph_index(graph_index), _reader(nullptr)
+  OMShape() = delete;
+  OMShape(const circle::Tensor *tensor): _shape(tensor->shape())
   {
     // Do nothing
   }
-  OMRuntimeContext() = delete;
-  OMRuntimeContext(const OMRuntimeContext &) = delete;
-  OMRuntimeContext &operator=(const OMRuntimeContext &) = delete;
-  OMRuntimeContext &&operator=(const OMRuntimeContext &&) = delete;
-  OMRuntimeContext(OMRuntimeContext &&) = default;
-  ~OMRuntimeContext() = default;
+  OMShape(const OMShape&) = delete;
+  OMShape(OMShape &&) = delete;
+  OMShape &operator=(const OMShape &) = delete;
+  OMShape &&operator=(const OMShape &&) = delete;
+  ~OMShape() = default;
 
-  circle::Tensor *getCircleTensorByIndex(uint16_t index);
-
+  int32_t num_elements() const;
+  OMStatus dim(uint32_t idx, int32_t &dim_value) const;
+  int32_t rank() const;
 };
 
 } // core
 } // namespace onert_micro
 
-#endif // ONERT_MICRO_CORE_RUNTIME_CONTEXT_H
+#endif // ONERT_MICRO_CORE_KERNEL_H

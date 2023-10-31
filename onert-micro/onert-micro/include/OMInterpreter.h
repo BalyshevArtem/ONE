@@ -34,17 +34,22 @@ public:
   OMInterpreter() = default;
   OMInterpreter(const OMInterpreter &) = delete;
   OMInterpreter(OMInterpreter &&) = delete;
+  OMInterpreter &operator=(const OMInterpreter &) = delete;
+  OMInterpreter &&operator=(const OMInterpreter &&) = delete;
   ~OMInterpreter() = default;
 
   OMStatus importModel(const char *model_ptr, const OMConfig &config);
 
   OMStatus run();
 
-  int getNumberOfInputs();
-  int getNumberOfOutput();
+  uint32_t getNumberOfInputs();
+  uint32_t getNumberOfOutputs();
 
-  uint8_t *getInputDataAt(int position);
-  uint8_t *getOutputDataAt(int position);
+  uint32_t getInputSizeAt(uint32_t position);
+  uint32_t getOutputSizeAt(uint32_t position);
+
+  void *getInputDataAt(uint32_t position);
+  void *getOutputDataAt(uint32_t position);
 };
 
 } // namespace onert_micro

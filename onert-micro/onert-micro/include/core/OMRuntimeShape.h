@@ -18,6 +18,7 @@
 #define ONERT_MICRO_CORE_RUNTIME_SHAPE_H
 
 #include <cstring>
+#include <cstdint>
 #include <cassert>
 
 namespace onert_micro

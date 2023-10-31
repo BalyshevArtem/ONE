@@ -13,10 +13,10 @@ set(SOURCES
         OMRuntimeStorage.cpp
         OMRuntimeGraph.cpp
         OMRuntimeModule.cpp
+        OMShape.cpp
         memory/OMMemoryManager.cpp
         memory/OMRuntimeAllocator.cpp
-        reader/OMCircleReader.cpp
-        reader/OMCircleReaderHelper.cpp)
+        reader/OMCircleReader.cpp)
 
 add_library(${OM_CORE_LIB} STATIC ${SOURCES})
 

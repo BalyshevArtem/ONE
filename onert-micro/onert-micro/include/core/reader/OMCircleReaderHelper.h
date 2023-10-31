@@ -1,8 +1,0 @@
-//
-// Created by balyshev on 17.10.2023.
-//
-
-#ifndef NNCC_OMCIRCLEREADERHELPER_H
-#define NNCC_OMCIRCLEREADERHELPER_H
-
-#endif // NNCC_OMCIRCLEREADERHELPER_H

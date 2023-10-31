@@ -19,6 +19,7 @@
 
 #include "OMRuntimeShape.h"
 #include "OMKernel.h"
+#include "OMStatus.h"
 
 #include <vector>
 #include <unordered_map>
@@ -34,13 +35,27 @@ class OMRuntimeStorage
 private:
   std::unordered_map<uint16_t, OMRuntimeShape> _tensor_index_to_runtime_shape;
   std::vector<OMKernel> _kernels;
-  std::unordered_map<uint16_t, uint8_t *> _tensor_index_to_data;
+  std::unordered_map<uint16_t, void *> _tensor_index_to_data;
 
 public:
   OMRuntimeStorage() = default;
   OMRuntimeStorage(const OMRuntimeStorage &) = delete;
   OMRuntimeStorage(OMRuntimeStorage &&) = delete;
+  OMRuntimeStorage &operator=(const OMRuntimeStorage &) = delete;
+  OMRuntimeStorage &&operator=(const OMRuntimeStorage &&) = delete;
   ~OMRuntimeStorage();
+
+  OMStatus saveDataToTensorIndex(void *data, uint16_t tensor_index);
+  OMStatus getDataByTensorIndex(void *data, uint16_t tensor_index);
+
+  OMStatus saveKernels(std::vector<OMKernel> &&kernels)
+  {
+    _kernels = std::move(kernels);
+    return Ok;
+  }
+
+  //OMStatus saveRuntimeShapeToTensorIndex(void *data, uint16_t tensor_index);
+  //OMStatus getRuntimeShapeByTensorIndex(void *data, uint16_t tensor_index);
 };
 
 } // core
