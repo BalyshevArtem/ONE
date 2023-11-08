@@ -94,36 +94,36 @@ int entry(int argc, char **argv)
   }
 
   // Create interpreter.
-  luci_interpreter::Interpreter interpreter(model_data.data(), true);
+  //luci_interpreter::Interpreter interpreter(model_data.data(), true);
 
   // Set input.
   // Data for n'th input is read from ${input_prefix}n
   // (ex: Add.circle.input0, Add.circle.input1 ..)
-  int num_inference = 1;
-  for (int j = 0; j < num_inference; ++j)
-  {
-    for (int32_t i = 0; i < num_inputs; i++)
-    {
-      auto input_data = reinterpret_cast<char *>(interpreter.allocateInputTensor(i));
-      readDataFromFile(std::string(input_prefix) + std::to_string(i), input_data,
-                       interpreter.getInputDataSizeByIndex(i));
-    }
-
-    // Do inference.
-    interpreter.interpret();
-  }
+//  int num_inference = 1;
+//  for (int j = 0; j < num_inference; ++j)
+//  {
+//    for (int32_t i = 0; i < num_inputs; i++)
+//    {
+//      auto input_data = reinterpret_cast<char *>(interpreter.allocateInputTensor(i));
+//      readDataFromFile(std::string(input_prefix) + std::to_string(i), input_data,
+//                       interpreter.getInputDataSizeByIndex(i));
+//    }
+//
+//    // Do inference.
+//    interpreter.interpret();
+//  }
 
   // Get output.
   int num_outputs = 1;
-  for (int i = 0; i < num_outputs; i++)
-  {
-    auto data = interpreter.readOutputTensor(i);
-
-    // Output data is written in ${output_file}
-    // (ex: Add.circle.output0)
-    writeDataToFile(std::string(output_file) + std::to_string(i), reinterpret_cast<char *>(data),
-                    interpreter.getOutputDataSizeByIndex(i));
-  }
+//  for (int i = 0; i < num_outputs; i++)
+//  {
+//    auto data = interpreter.readOutputTensor(i);
+//
+//    // Output data is written in ${output_file}
+//    // (ex: Add.circle.output0)
+//    writeDataToFile(std::string(output_file) + std::to_string(i), reinterpret_cast<char *>(data),
+//                    interpreter.getOutputDataSizeByIndex(i));
+//  }
   return EXIT_SUCCESS;
 }
 

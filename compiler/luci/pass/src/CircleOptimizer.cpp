@@ -24,6 +24,7 @@
 #include "luci/Pass/FoldDepthwiseConv2DPass.h"
 #include "luci/Pass/FoldDequantizePass.h"
 #include "luci/Pass/FoldFullyConnectedPass.h"
+#include "luci/Pass/CircleConvert.h"
 #include "luci/Pass/FoldGatherPass.h"
 #include "luci/Pass/FoldSparseToDensePass.h"
 #include "luci/Pass/ForwardReshapeToUnaryOpPass.h"
@@ -327,6 +328,10 @@ void CircleOptimizer::optimize(loco::Graph *g) const
   if (_options->query(Options::Algorithm::FoldFullyConnected))
   {
     phase.emplace_back(std::make_unique<luci::FoldFullyConnectedPass>());
+  }
+  if (_options->query(Options::Algorithm::CircleConvert))
+  {
+    phase.emplace_back(std::make_unique<luci::CircleConvert>());
   }
   if (_options->query(Options::Algorithm::FoldGather))
   {

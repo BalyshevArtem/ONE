@@ -31,15 +31,10 @@ namespace core
 class OMRuntimeContext
 {
 private:
-  reader::OMCircleReader *_reader;
-  uint32_t _graph_index;
+  reader::OMCircleReader _reader;
 
 public:
-  explicit OMRuntimeContext(uint32_t graph_index): _graph_index(graph_index), _reader(nullptr)
-  {
-    // Do nothing
-  }
-  OMRuntimeContext() = delete;
+  OMRuntimeContext() = default;
   OMRuntimeContext(const OMRuntimeContext &) = delete;
   OMRuntimeContext &operator=(const OMRuntimeContext &) = delete;
   OMRuntimeContext &&operator=(const OMRuntimeContext &&) = delete;
@@ -47,6 +42,23 @@ public:
   ~OMRuntimeContext() = default;
 
   circle::Tensor *getCircleTensorByIndex(uint16_t index);
+
+  OMStatus setModel(const char *model_ptr,  uint32_t graph_index)
+  {
+    OMStatus status;
+    status = _reader.parse(model_ptr);
+    if (status != Ok)
+      return status;
+    status = _reader.select_subgraph(graph_index);
+    if (status != Ok)
+      return  status;
+    return Ok;
+  }
+
+  reader::OMCircleReader &getCircleReader()
+  {
+    return _reader;
+  }
 
 };
 

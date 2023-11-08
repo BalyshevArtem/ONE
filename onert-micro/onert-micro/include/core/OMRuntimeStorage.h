@@ -40,7 +40,7 @@ private:
 public:
   OMRuntimeStorage() = default;
   OMRuntimeStorage(const OMRuntimeStorage &) = delete;
-  OMRuntimeStorage(OMRuntimeStorage &&) = delete;
+  OMRuntimeStorage(OMRuntimeStorage &&) = default;
   OMRuntimeStorage &operator=(const OMRuntimeStorage &) = delete;
   OMRuntimeStorage &&operator=(const OMRuntimeStorage &&) = delete;
   ~OMRuntimeStorage();

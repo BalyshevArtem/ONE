@@ -33,7 +33,6 @@ class OMRuntimeModule
 {
 private:
   std::vector<OMRuntimeGraph> _graphs;
-  reader::OMCircleReader _reader;
 
 public:
   OMRuntimeModule() = default;

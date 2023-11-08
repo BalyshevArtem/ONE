@@ -19,7 +19,6 @@
 
 #include "OMStatus.h"
 
-#include "OMRuntimeModule.h"
 #include "OMRuntimeContext.h"
 #include "OMRuntimeStorage.h"
 #include "memory/OMRuntimeAllocator.h"
@@ -34,18 +33,14 @@ namespace core
 class OMRuntimeGraph
 {
 private:
-  OMRuntimeContext _context;
+  OMRuntimeContext _context{};
   OMRuntimeStorage _storage{};
   memory::OMRuntimeAllocator _allocator{};
 
 public:
-  explicit OMRuntimeGraph(uint32_t graph_index): _context(OMRuntimeContext(graph_index))
-  {
-    // Do nothing
-  }
-  OMRuntimeGraph() = delete;
+  OMRuntimeGraph() = default;
   OMRuntimeGraph(const OMRuntimeGraph &) = delete;
-  OMRuntimeGraph(OMRuntimeGraph &&) = delete;
+  OMRuntimeGraph(OMRuntimeGraph &&) = default;
   OMRuntimeGraph &operator=(const OMRuntimeGraph &) = delete;
   OMRuntimeGraph &&operator=(const OMRuntimeGraph &&) = delete;
   ~OMRuntimeGraph() = default;
@@ -61,6 +56,16 @@ public:
 
   OMStatus run();
   OMStatus configure();
+
+  OMRuntimeStorage &getRuntimeStorage()
+  {
+    return _storage;
+  }
+
+  OMRuntimeContext &getRuntimeContext()
+  {
+    return _context;
+  }
 };
 
 } // core

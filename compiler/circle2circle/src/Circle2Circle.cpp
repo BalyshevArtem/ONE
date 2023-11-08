@@ -80,6 +80,8 @@ int entry(int argc, char **argv)
              "This will fold Depthwise Convolution operator with constant inputs");
   add_switch(arser, "--fold_fully_connected",
              "This will fold FullyConnected operator with constant inputs");
+  add_switch(arser, "--circle_convert",
+             "???");
   add_switch(arser, "--fold_gather", "This will fold Gather operator");
   add_switch(arser, "--fold_sparse_to_dense", "This will fold SparseToDense operator");
   add_switch(arser, "--forward_reshape_to_unaryop",
@@ -245,6 +247,8 @@ int entry(int argc, char **argv)
     options->enable(Algorithms::FoldDepthwiseConv2D);
   if (arser.get<bool>("--fold_fully_connected"))
     options->enable(Algorithms::FoldFullyConnected);
+  if (arser.get<bool>("--circle_convert"))
+    options->enable(Algorithms::CircleConvert);
   if (arser.get<bool>("--fold_gather"))
     options->enable(Algorithms::FoldGather);
   if (arser.get<bool>("--fold_sparse_to_dense"))

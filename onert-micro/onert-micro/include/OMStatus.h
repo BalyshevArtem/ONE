@@ -23,6 +23,7 @@ namespace onert_micro
 enum OMStatus
 {
   Ok,
+  UnsupportedOp,
   UnknownError,
 };
 

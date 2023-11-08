@@ -42,7 +42,7 @@ public:
   OMRuntimeAllocator(const OMRuntimeAllocator &) = delete;
   OMRuntimeAllocator &operator=(const OMRuntimeAllocator &) = delete;
   OMRuntimeAllocator &&operator=(const OMRuntimeAllocator &&) = delete;
-  OMRuntimeAllocator(OMRuntimeAllocator &&) = delete;
+  OMRuntimeAllocator(OMRuntimeAllocator &&) = default;
   ~OMRuntimeAllocator() = default;
 
   void saveAllocPlan(std::vector<std::vector<uint16_t>> &&alloc_plan)

@@ -30,14 +30,15 @@ namespace core
 class OMKernel
 {
 private:
-  std::vector<uint8_t> _operators{};
-  std::vector<uint16_t> _inputs_indexes{};
-  std::vector<uint16_t> _outputs_indexes{};
-  // TODO: pointer to configure function
-  // TODO: pointer to execute function
+  std::vector<uint16_t> _operators{};
   OMKernelType _kernel_type = Normal;
-  bool _is_inplace = false;
-  void *_data = nullptr;
+  OMBuilderID _builder_id;
+  uint8_t *_kernel_data = nullptr;
+
+  void unsetKernelData()
+  {
+    delete[] _kernel_data;
+  }
 
 public:
   OMKernel() = default;
@@ -45,21 +46,52 @@ public:
   OMKernel(OMKernel &&) = delete;
   OMKernel &operator=(const OMKernel &) = delete;
   OMKernel &&operator=(const OMKernel &&) = delete;
-  ~OMKernel() = default;
+  ~OMKernel()
+  {
+    _operators.clear();
+    delete[] _kernel_data;
+  }
 
-  const std::vector<uint8_t> &getKernelOperators()
+  std::vector<uint16_t> &getKernelOperators()
   {
     return _operators;
   }
 
-  const std::vector<uint16_t> &getKernelInputs()
+  void setKernelOperators(std::vector<uint16_t> &&operators)
   {
-    return _inputs_indexes;
+    _operators.clear();
+    _operators = std::move(operators);
   }
 
-  const std::vector<uint16_t> &getKernelOutputs()
+  OMKernelType getKernelType()
   {
-    return _outputs_indexes;
+    return _kernel_type;
+  }
+
+  void setKernelType(OMKernelType kernel_type)
+  {
+    _kernel_type = kernel_type;
+  }
+
+  OMBuilderID getBuilderID()
+  {
+    return _builder_id;
+  }
+
+  void setBuilderID(OMBuilderID builder_id)
+  {
+    _builder_id = builder_id;
+  }
+
+  void setKernelData(uint8_t *kernel_data)
+  {
+    unsetKernelData();
+    _kernel_data = kernel_data;
+  }
+
+  uint8_t *getKernelData()
+  {
+    return _kernel_data;
   }
 };
 

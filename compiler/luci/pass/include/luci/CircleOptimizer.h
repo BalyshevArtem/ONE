@@ -53,6 +53,7 @@ public:
       FoldDensify,
       FoldDepthwiseConv2D,
       FoldFullyConnected,
+      CircleConvert,
       FoldDequantize,
       FoldGather,
       FoldSparseToDense,

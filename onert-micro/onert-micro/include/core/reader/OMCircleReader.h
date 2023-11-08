@@ -43,7 +43,7 @@ class OMCircleReader
 public:
   OMCircleReader() = default;
   OMCircleReader(const OMCircleReader &) = delete;
-  OMCircleReader(OMCircleReader &&) = delete;
+  OMCircleReader(OMCircleReader &&) = default;
   OMCircleReader &operator=(const OMCircleReader &) = delete;
   OMCircleReader &&operator=(const OMCircleReader &&) = delete;
   ~OMCircleReader() = default;

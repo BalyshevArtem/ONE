@@ -17,6 +17,11 @@
 #ifndef ONERT_MICRO_IMPORT_GRAPH_LOADER_H
 #define ONERT_MICRO_IMPORT_GRAPH_LOADER_H
 
+#include "OMStatus.h"
+#include "core/OMRuntimeStorage.h"
+#include "core/OMRuntimeContext.h"
+#include "OMConfig.h"
+
 namespace onert_micro
 {
 namespace import
@@ -24,6 +29,9 @@ namespace import
 
 class OMGraphLoader
 {
+public:
+  static OMStatus loadGraph(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
+                            const OMConfig &configs);
 };
 
 } // import

@@ -15,6 +15,7 @@
  */
 
 #include "core/OMRuntimeModule.h"
+#include "import/OMGraphLoader.h"
 
 using namespace onert_micro::core;
 using namespace onert_micro;
@@ -51,7 +52,7 @@ void *OMRuntimeModule::getOutputDataAt(uint32_t position)
 
 OMStatus OMRuntimeModule::importModel(const char *model_ptr, const OMConfig &config)
 {
-  assert(model_ptr != nullptr && "Model ptr shouldn't be nullptr");
+  //assert(model_ptr != nullptr && "Model ptr shouldn't be nullptr");
   if (model_ptr == nullptr)
     return UnknownError;
 
@@ -60,13 +61,41 @@ OMStatus OMRuntimeModule::importModel(const char *model_ptr, const OMConfig &con
   // Third - optimize it until can
   // Then_4 - AllocDeallocPlan creation
   // Finally_5 - KernelConfigure
+
   OMStatus status;
-  // First
-  status = _reader.parse(model_ptr);
-  if (status != Ok)
-    return status;
+  // First - parse reader
+  uint32_t num_subgraph = 0;
+  {
+    reader::OMCircleReader reader;
+    status = reader.parse(model_ptr);
+    if (status != Ok)
+      return status;
+    num_subgraph = reader.num_subgraph();
+  }
+
+  assert(num_subgraph >= 1);
+  if (num_subgraph == 0)
+    return UnknownError;
+
+  OMRuntimeGraph gr;
+
+  _graphs.reserve(num_subgraph);
 
 
+
+  for (uint32_t i = 0; i < num_subgraph; ++i)
+  {
+    // Second - load default graph
+    OMRuntimeGraph &graph = _graphs.at(i);
+
+    OMRuntimeContext &runtime_context = graph.getRuntimeContext();
+    OMRuntimeStorage &runtime_storage = graph.getRuntimeStorage();
+
+    runtime_context.setModel(model_ptr, i);
+
+    import::OMGraphLoader::loadGraph(runtime_storage, runtime_context, config);
+
+  }
 
   return Ok;
 }
