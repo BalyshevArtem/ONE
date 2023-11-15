@@ -14,21 +14,30 @@
  * limitations under the License.
  */
 
-// TODO: rename to GraphExecutionPlanCreater
+#ifndef ONERT_MICRO_IMPORT_EXECUTION_PLAN_CREATOR_H
+#define ONERT_MICRO_IMPORT_EXECUTION_PLAN_CREATOR_H
 
-#ifndef ONERT_MICRO_IMPORT_GRAPH_ALLOC_DEALLOC_PLAN_CREATER_H
-#define ONERT_MICRO_IMPORT_GRAPH_ALLOC_DEALLOC_PLAN_CREATER_H
+#include "OMStatus.h"
+#include "OMConfig.h"
+#include "core/OMRuntimeStorage.h"
+#include "core/OMRuntimeContext.h"
+#include "core/memory/OMRuntimeAllocator.h"
 
 namespace onert_micro
 {
 namespace import
 {
 
-class OMGraphAllocDeallocPlanCreater
+struct OMExecutionPlanCreator
 {
+
+  static OMStatus createExecutionPlan(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
+                                      core::memory::OMRuntimeAllocator &allocator,
+                                      const OMConfig &configs);
+
 };
 
 } // import
 } // namespace onert_micro
 
-#endif // ONERT_MICRO_IMPORT_GRAPH_ALLOC_DEALLOC_PLAN_CREATER_H
+#endif // ONERT_MICRO_IMPORT_EXECUTION_PLAN_CREATOR_H

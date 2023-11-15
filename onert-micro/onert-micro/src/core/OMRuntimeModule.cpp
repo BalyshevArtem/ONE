@@ -16,38 +16,40 @@
 
 #include "core/OMRuntimeModule.h"
 #include "import/OMGraphLoader.h"
+#include "optimize/OMOptimizer.h"
+#include "import/OMExecutionPlanCreator.h"
 
 using namespace onert_micro::core;
 using namespace onert_micro;
 
 uint32_t OMRuntimeModule::getNumberOfInputs()
 {
-  return _graphs.at(0).getNumberOfInputs();
+//  return _graphs.at(0).getNumberOfInputs();
 }
 
 uint32_t OMRuntimeModule::getNumberOfOutputs()
 {
-  return _graphs.at(0).getNumberOfOutputs();
+//  return _graphs.at(0).getNumberOfOutputs();
 }
 
 uint32_t OMRuntimeModule::getInputSizeAt(uint32_t position)
 {
-  return _graphs.at(0).getInputSizeAt(position);
+ // return _graphs.at(0).getInputSizeAt(position);
 }
 
 uint32_t OMRuntimeModule::getOutputSizeAt(uint32_t position)
 {
-  return _graphs.at(0).getOutputSizeAt(position);
+  //return _graphs.at(0).getOutputSizeAt(position);
 }
 
 void *OMRuntimeModule::getInputDataAt(uint32_t position)
 {
-  return _graphs.at(0).getInputDataAt(position);
+ // return _graphs.at(0).getInputDataAt(position);
 }
 
 void *OMRuntimeModule::getOutputDataAt(uint32_t position)
 {
-  return _graphs.at(0).getOutputDataAt(position);
+  //return _graphs.at(0).getOutputDataAt(position);
 }
 
 OMStatus OMRuntimeModule::importModel(const char *model_ptr, const OMConfig &config)
@@ -77,11 +79,7 @@ OMStatus OMRuntimeModule::importModel(const char *model_ptr, const OMConfig &con
   if (num_subgraph == 0)
     return UnknownError;
 
-  OMRuntimeGraph gr;
-
-  _graphs.reserve(num_subgraph);
-
-
+  _graphs.resize(num_subgraph);
 
   for (uint32_t i = 0; i < num_subgraph; ++i)
   {
@@ -90,11 +88,26 @@ OMStatus OMRuntimeModule::importModel(const char *model_ptr, const OMConfig &con
 
     OMRuntimeContext &runtime_context = graph.getRuntimeContext();
     OMRuntimeStorage &runtime_storage = graph.getRuntimeStorage();
+    memory::OMRuntimeAllocator &runtime_allocator = graph.getRuntimeAllocator();
 
     runtime_context.setModel(model_ptr, i);
 
-    import::OMGraphLoader::loadGraph(runtime_storage, runtime_context, config);
+    status = import::OMGraphLoader::loadGraph(runtime_storage, runtime_context, config);
 
+    if (status != Ok)
+      return status;
+
+    // Third - optimize it until can
+    status = optimize::OMOptimizer::optimize(runtime_storage, runtime_context, config);
+    if (status != Ok)
+      return status;
+
+    // Then_4 - AllocDeallocPlan creation
+    status = import::OMExecutionPlanCreator::createExecutionPlan(runtime_storage, runtime_context, runtime_allocator, config);
+    if (status != Ok)
+      return status;
+
+    // Finally_5 - KernelConfigure
   }
 
   return Ok;

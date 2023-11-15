@@ -93,6 +93,10 @@ int entry(int argc, char **argv)
     throw std::runtime_error(errmsg.c_str());
   }
 
+  onert_micro::OMInterpreter interpreter;
+  onert_micro::OMConfig config;
+  interpreter.importModel(model_data.data(), config);
+
   // Create interpreter.
   //luci_interpreter::Interpreter interpreter(model_data.data(), true);
 

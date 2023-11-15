@@ -1,9 +1,9 @@
 set(OM_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(OM_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
-set(OM_PAL_COMMON_DIR "${CMAKE_CURRENT_SOURCE_DIR}/pal/common")
+set(OM_PAL_COMMON_DIR "${OM_INCLUDE_DIR}/execute/pal/common")
 # if no path is specified, use classic to mcu
 if (NOT OM_PAL_DIR)
-    set(OM_PAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/pal/mcu")
+    set(OM_PAL_DIR "${OM_INCLUDE_DIR}/execute/pal/mcu")
 endif()
 
 # if no path is specified, use classic to KernelsToBuild list, else use generated one
@@ -12,6 +12,8 @@ if (NOT OM_KERNELS_BUILD_LIST)
 else()
     set(KERNEL_REGISTER_FILE ${OM_KERNELS_BUILD_LIST})
 endif()
+
+set(PASS_REGISTER_FILE "${OM_INCLUDE_DIR}/optimize/BuildPass.lst")
 
 # To build onert-micro for eval-driver x86-64 version (to avoid name conflicts)
 if (NOT DEFINED CUSTOM_OM_SUFFIX)

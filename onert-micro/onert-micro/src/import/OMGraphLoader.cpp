@@ -15,6 +15,7 @@
  */
 
 #include "import/OMGraphLoader.h"
+#include "import/OMKernelConfigureBuilder.h"
 #include "core/OMKernel.h"
 #include "OMStatus.h"
 
@@ -28,6 +29,10 @@ OMStatus OMGraphLoader::loadGraph(core::OMRuntimeStorage &runtime_storage, core:
 {
   reader::OMCircleReader &reader = runtime_context.getCircleReader();
   const reader::CircleOperators *operators = reader.operators();
+
+  std::vector<OMKernel> kernels;
+
+  OMStatus status = Ok;
   for (uint16_t i = 0; i < static_cast<uint16_t>(operators->size()); ++i)
   {
     const circle::Operator *op = operators->operator[](i);
@@ -37,9 +42,30 @@ OMStatus OMGraphLoader::loadGraph(core::OMRuntimeStorage &runtime_storage, core:
 
     OMKernel kernel;
     kernel.setKernelOperators({i});
-    reader.builtin_code()
 
+    // get BuilderId
+    const auto op_codes = reader.opcodes();
+    uint32_t index = op->opcode_index();
 
+    assert(index < op_codes->size());
+
+    const auto opcode = op_codes->operator[](index);
+    core::OMBuilderID builderID = core::OMBuilderID::Size;
+    if (opcode->builtin_code() == circle::BuiltinOperator_CUSTOM)
+      status = core::getCustomOperatorBuilderId(opcode->custom_code(), builderID);
+    else
+      status = core::getBuiltinOperatorBuilderId(opcode->builtin_code(), builderID);
+
+    assert(status == Ok && "Unknown operation");
+    if (status == UnsupportedOp or builderID == core::OMBuilderID::Size)
+      return UnsupportedOp;
+
+    kernel.setBuilderID(builderID);
+
+    kernels.push_back(std::move(kernel));
   }
-  return Ok;
+
+  runtime_storage.saveKernels(std::move(kernels));
+
+  return status;
 }

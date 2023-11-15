@@ -66,6 +66,12 @@ public:
   OMStatus select_subgraph(uint32_t subgraph);
   uint32_t get_current_subgraph_index() const { return _current_subgraph_index; }
 
+  // helpers
+public:
+  bool isConstTensor(uint32_t tensor_index);
+
+  const circle::Tensor *getTensorByIndex(int32_t tensor_index);
+
 private:
   const circle::Model *_model{nullptr};
   const circle::SubGraph *_current_subgraph{nullptr};

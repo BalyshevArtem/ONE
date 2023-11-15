@@ -30,7 +30,7 @@ namespace core
 class OMKernel
 {
 private:
-  std::vector<uint16_t> _operators{};
+  std::vector<uint16_t> _operators;
   OMKernelType _kernel_type = Normal;
   OMBuilderID _builder_id;
   uint8_t *_kernel_data = nullptr;
@@ -43,7 +43,14 @@ private:
 public:
   OMKernel() = default;
   OMKernel(const OMKernel&) = delete;
-  OMKernel(OMKernel &&) = delete;
+  OMKernel(OMKernel &&rhs)
+  {
+    rhs._operators = std::move(_operators);
+    rhs._kernel_data = _kernel_data;
+    _kernel_data = nullptr;
+    rhs._kernel_type = _kernel_type;
+    rhs._builder_id = _builder_id;
+  }
   OMKernel &operator=(const OMKernel &) = delete;
   OMKernel &&operator=(const OMKernel &&) = delete;
   ~OMKernel()

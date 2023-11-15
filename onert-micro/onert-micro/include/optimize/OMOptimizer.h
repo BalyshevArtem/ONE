@@ -17,13 +17,20 @@
 #ifndef ONERT_MICRO_OPTIMIZE_OPTIMIZER_H
 #define ONERT_MICRO_OPTIMIZE_OPTIMIZER_H
 
+#include "OMGraphStatus.h"
+#include "OMConfig.h"
+#include "core/OMRuntimeContext.h"
+#include "core/OMRuntimeStorage.h"
+
 namespace onert_micro
 {
 namespace optimize
 {
 
-class OMOptimizer
+struct OMOptimizer
 {
+  static OMStatus optimize(core::OMRuntimeStorage &storage, core::OMRuntimeContext &context,
+                           const OMConfig &configs);
 };
 
 } // optimize

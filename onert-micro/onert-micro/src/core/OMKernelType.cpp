@@ -1,0 +1,94 @@
+/*
+ * Copyright (c) 2023 Samsung Electronics Co., Ltd. All Rights Reserved
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+// Have common structure
+
+#include "core/OMKernelType.h"
+
+using namespace onert_micro::core;
+using namespace onert_micro;
+
+OMStatus onert_micro::core::getBuiltinOperatorBuilderId(const circle::BuiltinOperator &opcode, core::OMBuilderID &builderID)
+{
+  switch (opcode)
+  {
+#define REGISTER_KERNEL(builtin_operator, name)    \
+  case circle::BuiltinOperator_##builtin_operator: \
+    builderID = core::OMBuilderID::BuiltinOperator_##builtin_operator; \
+    break;
+#include "KernelsToBuild.lst"
+#undef REGISTER_KERNEL
+    default:
+      assert(false && "Unsupported operation");
+      return UnsupportedOp;
+  }
+  return Ok;
+}
+
+OMStatus onert_micro::core::getBuiltinOperatorByBuilderId(core::OMBuilderID &builderID, circle::BuiltinOperator &opcode)
+{
+  switch (builderID)
+  {
+#define REGISTER_KERNEL(builtin_operator, name)    \
+  case core::OMBuilderID::BuiltinOperator_##builtin_operator: \
+    opcode = circle::BuiltinOperator_##builtin_operator; \
+    break;
+#include "KernelsToBuild.lst"
+#undef REGISTER_KERNEL
+#define REGISTER_CUSTOM_KERNEL(name, string_name)           \
+  case core::OMBuilderID::CUSTOM_##name:                    \
+    opcode = circle::BuiltinOperator_CUSTOM;                \
+    break;
+#include "CustomKernelsToBuild.lst"
+#undef REGISTER_CUSTOM_KERNEL
+    default:
+      assert(false && "Unsupported operation");
+      return UnsupportedOp;
+  }
+  return Ok;
+}
+
+OMStatus onert_micro::core::getCustomOperatorByBuilderId(core::OMBuilderID &builderID, OMBuilderCustomID &opcode)
+{
+  switch (builderID)
+  {
+#define REGISTER_CUSTOM_KERNEL(name, string_name)              \
+  case core::OMBuilderID::CUSTOM_##name:                       \
+    opcode = core::OMBuilderCustomID::##name;                 \
+    break;
+#include "CustomKernelsToBuild.lst"
+#undef REGISTER_CUSTOM_KERNEL
+    default:
+      assert(false && "Unsupported operation");
+      return UnsupportedOp;
+  }
+  return Ok;
+}
+
+OMStatus onert_micro::core::getCustomOperatorBuilderId(const flatbuffers::String *custom_opcode, core::OMBuilderID &builderID)
+{
+#define REGISTER_CUSTOM_KERNEL(name, string_name)                \
+  const char arr[] = string_name;                                \
+  if (std::strcmp(custom_opcode->c_str(), arr) == 0)             \
+  {                                                              \
+    builderID = core::OMBuilderID::CUSTOM_##name;                \
+    return Ok;                                                   \
+  }
+#include "CustomKernelsToBuild.lst"
+#undef REGISTER_CUSTOM_KERNEL
+  assert(false && "Unsupported custom operation");
+  return UnsupportedOp;
+}

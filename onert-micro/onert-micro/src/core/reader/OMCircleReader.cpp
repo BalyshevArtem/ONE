@@ -83,3 +83,19 @@ OMStatus OMCircleReader::select_subgraph(uint32_t sgindex)
 
   return Ok;
 }
+
+bool OMCircleReader::isConstTensor(uint32_t tensor_index)
+{
+  if (tensor_index == -1)
+    return false;
+
+  const auto tmp_tensor = _current_subgraph->tensors()->operator[](tensor_index);
+  return _model->buffers()[tmp_tensor->buffer()].data() != nullptr;
+}
+
+const circle::Tensor *OMCircleReader::getTensorByIndex(int32_t tensor_index)
+{
+  if (tensor_index == -1)
+    return nullptr;
+  return _current_subgraph->tensors()->operator[](tensor_index);
+}

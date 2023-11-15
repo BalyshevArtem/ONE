@@ -41,8 +41,6 @@ public:
   OMRuntimeContext(OMRuntimeContext &&) = default;
   ~OMRuntimeContext() = default;
 
-  circle::Tensor *getCircleTensorByIndex(uint16_t index);
-
   OMStatus setModel(const char *model_ptr,  uint32_t graph_index)
   {
     OMStatus status;
@@ -59,7 +57,6 @@ public:
   {
     return _reader;
   }
-
 };
 
 } // core

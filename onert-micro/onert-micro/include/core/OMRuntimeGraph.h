@@ -62,6 +62,11 @@ public:
     return _storage;
   }
 
+  memory::OMRuntimeAllocator &getRuntimeAllocator()
+  {
+    return _allocator;
+  }
+
   OMRuntimeContext &getRuntimeContext()
   {
     return _context;

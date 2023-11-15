@@ -2,8 +2,10 @@ message(STATUS "ONERT MICRO IMPORT BUILD BEGIN")
 
 set(SOURCES
         OMGraphLoader.cpp
-        OMGraphAllocDeallocPlanCreater.cpp
+        OMExecutionPlanCreator.cpp
         OMKernelConfiguration.cpp
+        OMKernelConfigureBuilder.cpp
+        kernels/custom_gru.cpp
         )
 
 # Add configure kernels

@@ -47,12 +47,24 @@ public:
 
   void saveAllocPlan(std::vector<std::vector<uint16_t>> &&alloc_plan)
   {
+    _alloc_plan.clear();
     _alloc_plan = std::move(alloc_plan);
   }
 
   void saveDeallocPlan(std::vector<std::vector<uint16_t>> &&dealloc_plan)
   {
+    _dealloc_plan.clear();
     _dealloc_plan = std::move(dealloc_plan);
+  }
+
+  std::vector<std::vector<uint16_t>> &getAllocPlan()
+  {
+    return _alloc_plan;
+  }
+
+  std::vector<std::vector<uint16_t>> &getDeallocPlan()
+  {
+    return _dealloc_plan;
   }
 
   OMStatus allocate(size_t kernel_index, OMRuntimeContext *context, OMRuntimeStorage *storage);

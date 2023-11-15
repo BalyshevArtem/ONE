@@ -14,29 +14,4 @@
  * limitations under the License.
  */
 
-#ifndef ONERT_MICRO_OPTIMIZE_GRAPH_STATUS_H
-#define ONERT_MICRO_OPTIMIZE_GRAPH_STATUS_H
-
-#include "OMStatus.h"
-
-namespace onert_micro
-{
-namespace optimize
-{
-
-enum OMGraphOptimizationStatus
-{
-  Changed,
-  Unchanged,
-};
-
-struct OMGraphStatus
-{
-  OMGraphOptimizationStatus graph_status;
-  OMStatus main_status;
-};
-
-} // optimize
-} // namespace onert_micro
-
-#endif // ONERT_MICRO_OPTIMIZE_GRAPH_STATUS_H
+#include "import/OMKernelConfigureBuilder.h"

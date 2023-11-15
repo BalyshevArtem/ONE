@@ -9,6 +9,7 @@ message(STATUS "ONERT MICRO CORE BUILD BEGIN")
 
 set(SOURCES
         OMKernel.cpp
+        OMKernelType.cpp
         OMRuntimeContext.cpp
         OMRuntimeStorage.cpp
         OMRuntimeGraph.cpp
