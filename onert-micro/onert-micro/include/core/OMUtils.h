@@ -14,26 +14,40 @@
  * limitations under the License.
  */
 
-#ifndef ONERT_MICRO_EXECUTE_KERNEL_EXECUTE_H
-#define ONERT_MICRO_EXECUTE_KERNEL_EXECUTE_H
+#ifndef ONERT_MICRO_CORE_UTILS_H
+#define ONERT_MICRO_CORE_UTILS_H
 
 #include "OMStatus.h"
-#include "core/OMKernel.h"
-#include "core/OMRuntimeContext.h"
-#include "core/OMRuntimeStorage.h"
+#include "core/reader/OMCircleReader.h"
+
+#include <cassert>
+#include <cstdint>
 
 namespace onert_micro
 {
-namespace execute
+namespace core
+{
+namespace utils
 {
 
-struct OMKernelExecute
-{
-  static OMStatus executeKernel(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                core::OMKernel &kernel);
-};
+OMStatus checkCondition(bool cond);
 
-} // execute
+uint32_t numElements(const circle::Tensor *circle_tensor);
+
+template <typename T>
+const T *castInputData(uint8_t *tensor_data)
+{
+  return tensor_data != nullptr ? reinterpret_cast<const T *>(tensor_data) : nullptr;
+}
+
+template <typename T>
+T *castOutputData(uint8_t *tensor_data)
+{
+  return tensor_data != nullptr ? reinterpret_cast<T *>(tensor_data) : nullptr;
+}
+
+} // namespace utils
+} // namespace core
 } // namespace onert_micro
 
-#endif // ONERT_MICRO_EXECUTE_KERNEL_EXECUTE_H
+#endif // ONERT_MICRO_CORE_UTILS_H

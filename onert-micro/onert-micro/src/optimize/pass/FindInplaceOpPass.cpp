@@ -67,7 +67,7 @@ OMStatus isInplaceOperation(core::OMBuilderID op, bool &is_inplace)
         return status;
       switch (custom_id)
       {
-        case onert_micro::core::custom_gru:
+        case onert_micro::core::CUSTOM_custom_gru:
           is_inplace = true;
           break;
         default:
@@ -115,7 +115,8 @@ bool isSingleUsageOfTensor(core::reader::OMCircleReader &reader, const int32_t t
   return true;
 }
 
-OMStatus checkInplaceOp(core::reader::OMCircleReader &reader,  uint16_t input_operator_index,
+OMStatus checkInplaceOp(core::OMRuntimeContext &context,
+                        core::reader::OMCircleReader &reader,  uint16_t input_operator_index,
                         uint16_t output_operator_index, bool &is_inplace)
 {
   const auto operators = reader.operators();
@@ -162,8 +163,8 @@ OMStatus checkInplaceOp(core::reader::OMCircleReader &reader,  uint16_t input_op
 
     // Check that num elements are equal
     {
-      const auto *input_non_const_tensor = reader.getTensorByIndex(non_const_input_idx);
-      const auto *output_tensor = reader.getTensorByIndex(output_index);
+      const auto *input_non_const_tensor = context.getTensorByIndex(non_const_input_idx);
+      const auto *output_tensor = context.getTensorByIndex(output_index);
       if (input_non_const_tensor->shape()->size() != output_tensor->shape()->size())
       {
         is_inplace = false;
@@ -196,6 +197,10 @@ OMStatus findInplaceOp(std::vector<core::OMKernel> &kernels, core::OMRuntimeCont
   for (uint32_t i = 0; i < kernels.size(); ++i)
   {
     core::OMKernel &cur_kernel = kernels.at(i);
+
+    if (cur_kernel.getKernelType() == onert_micro::core::Inplace)
+      continue;
+
     bool is_inplace = false;
     status = isInplaceOperation(cur_kernel.getBuilderID(), is_inplace);
     if (status != Ok)
@@ -209,7 +214,7 @@ OMStatus findInplaceOp(std::vector<core::OMKernel> &kernels, core::OMRuntimeCont
 
     is_inplace = true;
 
-    status = checkInplaceOp(reader, input_operator_index, output_operator_index, is_inplace);
+    status = checkInplaceOp(context, reader, input_operator_index, output_operator_index, is_inplace);
 
     if (status != Ok)
       return status;

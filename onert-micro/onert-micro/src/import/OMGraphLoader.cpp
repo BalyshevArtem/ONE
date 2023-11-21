@@ -30,17 +30,20 @@ OMStatus OMGraphLoader::loadGraph(core::OMRuntimeStorage &runtime_storage, core:
   reader::OMCircleReader &reader = runtime_context.getCircleReader();
   const reader::CircleOperators *operators = reader.operators();
 
-  std::vector<OMKernel> kernels;
+  std::vector<OMKernel> &kernels = runtime_storage.getKernels();
+
+  const auto num_operators = static_cast<uint16_t>(operators->size());
+  kernels.resize(num_operators);
 
   OMStatus status = Ok;
-  for (uint16_t i = 0; i < static_cast<uint16_t>(operators->size()); ++i)
+  for (uint16_t i = 0; i < num_operators; ++i)
   {
     const circle::Operator *op = operators->operator[](i);
     assert(op != nullptr);
     if (op == nullptr)
       return UnknownError;
 
-    OMKernel kernel;
+    OMKernel &kernel = kernels.at(i);
     kernel.setKernelOperators({i});
 
     // get BuilderId
@@ -62,10 +65,7 @@ OMStatus OMGraphLoader::loadGraph(core::OMRuntimeStorage &runtime_storage, core:
 
     kernel.setBuilderID(builderID);
 
-    kernels.push_back(std::move(kernel));
   }
-
-  runtime_storage.saveKernels(std::move(kernels));
 
   return status;
 }

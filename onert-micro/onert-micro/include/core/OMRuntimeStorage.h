@@ -46,8 +46,11 @@ public:
   // TODO check it
   ~OMRuntimeStorage() = default;
 
-  OMStatus saveDataToTensorIndex(void *data, uint16_t tensor_index);
-  OMStatus getDataByTensorIndex(void *data, uint16_t tensor_index);
+  OMStatus saveDataToTensorIndex(uint8_t *data, uint16_t tensor_index);
+
+  OMStatus removeTensorFromTensorIndexToData(uint16_t tensor_index);
+
+  OMStatus getDataByTensorIndex(uint8_t **data, uint16_t tensor_index);
 
   OMStatus saveKernels(std::vector<OMKernel> &&kernels)
   {

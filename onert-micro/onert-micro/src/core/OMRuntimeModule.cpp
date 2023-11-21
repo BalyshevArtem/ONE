@@ -18,38 +18,39 @@
 #include "import/OMGraphLoader.h"
 #include "optimize/OMOptimizer.h"
 #include "import/OMExecutionPlanCreator.h"
+#include "import/OMKernelConfiguration.h"
 
 using namespace onert_micro::core;
 using namespace onert_micro;
 
 uint32_t OMRuntimeModule::getNumberOfInputs()
 {
-//  return _graphs.at(0).getNumberOfInputs();
+  //return _graphs.at(0).getNumberOfInputs();
 }
 
 uint32_t OMRuntimeModule::getNumberOfOutputs()
 {
-//  return _graphs.at(0).getNumberOfOutputs();
+  //return _graphs.at(0).getNumberOfOutputs();
 }
 
 uint32_t OMRuntimeModule::getInputSizeAt(uint32_t position)
 {
- // return _graphs.at(0).getInputSizeAt(position);
+  //return _graphs.at(0).getInputSizeAt(position);
 }
 
 uint32_t OMRuntimeModule::getOutputSizeAt(uint32_t position)
 {
-  //return _graphs.at(0).getOutputSizeAt(position);
+  return _graphs.at(0).getOutputSizeAt(position);
 }
 
 void *OMRuntimeModule::getInputDataAt(uint32_t position)
 {
- // return _graphs.at(0).getInputDataAt(position);
+  return _graphs.at(0).getInputDataAt(position);
 }
 
 void *OMRuntimeModule::getOutputDataAt(uint32_t position)
 {
-  //return _graphs.at(0).getOutputDataAt(position);
+  return _graphs.at(0).getOutputDataAt(position);
 }
 
 OMStatus OMRuntimeModule::importModel(const char *model_ptr, const OMConfig &config)
@@ -108,7 +109,26 @@ OMStatus OMRuntimeModule::importModel(const char *model_ptr, const OMConfig &con
       return status;
 
     // Finally_5 - KernelConfigure
+    status = import::OMKernelConfiguration::configureKernels(runtime_storage, runtime_context, config);
+    if (status != Ok)
+      return status;
+
+    // Done!
   }
 
   return Ok;
+}
+
+OMStatus OMRuntimeModule::run()
+{
+  OMStatus status = Ok;
+
+  if (_graphs.empty())
+    return ModelNotImport;
+
+  core::OMRuntimeGraph &main_graph = _graphs.at(0);
+
+  status = main_graph.run();
+
+  return status;
 }

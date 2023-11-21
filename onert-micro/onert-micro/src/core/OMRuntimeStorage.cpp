@@ -19,7 +19,7 @@
 using namespace onert_micro::core;
 using namespace onert_micro;
 
-OMStatus OMRuntimeStorage::saveDataToTensorIndex(void *data, uint16_t tensor_index)
+OMStatus OMRuntimeStorage::saveDataToTensorIndex(uint8_t *data, uint16_t tensor_index)
 {
   auto tensor_to_data_it = _tensor_index_to_data.find(tensor_index);
   assert(tensor_to_data_it == _tensor_index_to_data.end() && "Already saved tensor data");
@@ -32,7 +32,7 @@ OMStatus OMRuntimeStorage::saveDataToTensorIndex(void *data, uint16_t tensor_ind
   return Ok;
 }
 
-OMStatus OMRuntimeStorage::getDataByTensorIndex(void *data, uint16_t tensor_index)
+OMStatus OMRuntimeStorage::removeTensorFromTensorIndexToData(uint16_t tensor_index)
 {
   auto tensor_to_data_it = _tensor_index_to_data.find(tensor_index);
   assert(tensor_to_data_it != _tensor_index_to_data.end() && "No data");
@@ -40,7 +40,20 @@ OMStatus OMRuntimeStorage::getDataByTensorIndex(void *data, uint16_t tensor_inde
   if (tensor_to_data_it == _tensor_index_to_data.end())
     return UnknownError;
 
-  data = tensor_to_data_it->second;
+  _tensor_index_to_data.erase(tensor_to_data_it);
+
+  return Ok;
+}
+
+OMStatus OMRuntimeStorage::getDataByTensorIndex(uint8_t **data, uint16_t tensor_index)
+{
+  auto tensor_to_data_it = _tensor_index_to_data.find(tensor_index);
+  assert(tensor_to_data_it != _tensor_index_to_data.end() && "No data");
+
+  if (tensor_to_data_it == _tensor_index_to_data.end())
+    return UnknownError;
+
+  *data = tensor_to_data_it->second;
 
   return Ok;
 }

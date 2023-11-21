@@ -14,33 +14,33 @@
  * limitations under the License.
  */
 
-#ifndef ONERT_MICRO_EXECUTE_PAL_ABS_COMMON_H
-#define ONERT_MICRO_EXECUTE_PAL_ABS_COMMON_H
+#ifndef ONERT_MICRO_EXECUTE_TESTUTILS_H
+#define ONERT_MICRO_EXECUTE_TESTUTILS_H
 
-#include "OMStatus.h"
+#include "test_models/TestDataBase.h"
 
-#include <cmath>
+#include <type_traits>
+
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 namespace onert_micro
 {
 namespace execute
 {
-namespace pal
+namespace testing
 {
 
-template <typename T>
-inline OMStatus Abs(const uint32_t flat_size, const T *input_data, T *output_data)
-{
-  for (uint32_t i = 0; i < flat_size; ++i)
-  {
-    output_data[i] = std::abs(input_data[i]);
-  }
+// Array version of `::testing::FloatNear` matcher.
+::testing::Matcher<std::vector<float>> FloatArrayNear(const std::vector<float> &values,
+                                                      float max_abs_error = 1.0e-5f);
 
-  return Ok;
-}
+template <typename T> std::vector<T> checkSISOKernel(onert_micro::test_model::TestDataBase<T> *test_data_base);
 
-} // namespace pal
+void checkNEGSISOKernel(onert_micro::test_model::NegTestDataBase *test_data_base);
+
+} // namespace testing
 } // namespace execute
 } // namespace onert_micro
 
-#endif // ONERT_MICRO_EXECUTE_PAL_ABS_COMMON_H
+#endif // ONERT_MICRO_EXECUTE_TESTUTILS_H

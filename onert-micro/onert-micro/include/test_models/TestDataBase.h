@@ -14,26 +14,35 @@
  * limitations under the License.
  */
 
-#ifndef ONERT_MICRO_EXECUTE_KERNEL_EXECUTE_H
-#define ONERT_MICRO_EXECUTE_KERNEL_EXECUTE_H
+#ifndef ONERT_MICRO_TEST_MODELS_TEST_DATA_BASE_H
+#define ONERT_MICRO_TEST_MODELS_TEST_DATA_BASE_H
 
-#include "OMStatus.h"
-#include "core/OMKernel.h"
-#include "core/OMRuntimeContext.h"
-#include "core/OMRuntimeStorage.h"
+#include <vector>
 
 namespace onert_micro
 {
-namespace execute
+namespace test_model
 {
 
-struct OMKernelExecute
+template <typename T, typename U = T> class TestDataBase
 {
-  static OMStatus executeKernel(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                core::OMKernel &kernel);
+public:
+  virtual ~TestDataBase() = default;
+
+  virtual const unsigned char *get_model_ptr() = 0;
+
+  virtual const std::vector<T> &get_input_data_by_index(int i) = 0;
+  virtual const std::vector<U> &get_output_data_by_index(int i) = 0;
 };
 
-} // execute
+class NegTestDataBase
+{
+public:
+  virtual ~NegTestDataBase() = default;
+  virtual const unsigned char *get_model_ptr() = 0;
+};
+
+} // namespace test_model
 } // namespace onert_micro
 
-#endif // ONERT_MICRO_EXECUTE_KERNEL_EXECUTE_H
+#endif // ONERT_MICRO_TEST_MODELS_TEST_DATA_BASE_H

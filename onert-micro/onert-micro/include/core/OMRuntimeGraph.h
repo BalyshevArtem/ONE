@@ -51,11 +51,10 @@ public:
   uint32_t getInputSizeAt(uint32_t position);
   uint32_t getOutputSizeAt(uint32_t position);
 
-  void *getInputDataAt(int position);
-  void *getOutputDataAt(int position);
+  void *getInputDataAt(uint32_t position);
+  void *getOutputDataAt(uint32_t position);
 
   OMStatus run();
-  OMStatus configure();
 
   OMRuntimeStorage &getRuntimeStorage()
   {

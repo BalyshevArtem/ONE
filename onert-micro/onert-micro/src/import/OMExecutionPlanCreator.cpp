@@ -97,7 +97,7 @@ OMStatus OMExecutionPlanCreator::createExecutionPlan(core::OMRuntimeStorage &run
   for (const auto output_ind : *reader.outputs())
   {
     if (lifetimes.count(output_ind) > 0)
-      lifetimes.at(output_ind).second = num_kernels;
+      lifetimes.at(output_ind).second = static_cast<int32_t>(num_kernels);
   }
 
   alloc_plan.assign(num_kernels, std::vector<uint16_t>());

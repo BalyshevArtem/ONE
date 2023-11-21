@@ -11,6 +11,8 @@ endif()
 
 set(SOURCES
         OMKernelExecute.cpp
+        OMKernelExecutionBuilder.cpp
+        kernels/custom_gru.cpp
         )
 
 # Add configure kernels
@@ -26,7 +28,25 @@ add_library(${OM_EXECUTE_LIB} STATIC ${SOURCES})
 target_include_directories(${OM_EXECUTE_LIB} PUBLIC "${OM_INCLUDE_DIR}")
 target_link_libraries(${OM_EXECUTE_LIB} PUBLIC ${OM_CORE_LIB})
 
-target_include_directories(${OM_EXECUTE_LIB} PUBLIC ${LUCI_INTERPRETER_PAL_COMMON_DIR})
+target_include_directories(${OM_EXECUTE_LIB} PUBLIC ${OM_PAL_COMMON_DIR})
 add_pal_to_target(${OM_EXECUTE_LIB})
 
 message(STATUS "ONERT MICRO EXECUTE BUILD FINISHED")
+
+if(NOT ENABLE_TEST)
+    return()
+endif(NOT ENABLE_TEST)
+
+nnas_find_package(GTest REQUIRED)
+
+macro(REGISTER_KERNEL OPERATOR, NODE)
+    list(APPEND TEST_SOURCES "kernels/${NODE}.test.cpp")
+endmacro(REGISTER_KERNEL)
+
+include(${KERNEL_REGISTER_FILE})
+
+list(APPEND TEST_SOURCES ${OM_INCLUDE_DIR}/execute/TestUtils.h TestUtils.cpp)
+
+GTest_AddTest(${OM_EXECUTE_LIB}_kernels_test ${TEST_SOURCES})
+target_include_directories(${OM_EXECUTE_LIB}_kernels_test PUBLIC "${OM_INCLUDE_DIR}")
+target_link_libraries(${OM_EXECUTE_LIB}_kernels_test ${OM_INTERPRETER_LIB})

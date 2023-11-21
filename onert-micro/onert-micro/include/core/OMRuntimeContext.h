@@ -57,6 +57,13 @@ public:
   {
     return _reader;
   }
+
+  const circle::Operator *getCircleOperatorAt(uint16_t index);
+  const circle::Tensor *getTensorByIndex(int32_t tensor_index);
+
+  uint32_t getGraphInputTensorIndex(uint32_t index);
+  uint32_t getGraphOutputTensorIndex(uint32_t index);
+
 };
 
 } // core

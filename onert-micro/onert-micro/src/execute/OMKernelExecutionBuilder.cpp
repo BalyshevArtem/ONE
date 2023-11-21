@@ -14,14 +14,4 @@
  * limitations under the License.
  */
 
-#include "import/OMKernelConfigureBuilder.h"
-#include "OMStatus.h"
-
-using namespace onert_micro;
-using namespace onert_micro;
-
-OMStatus onert_micro::import::configure_kernel_Circlecustom_gru(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                                                core::OMKernel &kernel)
-{
-  return Ok;
-}
+#include "execute/OMKernelExecutionBuilder.h"

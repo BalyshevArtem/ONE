@@ -23,8 +23,11 @@ namespace onert_micro
 enum OMStatus
 {
   Ok,
+  UnsupportedType,
   UnsupportedOp,
   UnknownError,
+  ModelNotImport,
+  FailedCheckCondition,
 };
 
 } // namespace onert_micro

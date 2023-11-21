@@ -17,13 +17,20 @@
 #ifndef ONERT_MICRO_IMPORT_KERNEL_CONFIGURATION_H
 #define ONERT_MICRO_IMPORT_KERNEL_CONFIGURATION_H
 
+#include "OMStatus.h"
+#include "OMConfig.h"
+#include "core/OMRuntimeStorage.h"
+#include "core/OMRuntimeContext.h"
+
 namespace onert_micro
 {
 namespace import
 {
 
-class OMKernelConfiguration
+struct OMKernelConfiguration
 {
+  static OMStatus configureKernels(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
+                                   const OMConfig &configs);
 };
 
 } // import

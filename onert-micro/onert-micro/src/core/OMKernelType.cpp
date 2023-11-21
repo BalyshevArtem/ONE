@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-// Have common structure
-
 #include "core/OMKernelType.h"
 
 using namespace onert_micro::core;
@@ -67,7 +65,7 @@ OMStatus onert_micro::core::getCustomOperatorByBuilderId(core::OMBuilderID &buil
   {
 #define REGISTER_CUSTOM_KERNEL(name, string_name)              \
   case core::OMBuilderID::CUSTOM_##name:                       \
-    opcode = core::OMBuilderCustomID::##name;                 \
+    opcode = core::OMBuilderCustomID::CUSTOM_##name;                 \
     break;
 #include "CustomKernelsToBuild.lst"
 #undef REGISTER_CUSTOM_KERNEL

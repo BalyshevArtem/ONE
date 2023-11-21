@@ -70,8 +70,6 @@ public:
 public:
   bool isConstTensor(uint32_t tensor_index);
 
-  const circle::Tensor *getTensorByIndex(int32_t tensor_index);
-
 private:
   const circle::Model *_model{nullptr};
   const circle::SubGraph *_current_subgraph{nullptr};

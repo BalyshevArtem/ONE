@@ -96,6 +96,7 @@ int entry(int argc, char **argv)
   onert_micro::OMInterpreter interpreter;
   onert_micro::OMConfig config;
   interpreter.importModel(model_data.data(), config);
+  interpreter.run();
 
   // Create interpreter.
   //luci_interpreter::Interpreter interpreter(model_data.data(), true);

@@ -18,22 +18,30 @@
 #define ONERT_MICRO_IMPORT_KERNEL_CONFIGURE_BUILDER_H
 
 #include "core/reader/OMCircleReader.h"
+#include "core/OMKernel.h"
 #include "core/OMKernelType.h"
+#include "core/OMRuntimeStorage.h"
+#include "core/OMRuntimeContext.h"
 
 namespace onert_micro
 {
 namespace import
 {
 
-using KernelConfigureFunc = OMStatus (const circle::Operator *);
+using KernelConfigureFunc = OMStatus (core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
+                                      core::OMKernel &kernel);
 
-#define REGISTER_KERNEL(builtin_operator, name)                        \
-  OMStatus configure_kernel_Circle##name(const circle::Operator *cur_op);
+#define REGISTER_KERNEL(builtin_operator, name)                                       \
+OMStatus configure_kernel_Circle##name(core::OMRuntimeStorage &runtime_storage,       \
+                                         core::OMRuntimeContext &runtime_context,     \
+                                         core::OMKernel &kernel);
 #include "KernelsToBuild.lst"
 #undef REGISTER_KERNEL
 
-#define REGISTER_CUSTOM_KERNEL(name, string_name)                        \
-  OMStatus configure_kernel_Circle##name(const circle::Operator *cur_op);
+#define REGISTER_CUSTOM_KERNEL(name, string_name)                                 \
+OMStatus configure_kernel_Circle##name(core::OMRuntimeStorage &runtime_storage,   \
+                                         core::OMRuntimeContext &runtime_context, \
+                                         core::OMKernel &kernel);
 #include "CustomKernelsToBuild.lst"
 #undef REGISTER_CUSTOM_KERNEL
 
@@ -51,22 +59,24 @@ public:
 #undef REGISTER_KERNEL
   }
 
-  void configureKernel(const circle::Operator *cur_op, circle::BuiltinOperator opcode) const;
+//  void configureKernel(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
+//                       core::OMKernel &kernel) const;
 
-private:
-  OMStatus getKernelConfigureFunc(core::OMBuilderID builderID, KernelConfigureFunc *configure_func) const
+public:
+  OMStatus getKernelConfigureFunc(core::OMBuilderID builderID, KernelConfigureFunc **configure_func) const
   {
     const auto builder_id_opcode = size_t(builderID);
     assert(builder_id_opcode < size_t(core::OMBuilderID::BuiltinOperatorsSize));
     if (builder_id_opcode >= size_t(core::OMBuilderID::BuiltinOperatorsSize))
     {
-      configure_func = nullptr;
+      *configure_func = nullptr;
       return UnknownError;
     }
-    configure_func = _operator_configure[builder_id_opcode];
+    *configure_func = _operator_configure[builder_id_opcode];
     return Ok;
   }
 
+private:
   constexpr void registerKernelConfigure(core::OMBuilderID id, KernelConfigureFunc *func)
   {
     assert(size_t(id) < size_t(core::OMBuilderID::BuiltinOperatorsSize));
@@ -91,28 +101,30 @@ public:
 #undef REGISTER_CUSTOM_KERNEL
   }
 
-  void configureKernel(const circle::Operator *cur_op, circle::BuiltinOperator opcode) const;
+//  void configureKernel(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
+//                       core::OMKernel &kernel) const;
 
-private:
-  OMStatus getKernelConfigureFunc(core::OMBuilderID builderID, KernelConfigureFunc *configure_func) const
+public:
+  OMStatus getKernelConfigureFunc(core::OMBuilderID builderID, KernelConfigureFunc **configure_func) const
   {
     auto builder_id_opcode = size_t(builderID);
     if (builder_id_opcode >= size_t(core::OMBuilderID::Size))
     {
-      configure_func = nullptr;
+      *configure_func = nullptr;
       return UnknownError;
     }
     const auto builder_id_offset = size_t(core::OMBuilderID::BuiltinOperatorsSize);
     builder_id_opcode -= builder_id_offset - 1;
     if (builder_id_opcode < 0)
     {
-      configure_func = nullptr;
+      *configure_func = nullptr;
       return UnknownError;
     }
-    configure_func = _operator_configure[builder_id_opcode];
+    *configure_func = _operator_configure[builder_id_opcode];
     return Ok;
   }
 
+private:
   constexpr void registerKernelConfigure(core::OMBuilderID id, KernelConfigureFunc *func)
   {
     auto builder_id_opcode = size_t(id);

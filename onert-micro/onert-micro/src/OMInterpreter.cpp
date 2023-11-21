@@ -29,7 +29,7 @@ OMStatus OMInterpreter::importModel(const char *model_ptr, const OMConfig &confi
 
 OMStatus OMInterpreter::run()
 {
-//  return _runtime_module.run();
+  return _runtime_module.run();
 }
 
 uint32_t OMInterpreter::getNumberOfInputs()

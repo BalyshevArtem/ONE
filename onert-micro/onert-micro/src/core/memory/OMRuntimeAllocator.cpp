@@ -31,18 +31,18 @@ OMStatus OMRuntimeAllocator::allocate(size_t kernel_index, OMRuntimeContext *con
 
   for (const uint16_t tensor_index : current_allocate_plan)
   {
-    const circle::Tensor *tensor = context->getCircleTensorByIndex(tensor_index);
+    const circle::Tensor *tensor = context->getTensorByIndex(tensor_index);
     const OMShape tensor_shape(tensor);
 
     int32_t num_elements = tensor_shape.num_elements();
     assert(num_elements >= 0 && "Num elements should be positive");
     if (num_elements < 0)
       return UnknownError;
-    const uint32_t casted_num_elements = static_cast<uint32_t>(num_elements);
-    const uint32_t type_size = static_cast<uint32_t>(sizeof(tensor->type()));
+    const auto casted_num_elements = static_cast<uint32_t>(num_elements);
+    const auto type_size = static_cast<uint32_t>(sizeof(tensor->type()));
 
-    void *allocated_data = nullptr;
-    OMStatus status = OMMemoryManager::allocateMemory(casted_num_elements * type_size, allocated_data);
+    uint8_t *allocated_data = nullptr;
+    OMStatus status = OMMemoryManager::allocateMemory(casted_num_elements * type_size, &allocated_data);
     if (status != Ok)
       return status;
 
@@ -62,8 +62,8 @@ OMStatus OMRuntimeAllocator::deallocate(size_t kernel_index, OMRuntimeStorage *s
 
   for (const uint16_t tensor_index : current_deallocate_plan)
   {
-    void *allocated_data = nullptr;
-    OMStatus status = storage->getDataByTensorIndex(allocated_data, tensor_index);
+    uint8_t *allocated_data = nullptr;
+    OMStatus status = storage->getDataByTensorIndex(&allocated_data, tensor_index);
     if (status != Ok)
       return status;
 

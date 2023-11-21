@@ -32,8 +32,8 @@ namespace memory
 
 struct OMMemoryManager
 {
-  static OMStatus allocateMemory(uint32_t size, void *data);
-  static OMStatus deallocateMemory(void *data);
+  static OMStatus allocateMemory(uint32_t size, uint8_t **data);
+  static OMStatus deallocateMemory(uint8_t *data);
 };
 
 } // memory

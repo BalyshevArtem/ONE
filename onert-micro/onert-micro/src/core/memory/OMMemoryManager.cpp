@@ -19,19 +19,19 @@
 using namespace onert_micro::core::memory;
 using namespace onert_micro;
 
-OMStatus OMMemoryManager::allocateMemory(uint32_t size, void *data)
+OMStatus OMMemoryManager::allocateMemory(uint32_t size, uint8_t **data)
 {
   if (size == 0)
     return UnknownError;
-  data = malloc(size);
+  *data = reinterpret_cast<uint8_t *>(malloc(size));
 
-  if (data == nullptr)
+  if (*data == nullptr)
     return UnknownError;
 
   return Ok;
 }
 
-OMStatus OMMemoryManager::deallocateMemory(void *data)
+OMStatus OMMemoryManager::deallocateMemory(uint8_t *data)
 {
   free(data);
   return Ok;
