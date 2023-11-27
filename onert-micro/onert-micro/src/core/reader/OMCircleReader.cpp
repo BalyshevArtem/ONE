@@ -90,5 +90,5 @@ bool OMCircleReader::isConstTensor(uint32_t tensor_index)
     return false;
 
   const auto tmp_tensor = _current_subgraph->tensors()->operator[](tensor_index);
-  return _model->buffers()[tmp_tensor->buffer()].data() != nullptr;
+  return  _model->buffers()->operator[](tmp_tensor->buffer())->data() != nullptr;
 }

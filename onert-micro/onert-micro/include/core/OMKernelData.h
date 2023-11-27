@@ -14,38 +14,46 @@
  * limitations under the License.
  */
 
-#ifndef ONERT_MICRO_CORE_UTILS_H
-#define ONERT_MICRO_CORE_UTILS_H
+#ifndef ONERT_MICRO_CORE_KERNEL_DATA_H
+#define ONERT_MICRO_CORE_KERNEL_DATA_H
 
 #include "OMStatus.h"
-#include "core/reader/OMCircleReader.h"
-
-#include <cassert>
-#include <cstdint>
+#include "reader/OMCircleReader.h"
 
 namespace onert_micro
 {
 namespace core
 {
-namespace utils
+
+struct DataFullyConnected
 {
+  int32_t input_offset;
+  int32_t weights_offset;
+  int32_t output_offset;
+  int32_t output_multiplier;
+  int output_shift;
+  // uint8_t, etc, activation params.
+  int32_t quantized_activation_min;
+  int32_t quantized_activation_max;
+  // Mark the operands as cacheable if they are unchanging, e.g. weights.
+  bool lhs_cacheable;
+  bool rhs_cacheable;
+  // float activation params.
+  float float_activation_min;
+  float float_activation_max;
+};
 
-OMStatus checkCondition(bool cond);
-
-template <typename T>
-const T *castInputData(uint8_t *tensor_data)
+struct DataAbs
 {
-  return tensor_data != nullptr ? reinterpret_cast<const T *>(tensor_data) : nullptr;
-}
+// Empty
+};
 
-template <typename T>
-T *castOutputData(uint8_t *tensor_data)
+struct Datacustom_gru
 {
-  return tensor_data != nullptr ? reinterpret_cast<T *>(tensor_data) : nullptr;
-}
+// Empty
+};
 
-} // namespace utils
-} // namespace core
+} // core
 } // namespace onert_micro
 
-#endif // ONERT_MICRO_CORE_UTILS_H
+#endif // ONERT_MICRO_CORE_KERNEL_DATA_H

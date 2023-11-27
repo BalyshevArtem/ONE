@@ -28,26 +28,3 @@ OMStatus onert_micro::core::utils::checkCondition(bool cond)
 
   return FailedCheckCondition;
 }
-
-uint32_t onert_micro::core::utils::numElements(const circle::Tensor *circle_tensor)
-{
-  uint32_t result = 1;
-  const auto shape = circle_tensor->shape();
-  for (uint32_t i = 0; i < shape->size(); ++i)
-  {
-    result *= shape->operator[](i);
-  }
-  return result;
-}
-
-//template <typename T>
-//const T *onert_micro::core::utils::castInputData(uint8_t *tensor_data)
-//{
-//  return tensor_data != nullptr ? reinterpret_cast<const T *>(tensor_data) : nullptr;
-//}
-//
-//template <typename T>
-//T *onert_micro::core::utils::castOutputData(uint8_t *tensor_data)
-//{
-//  return tensor_data != nullptr ? reinterpret_cast<T *>(tensor_data) : nullptr;
-//}

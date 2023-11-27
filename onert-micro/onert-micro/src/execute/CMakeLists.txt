@@ -12,7 +12,8 @@ endif()
 set(SOURCES
         OMKernelExecute.cpp
         OMKernelExecutionBuilder.cpp
-        kernels/custom_gru.cpp
+        OMRuntimeKernel.cpp
+        OMUtils.cpp
         )
 
 # Add configure kernels
@@ -22,6 +23,13 @@ endmacro(REGISTER_KERNEL)
 
 # To add REGISTER_KERNEL list
 include(${KERNEL_REGISTER_FILE})
+
+macro(REGISTER_CUSTOM_KERNEL NODE)
+    list(APPEND SOURCES "kernels/${NODE}.cpp")
+endmacro(REGISTER_CUSTOM_KERNEL)
+
+# To add CUSTOM_REGISTER_KERNEL list
+include(${CUSTOM_KERNEL_REGISTER_FILE})
 
 add_library(${OM_EXECUTE_LIB} STATIC ${SOURCES})
 
@@ -40,12 +48,19 @@ endif(NOT ENABLE_TEST)
 nnas_find_package(GTest REQUIRED)
 
 macro(REGISTER_KERNEL OPERATOR, NODE)
-    list(APPEND TEST_SOURCES "kernels/${NODE}.test.cpp")
+    list(APPEND TEST_SOURCES "kernels/tests/${NODE}.test.cpp")
 endmacro(REGISTER_KERNEL)
 
 include(${KERNEL_REGISTER_FILE})
 
-list(APPEND TEST_SOURCES ${OM_INCLUDE_DIR}/execute/TestUtils.h TestUtils.cpp)
+macro(REGISTER_CUSTOM_KERNEL NODE)
+    list(APPEND TEST_SOURCES "kernels/tests/${NODE}.test.cpp")
+endmacro(REGISTER_CUSTOM_KERNEL)
+
+# To add CUSTOM_REGISTER_KERNEL list
+include(${CUSTOM_KERNEL_REGISTER_FILE})
+
+list(APPEND TEST_SOURCES OMTestUtils.cpp)
 
 GTest_AddTest(${OM_EXECUTE_LIB}_kernels_test ${TEST_SOURCES})
 target_include_directories(${OM_EXECUTE_LIB}_kernels_test PUBLIC "${OM_INCLUDE_DIR}")

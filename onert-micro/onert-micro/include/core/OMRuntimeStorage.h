@@ -64,6 +64,11 @@ public:
     return _kernels;
   }
 
+  void clearTensorIndexToData()
+  {
+    _tensor_index_to_data.clear();
+  }
+
   //OMStatus saveRuntimeShapeToTensorIndex(void *data, uint16_t tensor_index);
   //OMStatus getRuntimeShapeByTensorIndex(void *data, uint16_t tensor_index);
 };
@@ -72,4 +77,3 @@ public:
 } // namespace onert_micro
 
 #endif // ONERT_MICRO_CORE_RUNTIME_STORAGE_H
-

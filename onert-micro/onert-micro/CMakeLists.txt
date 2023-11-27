@@ -14,6 +14,7 @@ else()
 endif()
 
 set(PASS_REGISTER_FILE "${OM_INCLUDE_DIR}/optimize/BuildPass.lst")
+set(CUSTOM_KERNEL_REGISTER_FILE "${OM_PAL_DIR}/CustomKernelsToBuild.lst")
 
 # To build onert-micro for eval-driver x86-64 version (to avoid name conflicts)
 if (NOT DEFINED CUSTOM_OM_SUFFIX)

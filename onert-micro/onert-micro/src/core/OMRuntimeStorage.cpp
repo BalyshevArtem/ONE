@@ -21,12 +21,6 @@ using namespace onert_micro;
 
 OMStatus OMRuntimeStorage::saveDataToTensorIndex(uint8_t *data, uint16_t tensor_index)
 {
-  auto tensor_to_data_it = _tensor_index_to_data.find(tensor_index);
-  assert(tensor_to_data_it == _tensor_index_to_data.end() && "Already saved tensor data");
-
-  if (tensor_to_data_it != _tensor_index_to_data.end())
-    return UnknownError;
-
   _tensor_index_to_data[tensor_index] = data;
 
   return Ok;
@@ -48,12 +42,11 @@ OMStatus OMRuntimeStorage::removeTensorFromTensorIndexToData(uint16_t tensor_ind
 OMStatus OMRuntimeStorage::getDataByTensorIndex(uint8_t **data, uint16_t tensor_index)
 {
   auto tensor_to_data_it = _tensor_index_to_data.find(tensor_index);
-  assert(tensor_to_data_it != _tensor_index_to_data.end() && "No data");
 
-  if (tensor_to_data_it == _tensor_index_to_data.end())
-    return UnknownError;
-
-  *data = tensor_to_data_it->second;
+  if (tensor_to_data_it != _tensor_index_to_data.end())
+    *data = tensor_to_data_it->second;
+  else
+    *data = nullptr;
 
   return Ok;
 }

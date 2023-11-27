@@ -23,32 +23,32 @@
 namespace luci_interpreter_pal
 {
 
-template <>
-inline void
-FullyConnected(const luci_interpreter_pal::FullyConnectedParams &params, const int32_t *input_shape,
-               const int8_t *input_data, const int32_t *filter_shape, const int8_t *filter_data,
-               const int32_t *bias_data, const int32_t *output_shape, int8_t *output_data)
-{
-  // MARK: At this moment this operation doesn't support
-  assert(false && "FullyConnected INT8 NYI");
-  (void)params;
-  (void)input_shape;
-  (void)input_data;
-  (void)filter_shape;
-  (void)filter_data;
-  (void)bias_data;
-  (void)output_shape;
-  (void)output_data;
-}
-
-template <>
-inline void FullyConnected(const luci_interpreter_pal::FullyConnectedParams &, const int32_t *,
-                           const int16_t *, const int32_t *, const int8_t *, const int64_t *,
-                           const int32_t *, int16_t *)
-{
-  // MARK: At this moment this operation doesn't support
-  assert(false && "FullyConnected INT16 NYI");
-}
+//template <>
+//inline void
+//FullyConnected(const luci_interpreter_pal::QuantizedFullyConnectedParams &params, const int32_t *input_shape,
+//               const int8_t *input_data, const int32_t *filter_shape, const int8_t *filter_data,
+//               const int32_t *bias_data, const int32_t *output_shape, int8_t *output_data)
+//{
+//  // MARK: At this moment this operation doesn't support
+//  assert(false && "FullyConnected INT8 NYI");
+//  (void)params;
+//  (void)input_shape;
+//  (void)input_data;
+//  (void)filter_shape;
+//  (void)filter_data;
+//  (void)bias_data;
+//  (void)output_shape;
+//  (void)output_data;
+//}
+//
+//template <>
+//inline void FullyConnected(const luci_interpreter_pal::FullyConnectedParams &, const int32_t *,
+//                           const int16_t *, const int32_t *, const int8_t *, const int64_t *,
+//                           const int32_t *, int16_t *)
+//{
+//  // MARK: At this moment this operation doesn't support
+//  assert(false && "FullyConnected INT16 NYI");
+//}
 
 } // namespace luci_interpreter_pal
 

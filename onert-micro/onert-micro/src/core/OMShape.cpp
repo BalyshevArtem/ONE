@@ -21,7 +21,6 @@ using namespace onert_micro;
 
 int32_t OMShape::num_elements() const
 {
-  assert(_shape != nullptr && "Read from empty shape");
   if (_shape == nullptr)
     return -1;
 
@@ -42,7 +41,6 @@ int32_t OMShape::num_elements() const
 
 int32_t OMShape::rank() const
 {
-  assert(_shape != nullptr && "Read from empty shape");
   if (_shape == nullptr)
     return -1;
 
@@ -50,18 +48,15 @@ int32_t OMShape::rank() const
   return result;
 }
 
-OMStatus OMShape::dim(uint32_t idx, int32_t &dim_value) const
+int32_t OMShape::dim(uint32_t idx) const
 {
-  assert(_shape != nullptr && "Read from empty shape");
   if (_shape == nullptr)
-    return UnknownError;
+    return -1;
 
   uint32_t size = _shape->size();
   assert(idx < size && "Wrong index");
-  if (idx < size)
-    return UnknownError;
-  // Save dim value
-  dim_value = _shape->operator[](idx);
+  if (idx >= size)
+    return -1;
 
-  return Ok;
+  return _shape->operator[](idx);
 }

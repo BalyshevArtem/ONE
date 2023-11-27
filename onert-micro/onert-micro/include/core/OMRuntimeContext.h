@@ -64,6 +64,8 @@ public:
   uint32_t getGraphInputTensorIndex(uint32_t index);
   uint32_t getGraphOutputTensorIndex(uint32_t index);
 
+  OMStatus getConstDataByTensorIndex(uint8_t **data, uint16_t tensor_index);
+
 };
 
 } // core

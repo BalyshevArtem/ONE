@@ -32,6 +32,11 @@ OMStatus OMInterpreter::run()
   return _runtime_module.run();
 }
 
+OMStatus OMInterpreter::reset()
+{
+  return _runtime_module.reset();
+}
+
 uint32_t OMInterpreter::getNumberOfInputs()
 {
   return _runtime_module.getNumberOfInputs();
@@ -60,4 +65,9 @@ uint32_t OMInterpreter::getInputSizeAt(uint32_t position)
 uint32_t OMInterpreter::getOutputSizeAt(uint32_t position)
 {
   return _runtime_module.getOutputSizeAt(position);
+}
+
+OMStatus OMInterpreter::allocateInputs()
+{
+  return _runtime_module.allocateInputs();
 }

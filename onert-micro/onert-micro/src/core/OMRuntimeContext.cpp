@@ -44,3 +44,20 @@ uint32_t OMRuntimeContext::getGraphOutputTensorIndex(uint32_t index)
   auto *outputs = _reader.outputs();
   return outputs->operator[](index);
 }
+
+OMStatus OMRuntimeContext::getConstDataByTensorIndex(uint8_t **data, uint16_t tensor_index)
+{
+  auto *tensor = getTensorByIndex(tensor_index);
+
+  if (tensor == nullptr)
+    return UnknownError;
+
+  auto const *buffer = _reader.buffers()->operator[](tensor->buffer())->data();
+
+  if (buffer == nullptr)
+    return Ok;
+
+  *data = const_cast<uint8_t *>(buffer->data());
+
+  return Ok;
+}

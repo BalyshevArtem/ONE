@@ -16,42 +16,57 @@
 
 #include "execute/OMKernelExecutionBuilder.h"
 #include "OMStatus.h"
-#include "core/OMSISORuntimeKernel.h"
+#include "execute/OMRuntimeKernel.h"
 #include "core/OMUtils.h"
+#include "core/OMShape.h"
 #include "PALAbs.h"
 
 using namespace onert_micro;
 using namespace onert_micro::execute;
 
+namespace
+{
+
+constexpr uint32_t numInput = 1;
+constexpr uint32_t numOutput = 1;
+
+constexpr uint32_t inputTensorIdx = 0;
+constexpr uint32_t outputTensorIdx = 0;
+
+} // namespace
+
+// NOTE: doesnt currently support dynamic shapes
 OMStatus onert_micro::execute::execute_kernel_CircleAbs(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
                                   core::OMKernel &kernel)
 {
-  core::OMSISORuntimeKernel runtime_kernel(kernel, runtime_context);
+  OMRuntimeKernel runtime_kernel(numInput, numOutput);
+  runtime_kernel.readKernel(kernel, runtime_context);
 
-  const circle::Tensor *input = runtime_kernel.input;
-  const circle::Tensor *output = runtime_kernel.output;
+  const circle::Tensor *input = runtime_kernel.inputs[inputTensorIdx];
+  const circle::Tensor *output = runtime_kernel.outputs[outputTensorIdx];
 
   assert(input != nullptr);
   assert(output != nullptr);
 
   OMStatus status = Ok;
 
-  uint8_t *input_data = nullptr;
-  uint8_t *output_data = nullptr;
-  status = runtime_kernel.getDataFromStorage(kernel, runtime_storage, &input_data, &output_data);
+  status = runtime_kernel.getDataFromStorage(kernel, runtime_storage, runtime_context);
   if (status != Ok)
     return status;
+
+  uint8_t *input_data = runtime_kernel.inputs_data[inputTensorIdx];
+  uint8_t *output_data = runtime_kernel.outputs_data[outputTensorIdx];
 
   assert(input_data != nullptr);
   assert(output_data != nullptr);
 
-  const uint32_t flat_size = core::utils::numElements(input);
+  const core::OMShape shape(input);
 
   switch (input->type())
   {
 #ifndef DIS_FLOAT
     case circle::TensorType_FLOAT32:
-      status = pal::Abs(flat_size, core::utils::castInputData<float>(input_data),
+      status = pal::Abs(shape, core::utils::castInputData<float>(input_data),
                core::utils::castOutputData<float>(output_data));
       break;
 #endif // DIS_FLOAT

@@ -23,7 +23,9 @@ OMStatus OMMemoryManager::allocateMemory(uint32_t size, uint8_t **data)
 {
   if (size == 0)
     return UnknownError;
-  *data = reinterpret_cast<uint8_t *>(malloc(size));
+  auto data_tmp = new uint8_t[size];
+
+  *data = data_tmp;
 
   if (*data == nullptr)
     return UnknownError;
@@ -33,6 +35,6 @@ OMStatus OMMemoryManager::allocateMemory(uint32_t size, uint8_t **data)
 
 OMStatus OMMemoryManager::deallocateMemory(uint8_t *data)
 {
-  free(data);
+  delete[] data;
   return Ok;
 }

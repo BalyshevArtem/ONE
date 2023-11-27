@@ -15,7 +15,6 @@ set(SOURCES
         OMRuntimeGraph.cpp
         OMRuntimeModule.cpp
         OMShape.cpp
-        OMSISORuntimeKernel.cpp
         OMUtils.cpp
         memory/OMMemoryManager.cpp
         memory/OMRuntimeAllocator.cpp

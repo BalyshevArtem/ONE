@@ -25,17 +25,17 @@ using namespace onert_micro;
 
 uint32_t OMRuntimeModule::getNumberOfInputs()
 {
-  //return _graphs.at(0).getNumberOfInputs();
+  return _graphs.at(0).getNumberOfInputs();
 }
 
 uint32_t OMRuntimeModule::getNumberOfOutputs()
 {
-  //return _graphs.at(0).getNumberOfOutputs();
+  return _graphs.at(0).getNumberOfOutputs();
 }
 
 uint32_t OMRuntimeModule::getInputSizeAt(uint32_t position)
 {
-  //return _graphs.at(0).getInputSizeAt(position);
+  return _graphs.at(0).getInputSizeAt(position);
 }
 
 uint32_t OMRuntimeModule::getOutputSizeAt(uint32_t position)
@@ -55,15 +55,16 @@ void *OMRuntimeModule::getOutputDataAt(uint32_t position)
 
 OMStatus OMRuntimeModule::importModel(const char *model_ptr, const OMConfig &config)
 {
-  //assert(model_ptr != nullptr && "Model ptr shouldn't be nullptr");
+  assert(model_ptr != nullptr && "Model ptr shouldn't be nullptr");
   if (model_ptr == nullptr)
     return UnknownError;
 
   // First - parse reader
   // Second - load default graph
   // Third - optimize it until can
-  // Then_4 - AllocDeallocPlan creation
-  // Finally_5 - KernelConfigure
+  // 4 - AllocDeallocPlan creation
+  // 5 - KernelConfigure
+  // 6 - Allocate inputs
 
   OMStatus status;
   // First - parse reader
@@ -103,12 +104,12 @@ OMStatus OMRuntimeModule::importModel(const char *model_ptr, const OMConfig &con
     if (status != Ok)
       return status;
 
-    // Then_4 - AllocDeallocPlan creation
+    // 4 - AllocDeallocPlan creation
     status = import::OMExecutionPlanCreator::createExecutionPlan(runtime_storage, runtime_context, runtime_allocator, config);
     if (status != Ok)
       return status;
 
-    // Finally_5 - KernelConfigure
+    // 5 - KernelConfigure
     status = import::OMKernelConfiguration::configureKernels(runtime_storage, runtime_context, config);
     if (status != Ok)
       return status;
@@ -117,6 +118,14 @@ OMStatus OMRuntimeModule::importModel(const char *model_ptr, const OMConfig &con
   }
 
   return Ok;
+}
+
+OMStatus OMRuntimeModule::allocateInputs()
+{
+  assert(_graphs.size() > 0);
+  if (_graphs.size() == 0)
+    return ModelNotImport;
+  return _graphs.at(0).allocateGraphInputs();
 }
 
 OMStatus OMRuntimeModule::run()
@@ -129,6 +138,21 @@ OMStatus OMRuntimeModule::run()
   core::OMRuntimeGraph &main_graph = _graphs.at(0);
 
   status = main_graph.run();
+
+  return status;
+}
+
+OMStatus OMRuntimeModule::reset()
+{
+  OMStatus status = Ok;
+
+  if (_graphs.empty())
+    return ModelNotImport;
+
+  for (auto &graph : _graphs)
+  {
+    graph.reset();
+  }
 
   return status;
 }

@@ -15,12 +15,16 @@
  * limitations under the License.
  */
 
-#ifndef LUCI_INTERPRETER_PAL_UTILS_H
-#define LUCI_INTERPRETER_PAL_UTILS_H
+#ifndef ONERT_MICRO_EXECUTE_PAL_UTILS_H
+#define ONERT_MICRO_EXECUTE_PAL_UTILS_H
 
 #include <cassert>
 
-namespace luci_interpreter_pal
+namespace onert_micro
+{
+namespace execute
+{
+namespace pal
 {
 
 // Table of sigmoid(i/24) at 0.16 format - 256 elements.
@@ -170,8 +174,8 @@ inline bool nextIndex(const int num_dims, const int *dims, int *current)
 }
 
 // Get common shape dim, assert that they all agree.
-inline int MatchingDim(const luci_interpreter::RuntimeShape &shape1, int index1,
-                       const luci_interpreter::RuntimeShape &shape2, int index2)
+inline int MatchingDim(const core::OMRuntimeShape &shape1, int index1,
+                       const core::OMRuntimeShape &shape2, int index2)
 {
   assert(shape1.dims(index1) == shape2.dims(index2));
   return shape1.dims(index1);
@@ -208,6 +212,8 @@ inline T activationFunctionWithMinMax(T x, T output_activation_min, T output_act
   return min(max(x, output_activation_min), output_activation_max);
 }
 
-} // namespace luci_interpreter_pal
+} // namespace pal
+} // namespace execute
+} // namespace onert_micro
 
-#endif // LUCI_INTERPRETER_PAL_UTILS_H
+#endif // ONERT_MICRO_EXECUTE_PAL_UTILS_H

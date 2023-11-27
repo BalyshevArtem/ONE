@@ -17,35 +17,51 @@
 #include "import/OMKernelConfigureBuilder.h"
 #include "core/OMUtils.h"
 #include "OMStatus.h"
-#include "core/OMSISORuntimeKernel.h"
+#include "execute/OMRuntimeKernel.h"
+#include "core/OMShape.h"
 
 using namespace onert_micro;
 using namespace onert_micro::core;
 
+namespace
+{
+
+constexpr uint32_t numInput = 1;
+constexpr uint32_t numOutput = 1;
+
+constexpr uint32_t inputTensorIdx = 0;
+constexpr uint32_t outputTensorIdx = 0;
+
+} // namespace
+
+
 OMStatus onert_micro::import::configure_kernel_CircleAbs(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
                                                          core::OMKernel &kernel)
 {
-  OMSISORuntimeKernel runtime_kernel(kernel, runtime_context);
+  onert_micro::execute::OMRuntimeKernel runtime_kernel(numInput, numOutput);
 
-  const circle::Tensor *input = runtime_kernel.input;
-  const circle::Tensor *output = runtime_kernel.output;
+  OMStatus status = runtime_kernel.readKernel(kernel, runtime_context);
+  if (status != Ok)
+    return status;
+
+  const circle::Tensor *input = runtime_kernel.inputs[inputTensorIdx];
+  const circle::Tensor *output = runtime_kernel.outputs[outputTensorIdx];
 
   assert(input != nullptr);
   assert(output != nullptr);
 
-  OMStatus status = Ok;
   status = utils::checkCondition(input->type() == output->type());
   if (status != Ok)
     return status;
 
-  const auto *input_shape = input->shape();
-  const auto *output_shape = output->shape();
+  OMShape input_shape(input);
+  OMShape output_shape(output);
 
-  status = utils::checkCondition(input_shape->size() == output_shape->size());
+  status = utils::checkCondition(input_shape.rank() == output_shape.rank());
   if (status != Ok)
     return status;
 
-  status = utils::checkCondition(utils::numElements(input) == utils::numElements(output));
+  status = utils::checkCondition(input_shape.num_elements() == output_shape.num_elements());
 
   return status;
 }

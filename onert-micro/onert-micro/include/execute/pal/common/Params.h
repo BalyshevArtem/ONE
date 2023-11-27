@@ -15,10 +15,14 @@
  * limitations under the License.
  */
 
-#ifndef LUCI_INTERPRETER_PAL_PARAMS_H
-#define LUCI_INTERPRETER_PAL_PARAMS_H
+#ifndef ONERT_MICRO_EXECUTE_PAL_PARAMS_H
+#define ONERT_MICRO_EXECUTE_PAL_PARAMS_H
 
-namespace luci_interpreter_pal
+namespace onert_micro
+{
+namespace execute
+{
+namespace pal
 {
 
 struct MeanParams
@@ -39,24 +43,6 @@ struct PadParams
   int32_t left_padding[5];
   int8_t right_padding_count;
   int32_t right_padding[5];
-};
-
-struct FullyConnectedParams
-{
-  int32_t input_offset;
-  int32_t weights_offset;
-  int32_t output_offset;
-  int32_t output_multiplier;
-  int output_shift;
-  // uint8_t, etc, activation params.
-  int32_t quantized_activation_min;
-  int32_t quantized_activation_max;
-  // float activation params.
-  float float_activation_min;
-  float float_activation_max;
-  // Mark the operands as cacheable if they are unchanging, e.g. weights.
-  bool lhs_cacheable;
-  bool rhs_cacheable;
 };
 
 enum class PaddingType : uint8_t
@@ -251,6 +237,8 @@ struct QuantizationParams
   int zero_point;
 };
 
-} // namespace luci_interpreter_pal
+} // namespace pal
+} // namespace execute
+} // namespace onert_micro
 
-#endif // LUCI_INTERPRETER_PAL_PARAMS_H
+#endif // ONERT_MICRO_EXECUTE_PAL_PARAMS_H

@@ -42,8 +42,12 @@ public:
 
   OMStatus run();
 
+  OMStatus reset();
+
   uint32_t getNumberOfInputs();
   uint32_t getNumberOfOutputs();
+
+  OMStatus allocateInputs();
 
   uint32_t getInputSizeAt(uint32_t position);
   uint32_t getOutputSizeAt(uint32_t position);

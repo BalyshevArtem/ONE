@@ -17,6 +17,8 @@
 #ifndef ONERT_MICRO_CORE_RUNTIME_SHAPE_H
 #define ONERT_MICRO_CORE_RUNTIME_SHAPE_H
 
+#include "core/reader/OMCircleReader.h"
+
 #include <cstring>
 #include <cstdint>
 #include <cassert>
@@ -31,13 +33,22 @@ static constexpr int maxTensorShapeSize = 5;
 class OMRuntimeShape
 {
 private:
-  int32_t _size;
-  int32_t _dims[maxTensorShapeSize];
+  int32_t _size = 0;
+  int32_t _dims[maxTensorShapeSize] = {0};
 
 public:
   OMRuntimeShape(const OMRuntimeShape &other) : _size(other.dimensionsCount())
   {
     std::memcpy(dimsData(), other.dimsData(), sizeof(int32_t) * _size);
+  }
+
+  OMRuntimeShape(const circle::Tensor *tensor)
+  {
+    if (tensor == nullptr)
+      return;
+
+    _size = tensor->shape()->size();
+    std::memcpy(_dims, tensor->shape()->data(), sizeof(int32_t) * _size);
   }
 
   // Returns the total count of elements, that is the size when flattened into a

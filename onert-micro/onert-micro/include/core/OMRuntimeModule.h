@@ -44,6 +44,7 @@ public:
 
   OMStatus importModel(const char *model_ptr, const OMConfig &config);
   OMStatus run();
+  OMStatus reset();
 
   uint32_t getNumberOfInputs();
   uint32_t getNumberOfOutputs();
@@ -53,6 +54,8 @@ public:
 
   void *getInputDataAt(uint32_t position);
   void *getOutputDataAt(uint32_t position);
+
+  OMStatus allocateInputs();
 };
 
 } // core

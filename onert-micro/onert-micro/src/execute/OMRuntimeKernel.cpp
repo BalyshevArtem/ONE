@@ -1,0 +1,111 @@
+/*
+ * Copyright (c) 2023 Samsung Electronics Co., Ltd. All Rights Reserved
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "execute/OMRuntimeKernel.h"
+
+using namespace onert_micro::execute;
+using namespace onert_micro;
+
+onert_micro::execute::OMRuntimeKernel::OMRuntimeKernel(uint32_t inputs_num, uint32_t outputs_num):
+                                                                                                    inputs_num(inputs_num),
+                                                                                                    outputs_num(outputs_num)
+{
+  // Do nothing
+}
+
+OMStatus onert_micro::execute::OMRuntimeKernel::readKernel(core::OMKernel &kernel, core::OMRuntimeContext &runtime_context)
+{
+  const std::vector<uint16_t> &kernel_operators = kernel.getKernelOperators();
+
+  const uint16_t first_operator_index = kernel_operators.front();
+  const uint16_t last_operator_index = kernel_operators.back();
+
+  first_operator = runtime_context.getCircleOperatorAt(first_operator_index);
+  const circle::Operator *last_operator = runtime_context.getCircleOperatorAt(last_operator_index);
+
+  if (inputs_num != first_operator->inputs()->size() or inputs_num >= maxInputSize)
+    return UnknownError;
+
+  if (outputs_num != first_operator->outputs()->size() or outputs_num >= maxOutputSize)
+    return UnknownError;
+
+  assert(inputs_num > 0 and outputs_num > 0);
+
+  // Read inputs
+  {
+    const auto *inputs_op = first_operator->inputs();
+    for (uint32_t i = 0; i < inputs_num; ++i)
+    {
+      inputs_index[i] = inputs_op->operator[](i);
+      if (inputs_index[i] != -1)
+        inputs[i] = runtime_context.getTensorByIndex(inputs_index[i]);
+    }
+  }
+  // Read outputs
+  {
+    const auto *outputs_op = last_operator->outputs();
+    for (uint32_t i = 0; i < outputs_num; ++i)
+    {
+      outputs_index[i] = outputs_op->operator[](i);
+      if (outputs_index[i] != -1)
+        outputs[i] = runtime_context.getTensorByIndex(outputs_index[i]);
+    }
+  }
+
+  return Ok;
+}
+
+// Note: if inplace then first input and first output will be inplace
+OMStatus onert_micro::execute::OMRuntimeKernel::getDataFromStorage(core::OMKernel &kernel,
+                                                                   core::OMRuntimeStorage &storage,
+                                                                   core::OMRuntimeContext &context)
+{
+  OMStatus status = Ok;
+
+  for (uint32_t i = 0; i < inputs_num; ++i)
+  {
+    if (inputs_index[i] == -1)
+      continue;
+    status = storage.getDataByTensorIndex(&inputs_data[i], inputs_index[i]);
+    if (inputs_data[i] == nullptr)
+      status = context.getConstDataByTensorIndex(&inputs_data[i], inputs_index[i]);
+    if (status != Ok)
+      return status;
+  }
+
+  for (uint32_t i = 0; i < outputs_num; ++i)
+  {
+    if (outputs_index[i] == -1)
+      continue;
+    status = storage.getDataByTensorIndex(&outputs_data[i], outputs_index[i]);
+
+    if (status != Ok)
+      return status;
+
+    if (kernel.getKernelType() == core::Inplace)
+    {
+      outputs_data[i] = inputs_data[i];
+      status = storage.removeTensorFromTensorIndexToData(inputs_index[i]);
+
+      if (status != Ok)
+        return status;
+
+      status = storage.saveDataToTensorIndex(outputs_data[i], outputs_index[i]);
+    }
+  }
+
+  return status;
+}

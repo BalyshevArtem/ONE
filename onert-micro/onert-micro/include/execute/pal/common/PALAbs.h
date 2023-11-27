@@ -18,6 +18,7 @@
 #define ONERT_MICRO_EXECUTE_PAL_ABS_COMMON_H
 
 #include "OMStatus.h"
+#include "core/OMShape.h"
 
 #include <cmath>
 
@@ -29,8 +30,16 @@ namespace pal
 {
 
 template <typename T>
-inline OMStatus Abs(const uint32_t flat_size, const T *input_data, T *output_data)
+inline OMStatus Abs(const core::OMShape &shape, const T *input_data, T *output_data)
 {
+  const uint32_t flat_size = shape.num_elements();
+
+  if (flat_size == -1)
+    return UnknownError;
+
+  assert(input_data != nullptr);
+  assert(output_data != nullptr);
+
   for (uint32_t i = 0; i < flat_size; ++i)
   {
     output_data[i] = std::abs(input_data[i]);

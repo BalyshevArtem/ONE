@@ -14,9 +14,16 @@
  * limitations under the License.
  */
 
-#include "execute/TestUtils.h"
+#ifndef ONERT_MICRO_EXECUTE_TESTUTILS_H
+#define ONERT_MICRO_EXECUTE_TESTUTILS_H
 
+#include "test_models/TestDataBase.h"
 #include "OMInterpreter.h"
+
+#include <type_traits>
+
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 namespace onert_micro
 {
@@ -25,28 +32,18 @@ namespace execute
 namespace testing
 {
 
-using ::testing::FloatNear;
-using ::testing::Matcher;
-
-Matcher<std::vector<float>> FloatArrayNear(const std::vector<float> &values, float max_abs_error)
-{
-  std::vector<Matcher<float>> matchers;
-  matchers.reserve(values.size());
-  for (const float v : values)
-  {
-    matchers.emplace_back(FloatNear(v, max_abs_error));
-  }
-  return ElementsAreArray(matchers);
-}
+// Array version of `::testing::FloatNear` matcher.
+::testing::Matcher<std::vector<float>> FloatArrayNear(const std::vector<float> &values,
+                                                      float max_abs_error = 1.0e-5f);
 
 template <typename T>
-std::vector<T> onert_micro::execute::testing::checkSISOKernel(onert_micro::test_model::TestDataBase<T> *test_data_base)
+std::vector<T> checkSISOKernel(onert_micro::test_model::TestDataBase<T> *test_data_base)
 {
 
   onert_micro::OMInterpreter interpreter;
   onert_micro::OMConfig config;
 
-  interpreter.importModel(test_data_base->get_model_ptr(), config);
+  interpreter.importModel(reinterpret_cast<const char *>(test_data_base->get_model_ptr()), config);
 
   T *input_data = reinterpret_cast<T *>(interpreter.getInputDataAt(0));
 
@@ -64,14 +61,10 @@ std::vector<T> onert_micro::execute::testing::checkSISOKernel(onert_micro::test_
   return output_data_vector;
 }
 
-void checkNEGSISOKernel(onert_micro::test_model::NegTestDataBase *test_data_base)
-{
-  onert_micro::OMInterpreter interpreter;
-  onert_micro::OMConfig config;
-
-  interpreter.importModel(reinterpret_cast<const char *>(test_data_base->get_model_ptr()), config);
-}
+void checkNEGSISOKernel(onert_micro::test_model::NegTestDataBase *test_data_base);
 
 } // namespace testing
 } // namespace execute
 } // namespace onert_micro
+
+#endif // ONERT_MICRO_EXECUTE_TESTUTILS_H

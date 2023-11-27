@@ -67,6 +67,10 @@ public:
     return _dealloc_plan;
   }
 
+  OMStatus allocateGraphInputs(OMRuntimeContext *context, OMRuntimeStorage *storage);
+
+  OMStatus deallocateOutputs(OMRuntimeContext *context, OMRuntimeStorage *storage);
+
   OMStatus allocate(size_t kernel_index, OMRuntimeContext *context, OMRuntimeStorage *storage);
   OMStatus deallocate(size_t kernel_index, OMRuntimeStorage *storage);
 };

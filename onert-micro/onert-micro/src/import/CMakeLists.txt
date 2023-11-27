@@ -5,7 +5,6 @@ set(SOURCES
         OMExecutionPlanCreator.cpp
         OMKernelConfiguration.cpp
         OMKernelConfigureBuilder.cpp
-        kernels/custom_gru.cpp
         )
 
 # Add configure kernels
@@ -15,6 +14,13 @@ endmacro(REGISTER_KERNEL)
 
 # To add REGISTER_KERNEL list
 include(${KERNEL_REGISTER_FILE})
+
+macro(REGISTER_CUSTOM_KERNEL NODE)
+    list(APPEND SOURCES "kernels/${NODE}.cpp")
+endmacro(REGISTER_CUSTOM_KERNEL)
+
+# To add CUSTOM_REGISTER_KERNEL list
+include(${CUSTOM_KERNEL_REGISTER_FILE})
 
 add_library(${OM_IMPORT_LIB} STATIC ${SOURCES})
 

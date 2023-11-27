@@ -17,9 +17,33 @@
 #include "core/memory/OMRuntimeAllocator.h"
 #include "core/memory/OMMemoryManager.h"
 #include "core/OMShape.h"
+#include "core/OMDataType.h"
 
 using namespace onert_micro::core::memory;
 using namespace onert_micro;
+
+OMStatus OMRuntimeAllocator::deallocateOutputs(OMRuntimeContext *context, OMRuntimeStorage *storage)
+{
+  auto &reader = context->getCircleReader();
+
+  const auto outputs = reader.outputs();
+
+  for (uint32_t i = 0; i < outputs->size(); ++i)
+  {
+    auto tensor_index = outputs->operator[](i);
+
+    uint8_t *allocated_data = nullptr;
+    OMStatus status = storage->getDataByTensorIndex(&allocated_data, tensor_index);
+    if (status != Ok)
+      return status;
+
+    OMMemoryManager::deallocateMemory(allocated_data);
+  }
+
+  storage->clearTensorIndexToData();
+
+  return Ok;
+}
 
 OMStatus OMRuntimeAllocator::allocate(size_t kernel_index, OMRuntimeContext *context, OMRuntimeStorage *storage)
 {
@@ -39,10 +63,18 @@ OMStatus OMRuntimeAllocator::allocate(size_t kernel_index, OMRuntimeContext *con
     if (num_elements < 0)
       return UnknownError;
     const auto casted_num_elements = static_cast<uint32_t>(num_elements);
-    const auto type_size = static_cast<uint32_t>(sizeof(tensor->type()));
+    const auto type_size = static_cast<uint32_t>(getOMDataTypeSize(onerMicroDatatype(tensor->type())));
 
+    // clear if it is already saved data
     uint8_t *allocated_data = nullptr;
-    OMStatus status = OMMemoryManager::allocateMemory(casted_num_elements * type_size, &allocated_data);
+    OMStatus status = storage->getDataByTensorIndex(&allocated_data, tensor_index);
+    if (status != Ok)
+      return status;
+
+    OMMemoryManager::deallocateMemory(allocated_data);
+
+    // allocate data
+    status = OMMemoryManager::allocateMemory(casted_num_elements * type_size, &allocated_data);
     if (status != Ok)
       return status;
 
@@ -70,8 +102,50 @@ OMStatus OMRuntimeAllocator::deallocate(size_t kernel_index, OMRuntimeStorage *s
     status = OMMemoryManager::deallocateMemory(allocated_data);
     if (status != Ok)
       return status;
+
+    status = storage->removeTensorFromTensorIndexToData(tensor_index);
+    if (status != Ok)
+      return status;
   }
 
   return Ok;
+}
+
+OMStatus OMRuntimeAllocator::allocateGraphInputs(OMRuntimeContext *context, OMRuntimeStorage *storage)
+{
+  OMStatus status = Ok;
+  auto &reader = context->getCircleReader();
+  const auto &graph_inputs = reader.inputs();
+
+  for (uint i = 0; i < graph_inputs->size(); ++i)
+  {
+    auto tensor_index = graph_inputs->operator[](i);
+    const circle::Tensor *tensor = context->getTensorByIndex(tensor_index);
+    const OMShape tensor_shape(tensor);
+
+    int32_t num_elements = tensor_shape.num_elements();
+    assert(num_elements >= 0 && "Num elements should be positive");
+    if (num_elements < 0)
+      return UnknownError;
+    const auto casted_num_elements = static_cast<uint32_t>(num_elements);
+    const auto type_size = static_cast<uint32_t>(getOMDataTypeSize(onerMicroDatatype(tensor->type())));
+
+    uint8_t *allocated_data = nullptr;
+    // First clear if already allocated
+    status = storage->getDataByTensorIndex(&allocated_data, tensor_index);
+    if (status != Ok)
+      return status;
+
+    OMMemoryManager::deallocateMemory(allocated_data);
+
+    // Then Allocate
+    status = OMMemoryManager::allocateMemory(casted_num_elements * type_size, &allocated_data);
+    if (status != Ok)
+      return status;
+
+    storage->saveDataToTensorIndex(allocated_data, tensor_index);
+  }
+
+  return status;
 }
 

@@ -15,32 +15,41 @@
  * limitations under the License.
  */
 
-#ifndef LUCI_INTERPRETER_PAL_FULLY_CONNECTED_COMMON_H
-#define LUCI_INTERPRETER_PAL_FULLY_CONNECTED_COMMON_H
+#ifndef ONERT_MICRO_EXECUTE_PAL_FULLY_CONNECTED_COMMON_H
+#define ONERT_MICRO_EXECUTE_PAL_FULLY_CONNECTED_COMMON_H
 
-#include "PALUtils.h"
+#include "OMStatus.h"
+#include "core/OMShape.h"
+
 #include "Params.h"
+#include "PALUtils.h"
 
-namespace luci_interpreter_pal
+#include <cmath>
+
+namespace onert_micro
+{
+namespace execute
+{
+namespace pal
 {
 
 template <typename InputType, typename WeightType, typename OutputType, typename BiasType>
-inline void FullyConnected(const FullyConnectedParams &params, const int32_t *input_shape,
-                           const InputType *input_data, const int32_t *filter_shape,
+inline OMStatus FullyConnected(const core::DataFullyConnected *params,
+                           const InputType *input_data, const core::OMRuntimeShape &filter_shape,
                            const WeightType *filter_data, const BiasType *bias_data,
-                           const int32_t *output_shape, OutputType *output_data)
+                           const core::OMRuntimeShape &output_shape, OutputType *output_data)
 {
-  const int32_t input_offset = params.input_offset;
-  const int32_t filter_offset = params.weights_offset;
-  const int32_t output_offset = params.output_offset;
-  const int32_t output_multiplier = params.output_multiplier;
-  const int output_shift = params.output_shift;
-  const int32_t output_activation_min = params.quantized_activation_min;
-  const int32_t output_activation_max = params.quantized_activation_max;
+  const int32_t input_offset = params->input_offset;
+  const int32_t filter_offset = params->weights_offset;
+  const int32_t output_offset = params->output_offset;
+  const int32_t output_multiplier = params->output_multiplier;
+  const int output_shift = params->output_shift;
+  const int32_t output_activation_min = params->quantized_activation_min;
+  const int32_t output_activation_max = params->quantized_activation_max;
 
-  const int batches = input_shape[0];
-  const int output_depth = output_shape[1];
-  const int accum_depth = filter_shape[1];
+  const int batches = flatSizeSkipDim(output_shape.dimsData(), output_shape.dimensionsCount() - 1, output_shape.dimensionsCount());
+  const int output_depth = output_shape.dims(output_shape.dimensionsCount() - 1);
+  const int accum_depth = filter_shape.dims(filter_shape.dimensionsCount() - 1);
 
   for (int b = 0; b < batches; ++b)
   {
@@ -64,19 +73,21 @@ inline void FullyConnected(const FullyConnectedParams &params, const int32_t *in
       output_data[out_c + output_depth * b] = static_cast<OutputType>(acc_scaled);
     }
   }
-}
-template <>
-inline void FullyConnected(const FullyConnectedParams &params, const int32_t *input_shape,
-                           const float *input_data, const int32_t *filter_shape,
-                           const float *filter_data, const float *bias_data,
-                           const int32_t *output_shape, float *output_data)
-{
-  const float output_activation_min = params.float_activation_min;
-  const float output_activation_max = params.float_activation_max;
 
-  const int batches = input_shape[0];
-  const int output_depth = output_shape[1];
-  const int accum_depth = filter_shape[1];
+  return Ok;
+}
+
+inline OMStatus FullyConnectedFloat(const core::DataFullyConnected *params,
+                                    const float *input_data,  const core::OMRuntimeShape &filter_shape,
+                                    const float *filter_data, const float *bias_data,
+                                    const core::OMRuntimeShape &output_shape, float *output_data)
+{
+  const float output_activation_min = params->float_activation_min;
+  const float output_activation_max = params->float_activation_max;
+
+  const int batches = flatSizeSkipDim(output_shape.dimsData(), output_shape.dimensionsCount() - 1, output_shape.dimensionsCount());
+  const int output_depth = output_shape.dims(output_shape.dimensionsCount() - 1);
+  const int accum_depth = filter_shape.dims(filter_shape.dimensionsCount() - 1);
 
   for (int b = 0; b < batches; ++b)
   {
@@ -96,8 +107,11 @@ inline void FullyConnected(const FullyConnectedParams &params, const int32_t *in
         std::min(std::max(total + bias_value, output_activation_min), output_activation_max);
     }
   }
+  return Ok;
 }
 
-} // namespace luci_interpreter_pal
+} // namespace pal
+} // namespace execute
+} // namespace onert_micro
 
-#endif // LUCI_INTERPRETER_PAL_FULLY_CONNECTED_COMMON_H
+#endif // ONERT_MICRO_EXECUTE_PAL_FULLY_CONNECTED_COMMON_H

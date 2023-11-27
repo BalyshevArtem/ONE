@@ -54,7 +54,11 @@ public:
   void *getInputDataAt(uint32_t position);
   void *getOutputDataAt(uint32_t position);
 
+  OMStatus allocateGraphInputs();
+
   OMStatus run();
+
+  OMStatus reset();
 
   OMRuntimeStorage &getRuntimeStorage()
   {

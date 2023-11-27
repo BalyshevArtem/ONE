@@ -18,6 +18,7 @@
 #define ONERT_MICRO_CORE_KERNEL_H
 
 #include "OMKernelType.h"
+#include "OMKernelData.h"
 
 #include <vector>
 #include <cstdint>
@@ -56,7 +57,25 @@ public:
   ~OMKernel()
   {
     _operators.clear();
-    delete[] _kernel_data;
+
+    switch (_builder_id)
+    {
+#define REGISTER_KERNEL(builtin_operator, name)    \
+  case core::OMBuilderID::BuiltinOperator_##builtin_operator: \
+    delete reinterpret_cast<core::Data##name *>(_kernel_data);              \
+    break;
+#include "KernelsToBuild.lst"
+#undef REGISTER_KERNEL
+#define REGISTER_CUSTOM_KERNEL(name, string_name)           \
+  case core::OMBuilderID::CUSTOM_##name:                    \
+    delete reinterpret_cast<core::Data##name *>(_kernel_data);                \
+    break;
+#include "CustomKernelsToBuild.lst"
+#undef REGISTER_CUSTOM_KERNEL
+      default:
+        assert(false && "Unsupported operation");
+    }
+
   }
 
   std::vector<uint16_t> &getKernelOperators()

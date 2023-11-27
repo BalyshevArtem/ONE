@@ -17,6 +17,7 @@
 #include "core/OMRuntimeGraph.h"
 #include "execute/OMKernelExecute.h"
 #include "OMStatus.h"
+#include "core/OMShape.h"
 
 using namespace onert_micro::core;
 using namespace onert_micro;
@@ -38,9 +39,7 @@ OMStatus OMRuntimeGraph::run()
 
     OMKernel &cur_kernel = kernels.at(i);
 
-    status = execute::OMKernelExecute::executeKernel(_storage,
-                                                     _context,
-                                                     cur_kernel);
+    status = execute::OMKernelExecute::executeKernel(_storage, _context, cur_kernel);
 
     if (status != Ok)
       return status;
@@ -51,22 +50,40 @@ OMStatus OMRuntimeGraph::run()
   return status;
 }
 
-void * OMRuntimeGraph::getInputDataAt(uint32_t position)
+OMStatus OMRuntimeGraph::reset()
+{
+  // deallocate outputs
+  return _allocator.deallocateOutputs(&_context, &_storage);
+}
+
+void *OMRuntimeGraph::getInputDataAt(uint32_t position)
 {
   const auto input_index = _context.getGraphInputTensorIndex(position);
 
   uint8_t *data;
-  assert(_storage.getDataByTensorIndex(&data, input_index) == Ok);
+  _storage.getDataByTensorIndex(&data, input_index);
+
+  if (data == nullptr)
+  {
+    _allocator.allocateGraphInputs(&_context, &_storage);
+    _storage.getDataByTensorIndex(&data, input_index);
+  }
+
   return reinterpret_cast<void *>(data);
 }
 
-void * OMRuntimeGraph::getOutputDataAt(uint32_t position)
+void *OMRuntimeGraph::getOutputDataAt(uint32_t position)
 {
   const auto output_index = _context.getGraphOutputTensorIndex(position);
 
   uint8_t *data;
-  assert(_storage.getDataByTensorIndex(&data, output_index) == Ok);
+  _storage.getDataByTensorIndex(&data, output_index);
   return reinterpret_cast<void *>(data);
+}
+
+OMStatus OMRuntimeGraph::allocateGraphInputs()
+{
+  return _allocator.allocateGraphInputs(&_context, &_storage);
 }
 
 uint32_t OMRuntimeGraph::getOutputSizeAt(uint32_t position)
@@ -74,5 +91,37 @@ uint32_t OMRuntimeGraph::getOutputSizeAt(uint32_t position)
   const auto output_index = _context.getGraphOutputTensorIndex(position);
   const circle::Tensor *output_tensor = _context.getTensorByIndex(output_index);
 
-  return output_tensor->shape()->size();
+  OMShape shape(output_tensor);
+  return shape.num_elements();
+}
+
+uint32_t OMRuntimeGraph::getInputSizeAt(uint32_t position)
+{
+  const auto input_index = _context.getGraphInputTensorIndex(position);
+  const circle::Tensor *input_tensor = _context.getTensorByIndex(input_index);
+
+  OMShape shape(input_tensor);
+  return shape.num_elements();
+}
+
+uint32_t OMRuntimeGraph::getNumberOfOutputs()
+{
+  auto &reader = _context.getCircleReader();
+
+  auto *outputs = reader.outputs();
+  if (outputs == nullptr)
+    return 0;
+
+  return outputs->size();
+}
+
+uint32_t OMRuntimeGraph::getNumberOfInputs()
+{
+  auto &reader = _context.getCircleReader();
+
+  auto *inputs = reader.inputs();
+  if (inputs == nullptr)
+    return 0;
+
+  return inputs->size();
 }

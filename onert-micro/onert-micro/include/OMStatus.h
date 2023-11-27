@@ -24,6 +24,7 @@ enum OMStatus
 {
   Ok,
   UnsupportedType,
+  UnsupportedActivation,
   UnsupportedOp,
   UnknownError,
   ModelNotImport,

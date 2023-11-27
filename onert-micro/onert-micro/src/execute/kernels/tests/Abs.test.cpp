@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "execute/TestUtils.h"
+#include "execute/OMTestUtils.h"
 #include "test_models/abs/FloatAbsKernel.h"
 #include "test_models/abs/NegAbsKernel.h"
 
@@ -35,7 +35,7 @@ class AbsTest : public ::testing::Test
 TEST_F(AbsTest, Float_P)
 {
   onert_micro::test_model::TestDataFloatAbs test_data_kernel;
-  std::vector<float> output_data_vector = checkSISOKernel(&test_data_kernel);
+  std::vector<float> output_data_vector = onert_micro::execute::testing::checkSISOKernel<float>(&test_data_kernel);
   EXPECT_THAT(output_data_vector, test_data_kernel.get_output_data_by_index(0));
 }
 
@@ -43,27 +43,17 @@ TEST_F(AbsTest, Input_output_type_mismatch_NEG)
 {
   onert_micro::test_model::NegTestDataInputOutputTypeMismatchAbsKernel test_data_kernel;
 
-//  onert_micro::OMInterpreter interpreter;
-//  onert_micro::OMConfig config;
-//
-//  interpreter.importModel(test_data_kernel->get_model_ptr(), config);
-
   EXPECT_DEATH(checkNEGSISOKernel(&test_data_kernel),
                "");
 }
 
-//TEST_F(AbsTest, Input_output_shape_mismatch_NEG)
-//{
-//  onert_micro::test_model::NegTestDataInputOutputShapeMismatchAbsKernel test_data_kernel;
-//
-//  MemoryManager memory_manager{};
-//  RuntimeModule runtime_module{};
-//  bool dealloc_input = true;
-//  // Load model with single op
-//  auto *model_data_raw = reinterpret_cast<const char *>(test_data_kernel.get_model_ptr());
-//  EXPECT_DEATH(ModuleLoader::load(&runtime_module, &memory_manager, model_data_raw, dealloc_input),
-//               "");
-//}
+TEST_F(AbsTest, Input_output_shape_mismatch_NEG)
+{
+  onert_micro::test_model::NegTestDataInputOutputShapeMismatchAbsKernel test_data_kernel;
+
+  EXPECT_DEATH(checkNEGSISOKernel(&test_data_kernel),
+               "");
+}
 
 } // namespace testing
 } // namespace execute

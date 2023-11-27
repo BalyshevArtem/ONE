@@ -29,13 +29,14 @@ namespace core
 class OMShape
 {
 private:
-  const reader::CircleValues *_shape;
+  const reader::CircleValues *_shape = nullptr;
 
 public:
-  OMShape() = delete;
-  OMShape(const circle::Tensor *tensor): _shape(tensor->shape())
+  OMShape() = default;
+  OMShape(const circle::Tensor *tensor)
   {
-    // Do nothing
+    if (tensor != nullptr)
+      _shape = tensor->shape();
   }
   OMShape(const OMShape&) = delete;
   OMShape(OMShape &&) = delete;
@@ -43,8 +44,14 @@ public:
   OMShape &&operator=(const OMShape &&) = delete;
   ~OMShape() = default;
 
+  void updateShape(const circle::Tensor *tensor)
+  {
+    if (tensor != nullptr)
+      _shape = tensor->shape();
+  }
+
   int32_t num_elements() const;
-  OMStatus dim(uint32_t idx, int32_t &dim_value) const;
+  int32_t dim(uint32_t idx) const;
   int32_t rank() const;
 };
 

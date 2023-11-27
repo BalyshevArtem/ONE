@@ -22,8 +22,7 @@ namespace onert_micro
 
 struct OMConfig
 {
-  bool keep_input;
-  bool allocate_input;
+  bool keep_input = false;
 };
 
 } // namespace onert_micro

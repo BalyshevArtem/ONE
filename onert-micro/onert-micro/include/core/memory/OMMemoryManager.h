@@ -21,7 +21,6 @@
 #include "core/OMRuntimeShape.h"
 
 #include <cstdint>
-#include <malloc.h>
 
 namespace onert_micro
 {
