@@ -112,7 +112,7 @@ int entry(int argc, char **argv)
     {
       auto input_data = reinterpret_cast<char *>(interpreter.getInputDataAt(i));
       readDataFromFile(std::string(input_prefix) + std::to_string(i), input_data,
-                       interpreter.getInputSizeAt(i) * sizeof(float));
+                       interpreter.getInputSizeAt(i) * sizeof(int8_t));
     }
 
     // Do inference.
@@ -128,7 +128,7 @@ int entry(int argc, char **argv)
     // Output data is written in ${output_file}
     // (ex: Add.circle.output0)
     writeDataToFile(std::string(output_file) + std::to_string(i), reinterpret_cast<char *>(data),
-                    interpreter.getOutputSizeAt(i) * sizeof(float));
+                    interpreter.getOutputSizeAt(i) * sizeof(int8_t));
   }
   interpreter.reset();
   return EXIT_SUCCESS;

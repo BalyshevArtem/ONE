@@ -107,13 +107,13 @@ void onert_micro::execute::calculateActivationRangeQuantized(circle::ActivationF
       qmax = std::numeric_limits<uint8_t>::max();
       break;
      case circle::TensorType_INT8:
-      qmin = -std::numeric_limits<int8_t>::max();
+      qmin = std::numeric_limits<int8_t>::min();
       qmax = std::numeric_limits<int8_t>::max();
       break;
     case circle::TensorType_INT16:
       // For now, assume that signed int16 type implies signed symmetric quantization.
       assert(output_zero_point == 0);
-      qmin = -std::numeric_limits<int16_t>::max();
+      qmin = std::numeric_limits<int16_t>::min();
       qmax = std::numeric_limits<int16_t>::max();
       break;
     default:

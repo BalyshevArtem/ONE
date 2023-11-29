@@ -23,6 +23,7 @@ namespace onert_micro
 struct OMConfig
 {
   bool keep_input = false;
+  bool cmsis_nn = false;
 };
 
 } // namespace onert_micro

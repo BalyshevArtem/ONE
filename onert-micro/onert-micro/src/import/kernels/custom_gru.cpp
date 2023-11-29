@@ -21,7 +21,7 @@ using namespace onert_micro;
 using namespace onert_micro;
 
 OMStatus onert_micro::import::configure_kernel_Circlecustom_gru(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                                                core::OMKernel &kernel)
+                                                                core::OMKernel &kernel, const OMConfig&)
 {
   return Ok;
 }

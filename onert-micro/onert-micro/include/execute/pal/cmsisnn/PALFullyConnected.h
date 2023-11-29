@@ -14,37 +14,40 @@
  * limitations under the License.
  */
 
-#ifndef LUCI_INTERPRETER_PAL_FULLY_CONNECTED_H
-#define LUCI_INTERPRETER_PAL_FULLY_CONNECTED_H
+#ifndef ONERT_MICRO_EXECUTE_PAL_FULLY_CONNECTED_H
+#define ONERT_MICRO_EXECUTE_PAL_FULLY_CONNECTED_H
 
 #include "PALFullyConnectedCommon.h"
 
 #include <arm_nnfunctions.h>
 
-namespace luci_interpreter_pal
+namespace onert_micro
+{
+namespace execute
+{
+namespace pal
 {
 
 template <>
-inline void FullyConnected<int8_t>(const luci_interpreter_pal::FullyConnectedParams &params,
-                                   const int32_t *, const int8_t *input_data,
-                                   const int32_t *filter_shape, const int8_t *filter_data,
-                                   const int32_t *bias_data, const int32_t *output_shape,
-                                   int8_t *output_data)
+OMStatus FullyConnected<int8_t>(const core::QuantFullyConnected *params,
+                        const int8_t *input_data, const core::OMRuntimeShape &filter_shape,
+                        const int8_t *filter_data, const int32_t *bias_data,
+                        const core::OMRuntimeShape &output_shape, int8_t *output_data)
 {
-  const int batches = output_shape[0];
-  const int output_depth = output_shape[1];
-  const int accum_depth = filter_shape[1];
+  const int batches = flatSizeSkipDim(output_shape.dimsData(), output_shape.dimensionsCount() - 1, output_shape.dimensionsCount());
+  const int output_depth = output_shape.dims(output_shape.dimensionsCount() - 1);
+  const int accum_depth = filter_shape.dims(filter_shape.dimensionsCount() - 1);
 
   cmsis_nn_fc_params fc_params;
-  fc_params.input_offset = params.input_offset;
-  fc_params.output_offset = params.output_offset;
-  fc_params.filter_offset = params.weights_offset;
-  fc_params.activation.min = params.quantized_activation_min;
-  fc_params.activation.max = params.quantized_activation_max;
+  fc_params.input_offset = params->input_offset;
+  fc_params.output_offset = params->output_offset;
+  fc_params.filter_offset = params->weights_offset;
+  fc_params.activation.min = params->quantized_activation_min;
+  fc_params.activation.max = params->quantized_activation_max;
 
   cmsis_nn_per_tensor_quant_params quant_params;
-  quant_params.multiplier = params.output_multiplier;
-  quant_params.shift = params.output_shift;
+  quant_params.multiplier = params->output_multiplier;
+  quant_params.shift = params->output_shift;
 
   cmsis_nn_dims input_dims;
   input_dims.n = batches;
@@ -82,28 +85,31 @@ inline void FullyConnected<int8_t>(const luci_interpreter_pal::FullyConnectedPar
     arm_fully_connected_s8(&ctx, &fc_params, &quant_params, &input_dims, input_data, &filter_dims,
                            filter_data, &bias_dims, bias_data, &output_dims, output_data);
   assert(res == ARM_CMSIS_NN_SUCCESS);
+  if (res != ARM_CMSIS_NN_SUCCESS)
+    return UnknownError;
+  return Ok;
 }
 
 template <>
-inline void FullyConnected(const luci_interpreter_pal::FullyConnectedParams &params,
-                           const int32_t *, const int16_t *input_data, const int32_t *filter_shape,
-                           const int8_t *filter_data, const int64_t *bias_data,
-                           const int32_t *output_shape, int16_t *output_data)
+OMStatus FullyConnected<int16_t>(const core::QuantFullyConnected *params,
+                                const int16_t *input_data, const core::OMRuntimeShape &filter_shape,
+                                const int8_t *filter_data, const int64_t *bias_data,
+                                const core::OMRuntimeShape &output_shape, int16_t *output_data)
 {
-  const int batches = output_shape[0];
-  const int output_depth = output_shape[1];
-  const int accum_depth = filter_shape[1];
+  const int batches = flatSizeSkipDim(output_shape.dimsData(), output_shape.dimensionsCount() - 1, output_shape.dimensionsCount());
+  const int output_depth = output_shape.dims(output_shape.dimensionsCount() - 1);
+  const int accum_depth = filter_shape.dims(filter_shape.dimensionsCount() - 1);
 
   cmsis_nn_fc_params fc_params;
-  fc_params.input_offset = params.input_offset;
-  fc_params.output_offset = params.output_offset;
-  fc_params.filter_offset = params.weights_offset;
-  fc_params.activation.min = params.quantized_activation_min;
-  fc_params.activation.max = params.quantized_activation_max;
+  fc_params.input_offset = params->input_offset;
+  fc_params.output_offset = params->output_offset;
+  fc_params.filter_offset = params->weights_offset;
+  fc_params.activation.min = params->quantized_activation_min;
+  fc_params.activation.max = params->quantized_activation_max;
 
   cmsis_nn_per_tensor_quant_params quant_params;
-  quant_params.multiplier = params.output_multiplier;
-  quant_params.shift = params.output_shift;
+  quant_params.multiplier = params->output_multiplier;
+  quant_params.shift = params->output_shift;
 
   cmsis_nn_dims input_dims;
   input_dims.n = batches;
@@ -141,8 +147,13 @@ inline void FullyConnected(const luci_interpreter_pal::FullyConnectedParams &par
     arm_fully_connected_s16(&ctx, &fc_params, &quant_params, &input_dims, input_data, &filter_dims,
                             filter_data, &bias_dims, bias_data, &output_dims, output_data);
   assert(res == ARM_CMSIS_NN_SUCCESS);
+  if (res != ARM_CMSIS_NN_SUCCESS)
+    return UnknownError;
+  return Ok;
 }
 
-} // namespace luci_interpreter_pal
+} // namespace pal
+} // namespace execute
+} // namespace onert_micro
 
-#endif // LUCI_INTERPRETER_PAL_FULLY_CONNECTED_H
+#endif // ONERT_MICRO_EXECUTE_PAL_FULLY_CONNECTED_H

@@ -36,7 +36,7 @@ constexpr uint32_t outputTensorIdx = 0;
 
 
 OMStatus onert_micro::import::configure_kernel_CircleAbs(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                                         core::OMKernel &kernel)
+                                                         core::OMKernel &kernel, const OMConfig&)
 {
   onert_micro::execute::OMRuntimeKernel runtime_kernel(numInput, numOutput);
 

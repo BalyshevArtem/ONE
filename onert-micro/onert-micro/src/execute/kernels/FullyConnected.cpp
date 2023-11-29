@@ -90,20 +90,49 @@ OMStatus onert_micro::execute::execute_kernel_CircleFullyConnected(core::OMRunti
   {
 #ifndef DIS_FLOAT
     case circle::TensorType_FLOAT32: {
-      DataFullyConnected params;
+      FloatFullyConnected params;
       status = calculateActivationRange(options->fused_activation_function(),
                                         &params.float_activation_min, &params.float_activation_max);
       if (status != Ok)
         return status;
 
       status = pal::FullyConnectedFloat(
-        &params, core::utils::castInputData<float>(input_data),
-        OMRuntimeShape(weight), core::utils::castInputData<float>(weight_data),
+        &params, core::utils::castInputData<float>(input_data), OMRuntimeShape(weight),
+        core::utils::castInputData<float>(weight_data),
         core::utils::castInputData<float>(bias_data), OMRuntimeShape(output),
         core::utils::castOutputData<float>(output_data));
     }
-      break;
+    break;
 #endif // DIS_FLOAT
+#ifndef DIS_QUANT
+    case circle::TensorType_INT8: {
+      QuantFullyConnected op_params;
+      op_params.input_offset = *input->quantization()->zero_point()->begin();
+      op_params.weights_offset = *weight->quantization()->zero_point()->begin();
+      op_params.output_offset = *output->quantization()->zero_point()->begin();
+
+      op_params.input_scale = *input->quantization()->scale()->begin();
+      op_params.weight_scale = *weight->quantization()->scale()->begin();
+      op_params.output_scale = *output->quantization()->scale()->begin();
+
+      execute::calculateActivationRangeQuantized(options->fused_activation_function(), op_params.output_offset, op_params.output_scale,
+                                                 output->type(), &op_params.quantized_activation_min,
+                                                 &op_params.quantized_activation_max);
+
+      DataFullyConnected *fc_data = reinterpret_cast<DataFullyConnected *>(kernel.getKernelData());
+      if (fc_data != nullptr)
+      {
+        op_params.output_multiplier = fc_data->output_multiplier;
+        op_params.output_shift = fc_data->output_shift;
+      }
+
+     status = pal::FullyConnected(&op_params, core::utils::castInputData<int8_t>(input_data),
+                                  OMRuntimeShape(weight), core::utils::castInputData<int8_t>(weight_data),
+                                  core::utils::castInputData<int32_t>(bias_data), OMRuntimeShape(output),
+                                  core::utils::castOutputData<int8_t>(output_data));
+    }
+    break;
+#endif // DIS_QUANT
     default: {
       status = UnsupportedActivation;
       assert(false && "Unsupported type.");

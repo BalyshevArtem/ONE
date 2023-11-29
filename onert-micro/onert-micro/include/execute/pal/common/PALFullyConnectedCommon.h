@@ -34,7 +34,7 @@ namespace pal
 {
 
 template <typename InputType, typename WeightType, typename OutputType, typename BiasType>
-inline OMStatus FullyConnected(const core::DataFullyConnected *params,
+OMStatus FullyConnected(const core::QuantFullyConnected *params,
                            const InputType *input_data, const core::OMRuntimeShape &filter_shape,
                            const WeightType *filter_data, const BiasType *bias_data,
                            const core::OMRuntimeShape &output_shape, OutputType *output_data)
@@ -42,8 +42,11 @@ inline OMStatus FullyConnected(const core::DataFullyConnected *params,
   const int32_t input_offset = params->input_offset;
   const int32_t filter_offset = params->weights_offset;
   const int32_t output_offset = params->output_offset;
-  const int32_t output_multiplier = params->output_multiplier;
-  const int output_shift = params->output_shift;
+
+  const float input_scale = params->input_scale;
+  const float filter_scale = params->weight_scale;
+  const float output_scale = params->output_scale;
+
   const int32_t output_activation_min = params->quantized_activation_min;
   const int32_t output_activation_max = params->quantized_activation_max;
 
@@ -51,33 +54,34 @@ inline OMStatus FullyConnected(const core::DataFullyConnected *params,
   const int output_depth = output_shape.dims(output_shape.dimensionsCount() - 1);
   const int accum_depth = filter_shape.dims(filter_shape.dimensionsCount() - 1);
 
+  const float scale = (input_scale * filter_scale) / output_scale;
   for (int b = 0; b < batches; ++b)
   {
     for (int out_c = 0; out_c < output_depth; ++out_c)
     {
-      BiasType acc = 0;
+      int32_t acc = 0;
       for (int d = 0; d < accum_depth; ++d)
       {
-        int32_t input_val = input_data[b * accum_depth + d];
-        int32_t filter_val = filter_data[out_c * accum_depth + d];
-        acc += (filter_val + filter_offset) * (input_val + input_offset);
+        int32_t input_val = input_data[b * accum_depth + d] - input_offset;
+        int32_t filter_val = filter_data[out_c * accum_depth + d] - filter_offset;
+        acc += input_val * filter_val;
       }
       if (bias_data)
       {
         acc += bias_data[out_c];
       }
-      int32_t acc_scaled = multiplyByQuantizedMultiplier(acc, output_multiplier, output_shift);
-      acc_scaled += output_offset;
-      acc_scaled = std::max(acc_scaled, output_activation_min);
-      acc_scaled = std::min(acc_scaled, output_activation_max);
-      output_data[out_c + output_depth * b] = static_cast<OutputType>(acc_scaled);
+      float scaled_acc = static_cast<float>(acc) * scale;
+      int32_t res = std::round(scaled_acc) + output_offset;
+      res = std::max(res, output_activation_min);
+      res = std::min(res, output_activation_max);
+      output_data[out_c + output_depth * b] = static_cast<OutputType>(res);
     }
   }
 
   return Ok;
 }
 
-inline OMStatus FullyConnectedFloat(const core::DataFullyConnected *params,
+OMStatus FullyConnectedFloat(const core::FloatFullyConnected *params,
                                     const float *input_data,  const core::OMRuntimeShape &filter_shape,
                                     const float *filter_data, const float *bias_data,
                                     const core::OMRuntimeShape &output_shape, float *output_data)

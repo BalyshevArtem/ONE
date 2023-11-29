@@ -60,13 +60,11 @@ void calculateOpDataFullyConnected(core::OMKernel &kernel, const circle::Tensor 
   assert(output->quantization()->scale()->size() == 1);      // Fix caller
   assert(output->quantization()->zero_point()->size() == 1); // Fix caller
 
-  const float input_scale = input->quantization()->scale()->operator[](0);
-  const float weight_scale = weights->quantization()->scale()->operator[](0);
-  const float output_scale = output->quantization()->scale()->operator[](0);
+  const float input_scale = *input->quantization()->scale()->begin();
+  const float weight_scale = *weights->quantization()->scale()->begin();
+  const float output_scale = *output->quantization()->scale()->begin();
 
-  const float input_zero_point = input->quantization()->zero_point()->operator[](0);
-  const float weights_zero_point = weights->quantization()->zero_point()->operator[](0);
-  const float output_zero_point = output->quantization()->zero_point()->operator[](0);
+  const float output_zero_point = *output->quantization()->zero_point()->begin();
 
   real_multiplier =
     execute::getQuantizedConvolutionMultipler(input_scale, weight_scale, output_scale);
@@ -75,21 +73,9 @@ void calculateOpDataFullyConnected(core::OMKernel &kernel, const circle::Tensor 
                                              output->type(), &output_activation_min,
                                              &output_activation_max);
 
-  int32_t input_offset = -input_zero_point;
-  int32_t filter_offset = 0;
-  filter_offset = -weights_zero_point;
-  int32_t output_offset = output_zero_point;
-
   DataFullyConnected *op_params = new DataFullyConnected;
-  op_params->input_offset = input_offset;
-  op_params->weights_offset = filter_offset;
-  op_params->output_offset = output_offset;
   op_params->output_multiplier = output_multiplier;
   op_params->output_shift = output_shift;
-  op_params->quantized_activation_min = output_activation_min;
-  op_params->quantized_activation_max = output_activation_max;
-  op_params->lhs_cacheable = false;
-  op_params->rhs_cacheable = false;
 
   kernel.setKernelData(reinterpret_cast<uint8_t *>(op_params));
 }
@@ -98,7 +84,7 @@ void calculateOpDataFullyConnected(core::OMKernel &kernel, const circle::Tensor 
 } // namespace
 
 OMStatus onert_micro::import::configure_kernel_CircleFullyConnected(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                                                    core::OMKernel &kernel)
+                                                                    core::OMKernel &kernel, const OMConfig &configs)
 {
   execute::OMRuntimeKernel runtime_kernel(numInput, numOutput);
   runtime_kernel.readKernel(kernel, runtime_context);
@@ -132,8 +118,21 @@ OMStatus onert_micro::import::configure_kernel_CircleFullyConnected(core::OMRunt
 
   status = utils::checkCondition(bias == nullptr or weight_shape.dim(0) == bias_shape.num_elements());
 
-  // TODO: add precalculations for quantized values;
-  // TODO check scales
+  if (input->type() == circle::TensorType_FLOAT32)
+    return status;
+
+  // Check quantized version
+  if (input->quantization() == nullptr or output->quantization() == nullptr or weight->quantization() == nullptr)
+    return NoQuantization;
+
+  if (output->quantization()->scale() == nullptr or output->quantization()->scale()->size() != 1)
+    return NoQuantization;
+
+  if (weight->quantization()->scale() == nullptr or weight->quantization()->scale()->size() != 1)
+    return NoQuantization;
+
+  if (configs.cmsis_nn)
+    calculateOpDataFullyConnected(kernel, input, weight, output, runtime_kernel.first_operator->builtin_options_as_FullyConnectedOptions()->fused_activation_function());
 
   return status;
 }

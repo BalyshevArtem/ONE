@@ -27,6 +27,12 @@ namespace core
 
 struct DataFullyConnected
 {
+  int32_t output_multiplier;
+  int output_shift;
+};
+
+struct QuantFullyConnected
+{
   int32_t input_offset;
   int32_t weights_offset;
   int32_t output_offset;
@@ -35,9 +41,14 @@ struct DataFullyConnected
   // uint8_t, etc, activation params.
   int32_t quantized_activation_min;
   int32_t quantized_activation_max;
-  // Mark the operands as cacheable if they are unchanging, e.g. weights.
-  bool lhs_cacheable;
-  bool rhs_cacheable;
+
+  float input_scale;
+  float weight_scale;
+  float output_scale;
+};
+
+struct FloatFullyConnected
+{
   // float activation params.
   float float_activation_min;
   float float_activation_max;

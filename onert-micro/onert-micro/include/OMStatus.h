@@ -29,6 +29,7 @@ enum OMStatus
   UnknownError,
   ModelNotImport,
   FailedCheckCondition,
+  NoQuantization,
 };
 
 } // namespace onert_micro
