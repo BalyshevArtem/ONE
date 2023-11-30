@@ -15,18 +15,22 @@
  * limitations under the License.
  */
 
-#ifndef LUCI_INTERPRETER_PAL_MUL_COMMON_H
-#define LUCI_INTERPRETER_PAL_MUL_COMMON_H
+#ifndef ONERT_MICRO_EXECUTE_PAL_MUL_COMMON_H
+#define ONERT_MICRO_EXECUTE_PAL_MUL_COMMON_H
 
 #include "Params.h"
 #include "PALUtils.h"
 #include "ProcessBroadcastShapes.h"
 
-namespace luci_interpreter_pal
+namespace onert_micro
+{
+namespace execute
+{
+namespace pal
 {
 template <typename T>
-inline void Mul(const ArithmeticParams &params, const int flat_size, const T *input1_data,
-                const T *input2_data, T *output_data)
+OMStatus Mul(const core::BinaryArithmeticBroadcastParams &params, const int flat_size, const T *input1_data,
+             const T *input2_data, T *output_data)
 {
   T activation_min, activation_max;
   getActivationParams(params, &activation_min, &activation_max);
@@ -34,11 +38,13 @@ inline void Mul(const ArithmeticParams &params, const int flat_size, const T *in
   for (int i = 0; i < flat_size; ++i)
     output_data[i] =
       std::min(std::max(input1_data[i] * input2_data[i], activation_min), activation_max);
+
+  return Ok;
 }
 
 template <typename T>
-inline void MulScalar(const ArithmeticParams &params, const int flat_size, const T *input_data,
-                      const T scalar_value, T *output_data)
+OMStatus MulScalar(const core::BinaryArithmeticBroadcastParams &params, const int flat_size, const T *input_data,
+                   const T scalar_value, T *output_data)
 {
   T activation_min, activation_max;
   getActivationParams(params, &activation_min, &activation_max);
@@ -46,22 +52,24 @@ inline void MulScalar(const ArithmeticParams &params, const int flat_size, const
   for (int i = 0; i < flat_size; ++i)
     output_data[i] =
       std::min(std::max(input_data[i] * scalar_value, activation_min), activation_max);
+
+  return Ok;
 }
 
 template <typename T>
-inline void
-BroadcastMul4DSlow(const ArithmeticParams &params,
-                   const luci_interpreter::RuntimeShape &input1_shape, const T *input1_data,
-                   const luci_interpreter::RuntimeShape &input2_shape, const T *input2_data,
-                   const luci_interpreter::RuntimeShape &output_shape, T *output_data)
+OMStatus
+BroadcastMul4DSlow(const core::BinaryArithmeticBroadcastParams &params,
+                   const core::OMRuntimeShape &input1_shape, const T *input1_data,
+                   const core::OMRuntimeShape &input2_shape, const T *input2_data,
+                   const core::OMRuntimeShape &output_shape, T *output_data)
 {
   const int flat_size = input1_shape.flatSize();
 
-  if (params.broadcast_category == BroadcastableOpCategory::kScalarFirstBroadcast)
+  if (params.broadcast_category == core::BroadcastableOpCategory::kScalarFirstBroadcast)
   {
     return MulScalar(params, flat_size, input2_data, input1_data[0], output_data);
   }
-  else if (params.broadcast_category == BroadcastableOpCategory::kScalarSecondBroadcast)
+  else if (params.broadcast_category == core::BroadcastableOpCategory::kScalarSecondBroadcast)
   {
     return MulScalar(params, flat_size, input1_data, input2_data[0], output_data);
   }
@@ -69,8 +77,8 @@ BroadcastMul4DSlow(const ArithmeticParams &params,
   NdArrayDesc<4> desc1;
   NdArrayDesc<4> desc2;
   NdArrayDescsForElementwiseBroadcast(input1_shape, input2_shape, &desc1, &desc2);
-  const luci_interpreter::RuntimeShape extended_output_shape =
-    luci_interpreter::RuntimeShape::extendedShape(4, output_shape);
+  const core::OMRuntimeShape extended_output_shape =
+    core::OMRuntimeShape::extendedShape(4, output_shape);
 
   T activation_min, activation_max;
   getActivationParams(params, &activation_min, &activation_max);
@@ -108,8 +116,12 @@ BroadcastMul4DSlow(const ArithmeticParams &params,
       }
     }
   }
+
+  return Ok;
 }
 
-} // namespace luci_interpreter_pal
+} // namespace pal
+} // namespace execute
+} // namespace onert_micro
 
-#endif // LUCI_INTERPRETER_PAL_MUL_H
+#endif // ONERT_MICRO_EXECUTE_PAL_MUL_COMMON_H

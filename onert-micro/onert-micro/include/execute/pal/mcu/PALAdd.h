@@ -15,27 +15,33 @@
  * limitations under the License.
  */
 
-#ifndef LUCI_INTERPRETER_PAL_ADD_H
-#define LUCI_INTERPRETER_PAL_ADD_H
+#ifndef ONERT_MICRO_EXECUTE_PAL_ADD_H
+#define ONERT_MICRO_EXECUTE_PAL_ADD_H
 
 #include "PALAddCommon.h"
 
-namespace luci_interpreter_pal
+namespace onert_micro
+{
+namespace execute
+{
+namespace pal
 {
 template <>
-inline void Add<int8_t>(const ArithmeticParams &, const int, const int8_t *, const int8_t *,
-                        int8_t *)
+OMStatus Add<int8_t>(const core::BinaryArithmeticBroadcastParams &params, const int flat_size, const int8_t *input1_data,
+                     const int8_t *input2_data, int8_t *output_data)
 {
   assert(false && "Not IMPL yet");
 }
 
 template <>
-inline void Add<int16_t>(const ArithmeticParams &, const int, const int16_t *, const int16_t *,
-                         int16_t *)
+OMStatus Add<int16_t>(const core::BinaryArithmeticBroadcastParams &params, const int flat_size, const int16_t *input1_data,
+                      const int16_t *input2_data, int16_t *output_data)
 {
   assert(false && "Not IMPL yet");
 }
 
-} // namespace luci_interpreter_pal
+} // namespace pal
+} // namespace execute
+} // namespace onert_micro
 
-#endif // LUCI_INTERPRETER_PAL_ADD_H
+#endif // ONERT_MICRO_EXECUTE_PAL_ADD_H

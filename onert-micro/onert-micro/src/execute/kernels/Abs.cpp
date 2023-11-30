@@ -60,13 +60,11 @@ OMStatus onert_micro::execute::execute_kernel_CircleAbs(core::OMRuntimeStorage &
   assert(input_data != nullptr);
   assert(output_data != nullptr);
 
-  const core::OMShape shape(input);
-
   switch (input->type())
   {
 #ifndef DIS_FLOAT
     case circle::TensorType_FLOAT32:
-      status = pal::Abs(shape, core::utils::castInputData<float>(input_data),
+      status = pal::Abs(core::OMRuntimeShape(input), core::utils::castInputData<float>(input_data),
                core::utils::castOutputData<float>(output_data));
       break;
 #endif // DIS_FLOAT

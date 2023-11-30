@@ -42,9 +42,10 @@ constexpr uint32_t outputTensorIdx = 0;
 } // namespace
 
 
-// NOTE: doesnt currently support dynamic shapes
-OMStatus onert_micro::execute::execute_kernel_CircleConv2D(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                                                   core::OMKernel &kernel)
+// NOTE: doesn't currently support dynamic shapes
+OMStatus onert_micro::execute::execute_kernel_CircleConv2D(core::OMRuntimeStorage &runtime_storage,
+                                                           core::OMRuntimeContext &runtime_context,
+                                                           core::OMKernel &kernel)
 {
   const circle::Tensor *input;
   const circle::Tensor *weight;
@@ -95,7 +96,7 @@ OMStatus onert_micro::execute::execute_kernel_CircleConv2D(core::OMRuntimeStorag
       if (data == nullptr)
         return UnknownError;
 
-      FloatConv2D params;
+      FloatConv2D params{};
       status = calculateActivationRange(options->fused_activation_function(),
                                         &params.activation_min, &params.activation_max);
       params.stride_w = options->stride_w();
@@ -108,15 +109,14 @@ OMStatus onert_micro::execute::execute_kernel_CircleConv2D(core::OMRuntimeStorag
       if (status != Ok)
         return status;
 
-      status = pal::ConvFloat(
-        &params, OMRuntimeShape(input), core::utils::castInputData<float>(input_data),
-        OMRuntimeShape(weight),
-        core::utils::castInputData<float>(weight_data),
-        core::utils::castInputData<float>(bias_data), OMRuntimeShape(output),
-        core::utils::castOutputData<float>(output_data));
+      status = pal::ConvFloat(&params, OMRuntimeShape(input),
+                              core::utils::castInputData<float>(input_data), OMRuntimeShape(weight),
+                              core::utils::castInputData<float>(weight_data),
+                              core::utils::castInputData<float>(bias_data), OMRuntimeShape(output),
+                              core::utils::castOutputData<float>(output_data));
       assert(status == Ok);
     }
-      break;
+    break;
 #endif // DIS_FLOAT
     default: {
       status = UnsupportedActivation;

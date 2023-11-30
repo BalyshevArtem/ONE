@@ -15,12 +15,18 @@
  * limitations under the License.
  */
 
-#ifndef LUCI_INTERPRETER_PAL_PROCESS_BROADCAST_SHAPES_H
-#define LUCI_INTERPRETER_PAL_PROCESS_BROADCAST_SHAPES_H
+#ifndef ONERT_MICRO_EXECUTE_PAL_PROCESS_BROADCAST_SHAPES_H
+#define ONERT_MICRO_EXECUTE_PAL_PROCESS_BROADCAST_SHAPES_H
 
-namespace luci_interpreter_pal
+#include "core/OMRuntimeShape.h"
+#include "core/OMKernelData.h"
+
+namespace onert_micro
 {
-
+namespace execute
+{
+namespace pal
+{
 // DO NOT USE THIS STRUCT FOR NEW FUNCTIONALITY BEYOND IMPLEMENTING
 // BROADCASTING.
 //
@@ -44,7 +50,7 @@ template <int N> struct NdArrayDesc
 
 // Copies dims to desc, calculating strides.
 template <int N>
-inline void copyDimsToDesc(const luci_interpreter::RuntimeShape &input_shape,
+inline void copyDimsToDesc(const core::OMRuntimeShape &input_shape,
                            NdArrayDesc<N> *desc_out)
 {
   int desc_stride = 1;
@@ -86,14 +92,14 @@ inline void NDOpsHelper(const NdArrayDesc<N> &output, const Calc &calc)
 }
 
 template <int N>
-inline void NdArrayDescsForElementwiseBroadcast(const luci_interpreter::RuntimeShape &input0_shape,
-                                                const luci_interpreter::RuntimeShape &input1_shape,
+inline void NdArrayDescsForElementwiseBroadcast(const core::OMRuntimeShape &input0_shape,
+                                                const core::OMRuntimeShape &input1_shape,
                                                 NdArrayDesc<N> *desc0_out,
                                                 NdArrayDesc<N> *desc1_out)
 {
 
-  auto extended_input0_shape = luci_interpreter::RuntimeShape::extendedShape(N, input0_shape);
-  auto extended_input1_shape = luci_interpreter::RuntimeShape::extendedShape(N, input1_shape);
+  auto extended_input0_shape = core::OMRuntimeShape::extendedShape(N, input0_shape);
+  auto extended_input1_shape = core::OMRuntimeShape::extendedShape(N, input1_shape);
 
   // Copy dims to desc, calculating strides.
   copyDimsToDesc<N>(extended_input0_shape, desc0_out);
@@ -147,32 +153,32 @@ inline int subscriptToIndex(const NdArrayDesc<5> &desc, int indexes[5])
 //
 // Returns true iff there is some sort of broadcast, which includes five-fold
 // patterns and falling back to generic broadcast.
-inline bool ProcessBroadcastShapes(const luci_interpreter::RuntimeShape &shape0,
-                                   const luci_interpreter::RuntimeShape &shape1,
-                                   luci_interpreter_pal::ArithmeticParams *params)
+inline bool processBroadcastShapes(const core::OMRuntimeShape &shape0,
+                                   const core::OMRuntimeShape &shape1,
+                                   core::BinaryArithmeticBroadcastParams *params)
 {
   const int dims_count = std::max(shape0.dimensionsCount(), shape1.dimensionsCount());
 
-  params->broadcast_category = BroadcastableOpCategory::kGenericBroadcast;
+  params->broadcast_category = core::BroadcastableOpCategory::kGenericBroadcast;
 
-  auto extended_shape0 = luci_interpreter::RuntimeShape::extendedShape(dims_count, shape0);
-  auto extended_shape1 = luci_interpreter::RuntimeShape::extendedShape(dims_count, shape1);
+  auto extended_shape0 = core::OMRuntimeShape::extendedShape(dims_count, shape0);
+  auto extended_shape1 = core::OMRuntimeShape::extendedShape(dims_count, shape1);
 
   // Check for "exact" match, implicitly accepting any scalar shapes.
   if (extended_shape0 == extended_shape1)
   {
-    params->broadcast_category = BroadcastableOpCategory::kNonBroadcast;
+    params->broadcast_category = core::BroadcastableOpCategory::kNonBroadcast;
     return false;
   }
 
   if (shape0.flatSize() == 1)
   {
-    params->broadcast_category = BroadcastableOpCategory::kScalarFirstBroadcast;
+    params->broadcast_category = core::BroadcastableOpCategory::kScalarFirstBroadcast;
     return true;
   }
   else if (shape1.flatSize() == 1)
   {
-    params->broadcast_category = BroadcastableOpCategory::kScalarSecondBroadcast;
+    params->broadcast_category = core::BroadcastableOpCategory::kScalarSecondBroadcast;
     return true;
   }
 
@@ -184,19 +190,19 @@ inline bool ProcessBroadcastShapes(const luci_interpreter::RuntimeShape &shape0,
     }
     else if (extended_shape0.dims(i) == 1)
     {
-      params->broadcast_category = BroadcastableOpCategory::kFirstInputBroadcastsFast;
+      params->broadcast_category = core::BroadcastableOpCategory::kFirstInputBroadcastsFast;
       return true;
     }
     else if (extended_shape1.dims(i) == 1)
     {
-      params->broadcast_category = BroadcastableOpCategory::kSecondInputBroadcastsFast;
+      params->broadcast_category = core::BroadcastableOpCategory::kSecondInputBroadcastsFast;
       return true;
     }
     else
     {
       // This case is erroneous: there is a dimension that does not match and
       // is not a broadcast from one shape to the other.
-      params->broadcast_category = BroadcastableOpCategory::kGenericBroadcast;
+      params->broadcast_category = core::BroadcastableOpCategory::kGenericBroadcast;
       return true;
     }
   }
@@ -204,6 +210,8 @@ inline bool ProcessBroadcastShapes(const luci_interpreter::RuntimeShape &shape0,
   return false;
 }
 
-} // namespace luci_interpreter_pal
+} // namespace pal
+} // namespace execute
+} // namespace onert_micro
 
-#endif // LUCI_INTERPRETER_PAL_PROCESS_BROADCAST_SHAPES_H
+#endif // ONERT_MICRO_EXECUTE_PAL_PROCESS_BROADCAST_SHAPES_H

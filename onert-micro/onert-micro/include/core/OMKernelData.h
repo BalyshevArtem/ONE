@@ -25,6 +25,44 @@ namespace onert_micro
 namespace core
 {
 
+enum class BroadcastableOpCategory : uint8_t
+{
+  kNone,
+  kNonBroadcast,              // Matching input shapes.
+  kFirstInputBroadcastsFast,  // Fivefold nested loops.
+  kSecondInputBroadcastsFast, // Fivefold nested loops.
+  kGenericBroadcast,          // Fall-back.
+  kScalarFirstBroadcast,      // Scalar
+  kScalarSecondBroadcast,     // Scalar
+};
+
+struct DataAdd
+{
+  // empty
+};
+
+struct DataSub
+{
+  // empty
+};
+
+struct DataMul
+{
+  // empty
+};
+
+struct BinaryArithmeticBroadcastParams
+{
+  // float activation params.
+  float float_activation_min;
+  float float_activation_max;
+  int32_t int32_activation_min;
+  int32_t int32_activation_max;
+  int64_t int64_activation_min;
+  int64_t int64_activation_max;
+  BroadcastableOpCategory broadcast_category;
+};
+
 struct DataFullyConnected
 {
   int32_t output_multiplier;

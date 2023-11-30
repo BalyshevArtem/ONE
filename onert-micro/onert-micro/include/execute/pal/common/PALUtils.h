@@ -96,8 +96,8 @@ inline int32_t multiplyByQuantizedMultiplierSmallerThanOneExp(int32_t x,
 
 template <typename P> inline void getActivationParams(const P &params, int32_t *min, int32_t *max)
 {
-  *min = params.quantized_activation_min;
-  *max = params.quantized_activation_max;
+  *min = params.int32_activation_min;
+  *max = params.int32_activation_max;
 }
 
 template <typename P> inline void getActivationParams(const P &params, float *min, float *max)

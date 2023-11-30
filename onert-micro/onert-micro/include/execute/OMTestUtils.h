@@ -61,6 +61,40 @@ std::vector<T> checkSISOKernel(onert_micro::test_model::TestDataBase<T> *test_da
   return output_data_vector;
 }
 
+template <typename T>
+std::vector<T> checkTISOKernel(onert_micro::test_model::TestDataBase<T> *test_data_base)
+{
+
+  onert_micro::OMInterpreter interpreter;
+  onert_micro::OMConfig config;
+
+  interpreter.importModel(reinterpret_cast<const char *>(test_data_base->get_model_ptr()), config);
+
+  interpreter.allocateInputs();
+
+  T *input1_data = reinterpret_cast<T *>(interpreter.getInputDataAt(0));
+  T *input2_data = reinterpret_cast<T *>(interpreter.getInputDataAt(1));
+
+  // Set input data
+  {
+    std::copy(test_data_base->get_input_data_by_index(0).begin(),
+              test_data_base->get_input_data_by_index(0).end(), input1_data);
+  }
+
+  // Set input data
+  {
+    std::copy(test_data_base->get_input_data_by_index(1).begin(),
+              test_data_base->get_input_data_by_index(1).end(), input2_data);
+  }
+
+  interpreter.run();
+
+  T *output_data = reinterpret_cast<T *>(interpreter.getOutputDataAt(0));
+  const size_t num_elements = interpreter.getOutputSizeAt(0);
+  std::vector<T> output_data_vector(output_data, output_data + num_elements);
+  return output_data_vector;
+}
+
 void checkNEGSISOKernel(onert_micro::test_model::NegTestDataBase *test_data_base);
 
 } // namespace testing

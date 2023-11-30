@@ -15,28 +15,9 @@
  * limitations under the License.
  */
 
-#ifndef LUCI_INTERPRETER_PAL_MUL_H
-#define LUCI_INTERPRETER_PAL_MUL_H
+#ifndef ONERT_MICRO_EXECUTE_PAL_MUL_H
+#define ONERT_MICRO_EXECUTE_PAL_MUL_H
 
 #include "PALMulCommon.h"
 
-namespace luci_interpreter_pal
-{
-
-template <>
-inline void Mul<int8_t>(const ArithmeticParams &, const int, const int8_t *, const int8_t *,
-                        int8_t *)
-{
-  assert(false && "Not IMPL yet");
-}
-
-template <>
-inline void Mul<int16_t>(const ArithmeticParams &, const int, const int16_t *, const int16_t *,
-                         int16_t *)
-{
-  assert(false && "Not IMPL yet");
-}
-
-} // namespace luci_interpreter_pal
-
-#endif // LUCI_INTERPRETER_PAL_MUL_H
+#endif // ONERT_MICRO_EXECUTE_PAL_MUL_H

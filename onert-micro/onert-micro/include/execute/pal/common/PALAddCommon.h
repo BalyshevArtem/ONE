@@ -15,19 +15,24 @@
  * limitations under the License.
  */
 
-#ifndef LUCI_INTERPRETER_PAL_ADD_COMMON_H
-#define LUCI_INTERPRETER_PAL_ADD_COMMON_H
+#ifndef ONERT_MICRO_EXECUTE_PAL_ADD_COMMON_H
+#define ONERT_MICRO_EXECUTE_PAL_ADD_COMMON_H
 
 #include "Params.h"
 #include "PALUtils.h"
 #include "ProcessBroadcastShapes.h"
 
-namespace luci_interpreter_pal
+#include "core/OMKernelData.h"
+
+namespace onert_micro
+{
+namespace execute
+{
+namespace pal
 {
 
-// TODO: check if there real activation value
 template <typename T>
-inline void Add(const ArithmeticParams &params, const int flat_size, const T *input1_data,
+OMStatus Add(const core::BinaryArithmeticBroadcastParams &params, const int flat_size, const T *input1_data,
                 const T *input2_data, T *output_data)
 {
   T activation_min, activation_max;
@@ -36,20 +41,22 @@ inline void Add(const ArithmeticParams &params, const int flat_size, const T *in
   for (int i = 0; i < flat_size; ++i)
     output_data[i] =
       std::min(std::max(input1_data[i] + input2_data[i], activation_min), activation_max);
+
+  return Ok;
 }
 
 template <typename T>
-inline void
-BroadcastAdd4DSlow(const ArithmeticParams &params,
-                   const luci_interpreter::RuntimeShape &input1_shape, const T *input1_data,
-                   const luci_interpreter::RuntimeShape &input2_shape, const T *input2_data,
-                   const luci_interpreter::RuntimeShape &output_shape, T *output_data)
+OMStatus
+BroadcastAdd4DSlow(const core::BinaryArithmeticBroadcastParams &params,
+                   const core::OMRuntimeShape &input1_shape, const T *input1_data,
+                   const core::OMRuntimeShape &input2_shape, const T *input2_data,
+                   const core::OMRuntimeShape &output_shape, T *output_data)
 {
   NdArrayDesc<4> desc1;
   NdArrayDesc<4> desc2;
   NdArrayDescsForElementwiseBroadcast(input1_shape, input2_shape, &desc1, &desc2);
-  const luci_interpreter::RuntimeShape extended_output_shape =
-    luci_interpreter::RuntimeShape::extendedShape(4, output_shape);
+  const core::OMRuntimeShape extended_output_shape =
+    core::OMRuntimeShape::extendedShape(4, output_shape);
 
   T activation_min, activation_max;
   getActivationParams(params, &activation_min, &activation_max);
@@ -87,8 +94,11 @@ BroadcastAdd4DSlow(const ArithmeticParams &params,
       }
     }
   }
+  return Ok;
 }
 
-} // namespace luci_interpreter_pal
+} // namespace pal
+} // namespace execute
+} // namespace onert_micro
 
-#endif // LUCI_INTERPRETER_PAL_ADD_COMMON_H
+#endif // ONERT_MICRO_EXECUTE_PAL_ADD_COMMON_H

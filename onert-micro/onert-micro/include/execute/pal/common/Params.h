@@ -158,43 +158,43 @@ struct StridedSliceParams
 };
 
 // For Add, Sub, Mul ops.
-struct ArithmeticParams
-{
-  // Shape dependent / common to data / op types.
-  BroadcastableOpCategory broadcast_category;
-  // uint8_t inference params.
-  int32_t input1_offset;
-  int32_t input2_offset;
-  int32_t output_offset;
-  int32_t output_multiplier;
-  int output_shift;
-  // Add / Sub, not Mul, uint8_t inference params.
-  int left_shift;
-  int32_t input1_multiplier;
-  int input1_shift;
-  int32_t input2_multiplier;
-  int input2_shift;
-  // uint8_t, etc, activation params.
-  int32_t quantized_activation_min;
-  int32_t quantized_activation_max;
-  // float activation params.
-  float float_activation_min;
-  float float_activation_max;
-  // int64_t activation params.
-  int64_t int64_activation_min;
-  int64_t int64_activation_max;
-
-  // Processed output dimensions.
-  // Let input "a" be the one that broadcasts in the faster-changing dimension.
-  // Then, after coalescing, for shapes {a0, a1, a2, a3, a4} and
-  // {b0, b1, b2, b3, b4},
-  // broadcast_shape[4] = b0 = a0.
-  // broadcast_shape[3] = b1; a1 = 1.
-  // broadcast_shape[2] = b2 = a2.
-  // broadcast_shape[1] = a3; b3 = 1.
-  // broadcast_shape[0] = b4 = a4.
-  int broadcast_shape[5];
-};
+//struct ArithmeticParams
+//{
+//  // Shape dependent / common to data / op types.
+//  BroadcastableOpCategory broadcast_category;
+//  // uint8_t inference params.
+//  int32_t input1_offset;
+//  int32_t input2_offset;
+//  int32_t output_offset;
+//  int32_t output_multiplier;
+//  int output_shift;
+//  // Add / Sub, not Mul, uint8_t inference params.
+//  int left_shift;
+//  int32_t input1_multiplier;
+//  int input1_shift;
+//  int32_t input2_multiplier;
+//  int input2_shift;
+//  // uint8_t, etc, activation params.
+//  int32_t quantized_activation_min;
+//  int32_t quantized_activation_max;
+//  // float activation params.
+//  float float_activation_min;
+//  float float_activation_max;
+//  // int64_t activation params.
+//  int64_t int64_activation_min;
+//  int64_t int64_activation_max;
+//
+//  // Processed output dimensions.
+//  // Let input "a" be the one that broadcasts in the faster-changing dimension.
+//  // Then, after coalescing, for shapes {a0, a1, a2, a3, a4} and
+//  // {b0, b1, b2, b3, b4},
+//  // broadcast_shape[4] = b0 = a0.
+//  // broadcast_shape[3] = b1; a1 = 1.
+//  // broadcast_shape[2] = b2 = a2.
+//  // broadcast_shape[1] = a3; b3 = 1.
+//  // broadcast_shape[0] = b4 = a4.
+//  int broadcast_shape[5];
+//};
 
 enum class FusedActivationFunctionType : uint8_t
 {
