@@ -1,2 +1,2 @@
-REGISTER_CUSTOM_KERNEL(custom_gru , "custom_gru")
+
 

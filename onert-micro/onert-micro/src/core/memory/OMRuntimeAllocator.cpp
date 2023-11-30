@@ -63,7 +63,7 @@ OMStatus OMRuntimeAllocator::allocate(size_t kernel_index, OMRuntimeContext *con
     if (num_elements < 0)
       return UnknownError;
     const auto casted_num_elements = static_cast<uint32_t>(num_elements);
-    const auto type_size = static_cast<uint32_t>(getOMDataTypeSize(onerMicroDatatype(tensor->type())));
+    const auto type_size = static_cast<uint32_t>(getOMDataTypeSize(onertMicroDatatype(tensor->type())));
 
     // clear if it is already saved data
     uint8_t *allocated_data = nullptr;
@@ -128,7 +128,7 @@ OMStatus OMRuntimeAllocator::allocateGraphInputs(OMRuntimeContext *context, OMRu
     if (num_elements < 0)
       return UnknownError;
     const auto casted_num_elements = static_cast<uint32_t>(num_elements);
-    const auto type_size = static_cast<uint32_t>(getOMDataTypeSize(onerMicroDatatype(tensor->type())));
+    const auto type_size = static_cast<uint32_t>(getOMDataTypeSize(onertMicroDatatype(tensor->type())));
 
     uint8_t *allocated_data = nullptr;
     // First clear if already allocated

@@ -31,6 +31,31 @@ struct DataFullyConnected
   int output_shift;
 };
 
+struct DataConv2D
+{
+  std::vector<int32_t> per_channel_output_multiplier = {};
+  std::vector<int32_t> per_channel_output_shift = {};
+  int32_t padding_h = 0;
+  int32_t padding_w = 0;
+};
+
+struct FloatConv2D
+{
+  int32_t stride_w;
+  int32_t stride_h;
+  int32_t dilation_width_factor;
+  int32_t dilation_height_factor;
+  int32_t pad_h;
+  int32_t pad_w;
+  float activation_min;
+  float activation_max;
+};
+
+struct DataReshape
+{
+  // Empty
+};
+
 struct QuantFullyConnected
 {
   int32_t input_offset;
@@ -55,11 +80,6 @@ struct FloatFullyConnected
 };
 
 struct DataAbs
-{
-// Empty
-};
-
-struct Datacustom_gru
 {
 // Empty
 };

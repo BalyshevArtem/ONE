@@ -49,6 +49,7 @@ OMStatus OMKernelConfiguration::configureKernels(core::OMRuntimeStorage &runtime
       return status;
 
     status = configure_func(runtime_storage, runtime_context, cur_kernel, configs);
+    assert(status == Ok);
   }
 
   return status;

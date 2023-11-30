@@ -38,7 +38,7 @@ constexpr uint32_t biasTensorIdx = 2;
 constexpr uint32_t outputTensorIdx = 0;
 
 #ifndef DIS_QUANT
-void calculateOpDataFullyConnected(core::OMKernel &kernel, const circle::Tensor *input,
+void calculateOpDataConv2D(core::OMKernel &kernel, const circle::Tensor *input,
                                    const circle::Tensor *weights, const circle::Tensor *output,
                                    circle::ActivationFunctionType activation)
 {
@@ -66,6 +66,8 @@ void calculateOpDataFullyConnected(core::OMKernel &kernel, const circle::Tensor 
 
   const float output_zero_point = *output->quantization()->zero_point()->begin();
 
+
+
   real_multiplier =
     execute::getQuantizedConvolutionMultipler(input_scale, weight_scale, output_scale);
   execute::quantizeMultiplier(real_multiplier, &output_multiplier, &output_shift);
@@ -83,8 +85,8 @@ void calculateOpDataFullyConnected(core::OMKernel &kernel, const circle::Tensor 
 
 } // namespace
 
-OMStatus onert_micro::import::configure_kernel_CircleFullyConnected(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                                                    core::OMKernel &kernel, const OMConfig &configs)
+OMStatus onert_micro::import::configure_kernel_CircleConv2D(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
+                                                            core::OMKernel &kernel, const OMConfig &configs)
 {
   execute::OMRuntimeKernel runtime_kernel(numInput, numOutput);
   runtime_kernel.readKernel(kernel, runtime_context);
@@ -103,39 +105,61 @@ OMStatus onert_micro::import::configure_kernel_CircleFullyConnected(core::OMRunt
   OMStatus status = Ok;
 
   if ((input->type() == circle::TensorType_FLOAT32 && weight->type() != circle::TensorType_FLOAT32) or
-    (input->type() == circle::TensorType_INT8 && weight->type() != circle::TensorType_INT8) or
-    (input->type() == circle::TensorType_INT16 && weight->type() != circle::TensorType_INT16))
+      (input->type() == circle::TensorType_INT8 && weight->type() != circle::TensorType_INT8) or
+      (input->type() == circle::TensorType_INT16 && weight->type() != circle::TensorType_INT16))
   {
     return UnsupportedType;
   }
 
+  core::OMShape input_shape(input);
   core::OMShape weight_shape(weight);
   core::OMShape bias_shape(bias);
+  core::OMShape output_shape(output);
 
-  status = utils::checkCondition(weight_shape.rank() == 2);
+  status = utils::checkCondition(input_shape.rank() == 4);
+  if (status != Ok)
+    return status;
+
+  status = utils::checkCondition(input_shape.rank() == output_shape.rank());
+  if (status != Ok)
+    return status;
+
+  status = utils::checkCondition(input_shape.rank() == weight_shape.rank());
   if (status != Ok)
     return status;
 
   status = utils::checkCondition(bias == nullptr or weight_shape.dim(0) == bias_shape.num_elements());
 
-  if (input->type() == circle::TensorType_FLOAT32)
-    return status;
+  const auto option = runtime_kernel.first_operator->builtin_options_as_Conv2DOptions();
 
-#ifndef DIS_QUANT
+  int32_t padding_h = 0;
+  int32_t padding_w = 0;
 
-  // Check quantized version
-  if (input->quantization() == nullptr or output->quantization() == nullptr or weight->quantization() == nullptr)
-    return NoQuantization;
+  const int input_width = input_shape.dim(2); //input->dims->data[2];
+  const int input_height = input_shape.dim(1); //input->dims->data[1];
+  const int weight_width = weight_shape.dim(2);// filter->dims->data[2];
+  const int weight_height = weight_shape.dim(1); //filter->dims->data[1];
+  const int output_width = output_shape.dim(2); //output->dims->data[2];
+  const int output_height = output_shape.dim(1); //output->dims->data[1];
+  execute::computePaddingHeightWidth(option->stride_h(), option->stride_w(), option->dilation_h_factor(),
+                          option->dilation_w_factor(), input_height, input_width, weight_height, weight_width,
+                                     option->padding(), &padding_h, &padding_w);
 
-  if (output->quantization()->scale() == nullptr or output->quantization()->scale()->size() != 1)
-    return NoQuantization;
+  DataConv2D *data = new DataConv2D;
 
-  if (weight->quantization()->scale() == nullptr or weight->quantization()->scale()->size() != 1)
-    return NoQuantization;
+  data->per_channel_output_multiplier.resize(0);
+  data->per_channel_output_shift.resize(0);
+  data->padding_w = padding_w;
+  data->padding_h = padding_h;
 
-  if (configs.cmsis_nn)
-    calculateOpDataFullyConnected(kernel, input, weight, output, runtime_kernel.first_operator->builtin_options_as_FullyConnectedOptions()->fused_activation_function());
 
-#endif // DIS_QUANT
+  if (input->type() != circle::TensorType_FLOAT32)
+  {
+    // TODO: enable quant params
+  }
+
+
+  kernel.setKernelData(reinterpret_cast<uint8_t *>(data));
+
   return status;
 }

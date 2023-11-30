@@ -54,34 +54,7 @@ enum class OMDataType
   BOOL, // Boolean
 };
 
-OMDataType onerMicroDatatype(const circle::TensorType type)
-{
-  switch (type)
-  {
-    case circle::TensorType_FLOAT32:
-      return OMDataType::FLOAT32;
-    case circle::TensorType_FLOAT16:
-      return OMDataType::FLOAT16;
-    case circle::TensorType_INT32:
-      return OMDataType::S32;
-    case circle::TensorType_UINT8:
-      return OMDataType::U8;
-    case circle::TensorType_INT64:
-      return OMDataType::S64;
-    case circle::TensorType_BOOL:
-      return OMDataType::BOOL;
-    case circle::TensorType_INT16:
-      return OMDataType::S16;
-    case circle::TensorType_COMPLEX64:
-      break;
-    case circle::TensorType_INT8:
-      return OMDataType::S8;
-    default:
-      break;
-  }
-  assert(false);
-  return OMDataType::Unknown;
-}
+OMDataType onertMicroDatatype(const circle::TensorType type);
 
 /**
  * @brief C++ scalar type corresponding to each OMDataType

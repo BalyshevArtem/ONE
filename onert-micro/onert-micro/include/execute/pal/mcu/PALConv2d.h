@@ -19,14 +19,14 @@
 #define LUCI_INTERPRETER_PAL_CONV2D_H
 #include "PALConv2DCommon.h"
 
-namespace luci_interpreter_pal
-{
-static inline void QuantizedConvPerChannel(const ConvParams &, const int32_t *, const int8_t *,
-                                           const int32_t *, const int8_t *, const int32_t *,
-                                           const int32_t *, int8_t *)
-{
-  assert(false && "Not supported yet");
-}
-} // namespace luci_interpreter_pal
+//namespace luci_interpreter_pal
+//{
+//static inline void QuantizedConvPerChannel(const ConvParams &, const int32_t *, const int8_t *,
+//                                           const int32_t *, const int8_t *, const int32_t *,
+//                                           const int32_t *, int8_t *)
+//{
+//  assert(false && "Not supported yet");
+//}
+//} // namespace luci_interpreter_pal
 
 #endif // LUCI_INTERPRETER_PAL_CONV2D_H

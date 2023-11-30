@@ -1,0 +1,72 @@
+/*
+ * Copyright (c) 2023 Samsung Electronics Co., Ltd. All Rights Reserved
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "execute/OMKernelExecutionBuilder.h"
+#include "OMStatus.h"
+#include "execute/OMRuntimeKernel.h"
+#include "core/OMUtils.h"
+#include "core/OMShape.h"
+#include "core/OMDataType.h"
+#include "PALAbs.h"
+
+using namespace onert_micro;
+using namespace onert_micro::execute;
+
+namespace
+{
+
+constexpr uint32_t numInput = 2;
+constexpr uint32_t numOutput = 1;
+
+constexpr uint32_t inputTensorIdx = 0;
+constexpr uint32_t shapeTensorIdx = 1;
+constexpr uint32_t outputTensorIdx = 0;
+
+} // namespace
+
+// NOTE: doesnt currently support dynamic shapes
+OMStatus onert_micro::execute::execute_kernel_CircleReshape(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
+                                                        core::OMKernel &kernel)
+{
+  OMRuntimeKernel runtime_kernel(numInput, numOutput);
+  runtime_kernel.readKernel(kernel, runtime_context);
+
+  const circle::Tensor *input = runtime_kernel.inputs[inputTensorIdx];
+  const circle::Tensor *output = runtime_kernel.outputs[outputTensorIdx];
+
+  assert(input != nullptr);
+  assert(output != nullptr);
+
+  OMStatus status = Ok;
+
+  status = runtime_kernel.getDataFromStorage(kernel, runtime_storage, runtime_context);
+  if (status != Ok)
+    return status;
+
+  uint8_t *input_data = runtime_kernel.inputs_data[inputTensorIdx];
+  uint8_t *output_data = runtime_kernel.outputs_data[outputTensorIdx];
+
+  assert(input_data != nullptr);
+  assert(output_data != nullptr);
+
+  const core::OMShape shape(input);
+
+  const size_t element_size = static_cast<uint32_t>(getOMDataTypeSize(core::onertMicroDatatype(input->type())));
+  const int32_t num_elements = shape.num_elements();
+  std::memcpy(output_data, input_data, num_elements * element_size);
+
+  return status;
+}

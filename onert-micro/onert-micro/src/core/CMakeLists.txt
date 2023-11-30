@@ -16,6 +16,7 @@ set(SOURCES
         OMRuntimeModule.cpp
         OMShape.cpp
         OMUtils.cpp
+        OMDataType.cpp
         memory/OMMemoryManager.cpp
         memory/OMRuntimeAllocator.cpp
         reader/OMCircleReader.cpp)

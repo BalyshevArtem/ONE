@@ -71,6 +71,51 @@ void calculateActivationRangeQuantized(circle::ActivationFunctionType activation
                                        float output_scale, circle::TensorType data_type,
                                        int32_t *activation_min, int32_t *activation_max);
 
+inline int computeOutSize(circle::Padding padding, int image_size,
+                          int filter_size, int stride, int dilation_rate = 1)
+{
+  int effective_filter_size = (filter_size - 1) * dilation_rate + 1;
+
+  if (stride == 0)
+    return 0;
+
+  switch (padding)
+  {
+    case circle::Padding_SAME:
+      return (image_size + stride - 1) / stride;
+    case circle::Padding_VALID:
+      return (image_size + stride - effective_filter_size) / stride;
+    default:
+      return 0;
+  }
+}
+
+inline int computePadding(int stride, int dilation_rate, int in_size,
+                          int filter_size, int out_size)
+{
+  int effective_filter_size = (filter_size - 1) * dilation_rate + 1;
+  int padding = ((out_size - 1) * stride + effective_filter_size - in_size) / 2;
+  return padding > 0 ? padding : 0;
+}
+
+inline void computePaddingHeightWidth(
+  int stride_height, int stride_width, int dilation_rate_height,
+  int dilation_rate_width, int in_height, int in_width, int filter_height,
+  int filter_width, circle::Padding padding, int* padding_h, int* padding_w)
+{
+
+  int out_width =
+    computeOutSize(padding, in_width, filter_width, stride_width, dilation_rate_width);
+  int out_height =
+    computeOutSize(padding, in_height, filter_height, stride_height, dilation_rate_height);
+
+  *padding_h = computePadding(stride_height, dilation_rate_height, in_height,
+                             filter_height, out_height);
+
+  *padding_w = computePadding(stride_width, dilation_rate_width, in_width,
+                                                  filter_width, out_width);
+}
+
 } // execute
 } // namespace onert_micro
 
