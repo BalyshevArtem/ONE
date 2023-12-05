@@ -88,7 +88,7 @@ void calculateOpDataConv2D(core::OMKernel &kernel, const circle::Tensor *input,
 OMStatus onert_micro::import::configure_kernel_CircleConv2D(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
                                                             core::OMKernel &kernel, const OMConfig &configs)
 {
-  execute::OMRuntimeKernel runtime_kernel(numInput, numOutput);
+  execute::OMRuntimeKernel runtime_kernel;
   runtime_kernel.readKernel(kernel, runtime_context);
 
   const circle::Tensor *input = runtime_kernel.inputs[inputTensorIdx];
@@ -139,8 +139,6 @@ OMStatus onert_micro::import::configure_kernel_CircleConv2D(core::OMRuntimeStora
   const int input_height = input_shape.dim(1); //input->dims->data[1];
   const int weight_width = weight_shape.dim(2);// filter->dims->data[2];
   const int weight_height = weight_shape.dim(1); //filter->dims->data[1];
-  const int output_width = output_shape.dim(2); //output->dims->data[2];
-  const int output_height = output_shape.dim(1); //output->dims->data[1];
   execute::computePaddingHeightWidth(option->stride_h(), option->stride_w(), option->dilation_h_factor(),
                           option->dilation_w_factor(), input_height, input_width, weight_height, weight_width,
                                      option->padding(), &padding_h, &padding_w);

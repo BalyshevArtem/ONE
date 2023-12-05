@@ -15,29 +15,32 @@
  * limitations under the License.
  */
 
-#ifndef LUCI_INTERPRETER_PAL_CONCATENATION_H
-#define LUCI_INTERPRETER_PAL_CONCATENATION_H
+#ifndef ONERT_MICRO_EXECUTE_PAL_CONCATENATION_H
+#define ONERT_MICRO_EXECUTE_PAL_CONCATENATION_H
 
 #include "Params.h"
 #include "PALUtils.h"
 
-namespace luci_interpreter_pal
+namespace onert_micro
 {
-
+namespace execute
+{
+namespace pal
+{
 template <typename Scalar>
-inline void Concatenation(const ConcatenationParams &params,
-                          const luci_interpreter::RuntimeShape *const *input_shapes,
-                          const Scalar *const *input_data,
-                          const luci_interpreter::RuntimeShape &output_shape, Scalar *output_data)
+OMStatus Concatenation(core::ConcatenationParams &params,
+                          std::vector<uint32_t> &input_shapes,
+                          std::vector<const Scalar *> &input_data,
+                          const core::OMRuntimeShape &output_shape, Scalar *output_data)
 {
   int axis = params.axis;
-  int inputs_count = params.inputs_count;
+  int inputs_count = params.num_inputs;
   const int concat_dimensions = output_shape.dimensionsCount();
 
   int64_t concat_size = 0;
   for (int i = 0; i < inputs_count; i++)
   {
-    concat_size += input_shapes[i]->dims(axis);
+    concat_size += input_shapes[i];//.dims(axis);
   }
   int64_t outer_size = 1;
   for (int i = 0; i < axis; ++i)
@@ -57,14 +60,18 @@ inline void Concatenation(const ConcatenationParams &params,
   {
     for (int i = 0; i < inputs_count; ++i)
     {
-      const int copy_size = input_shapes[i]->dims(axis) * base_inner_size;
+      const int copy_size = input_shapes[i] * base_inner_size;//->dims(axis) * base_inner_size;
       const Scalar *input_ptr = input_data[i] + k * copy_size;
       memcpy(output_ptr, input_ptr, copy_size * sizeof(Scalar));
       output_ptr += copy_size;
     }
   }
+
+  return Ok;
 }
 
-} // namespace luci_interpreter_pal
+} // namespace pal
+} // namespace execute
+} // namespace onert_micro
 
-#endif // LUCI_INTERPRETER_PAL_CONCATENATION_H
+#endif // ONERT_MICRO_EXECUTE_PAL_CONCATENATION_H

@@ -59,7 +59,7 @@ OMStatus onert_micro::execute::execute_kernel_CircleFullyConnected(core::OMRunti
   const circle::FullyConnectedOptions *options;
   // Read kernel
   {
-    execute::OMRuntimeKernel runtime_kernel(numInput, numOutput);
+    execute::OMRuntimeKernel runtime_kernel;
     runtime_kernel.readKernel(kernel, runtime_context);
 
     input = runtime_kernel.inputs[inputTensorIdx];

@@ -19,7 +19,7 @@
 #include "execute/OMRuntimeKernel.h"
 #include "core/OMUtils.h"
 #include "core/OMShape.h"
-#include "PALAbs.h"
+#include "PALLogistic.h"
 
 using namespace onert_micro;
 using namespace onert_micro::execute;
@@ -33,8 +33,8 @@ constexpr uint32_t outputTensorIdx = 0;
 } // namespace
 
 // NOTE: doesnt currently support dynamic shapes
-OMStatus onert_micro::execute::execute_kernel_CircleAbs(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                  core::OMKernel &kernel)
+OMStatus onert_micro::execute::execute_kernel_CircleLogistic(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
+                                                        core::OMKernel &kernel)
 {
   const circle::Tensor *input = nullptr;
   const circle::Tensor *output = nullptr;
@@ -68,12 +68,38 @@ OMStatus onert_micro::execute::execute_kernel_CircleAbs(core::OMRuntimeStorage &
   switch (input->type())
   {
 #ifndef DIS_FLOAT
-    case circle::TensorType_FLOAT32:
-      status = pal::Abs(core::OMRuntimeShape(input), core::utils::castInputData<float>(input_data),
-               core::utils::castOutputData<float>(output_data));
-      break;
+    case circle::TensorType_FLOAT32: {
+      status = pal::Logistic(core::OMRuntimeShape(input).flatSize(),
+                             core::utils::castInputData<float>(input_data),
+                             core::utils::castOutputData<float>(output_data));
+    }
+    break;
+    case circle::TensorType_INT8: {
+      assert(input->quantization() != nullptr);
+      assert(input->quantization()->scale() != nullptr);
+      assert(input->quantization()->scale()->size() == 1);
+      assert(input->quantization()->zero_point() != nullptr);
+      assert(input->quantization()->zero_point()->size() == 1);
+
+      assert(output->quantization() != nullptr);
+      assert(output->quantization()->scale() != nullptr);
+      assert(output->quantization()->scale()->size() == 1);
+      assert(output->quantization()->zero_point() != nullptr);
+      assert(output->quantization()->zero_point()->size() == 1);
+
+      auto input_scale = *input->quantization()->scale()->begin();
+      auto input_zero_point = *input->quantization()->zero_point()->begin();
+      auto output_scale = *input->quantization()->scale()->begin();
+      auto output_zero_point = *input->quantization()->zero_point()->begin();
+
+      status = pal::Logistic(core::OMRuntimeShape(input).flatSize(),
+                             core::utils::castInputData<int8_t>(input_data), input_scale,
+                             input_zero_point, core::utils::castOutputData<int8_t>(output_data),
+                             output_scale, output_zero_point);
+    }
+    break;
 #endif // DIS_FLOAT
-      default: {
+    default: {
       status = UnsupportedType;
       assert(false && "Unsupported type.");
     }

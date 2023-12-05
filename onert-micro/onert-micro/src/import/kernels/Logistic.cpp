@@ -26,18 +26,14 @@ using namespace onert_micro::core;
 namespace
 {
 
-constexpr uint32_t numInput = 2;
-constexpr uint32_t numOutput = 1;
-
 constexpr uint32_t inputTensorIdx = 0;
-constexpr uint32_t shapeTensorIdx = 1;
 constexpr uint32_t outputTensorIdx = 0;
 
 } // namespace
 
 
-OMStatus onert_micro::import::configure_kernel_CircleReshape(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                                            core::OMKernel &kernel, const OMConfig&)
+OMStatus onert_micro::import::configure_kernel_CircleLogistic(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
+                                                         core::OMKernel &kernel, const OMConfig&)
 {
   onert_micro::execute::OMRuntimeKernel runtime_kernel;
 
@@ -46,28 +42,40 @@ OMStatus onert_micro::import::configure_kernel_CircleReshape(core::OMRuntimeStor
     return status;
 
   const circle::Tensor *input = runtime_kernel.inputs[inputTensorIdx];
-  const circle::Tensor *shape = runtime_kernel.inputs[shapeTensorIdx];
   const circle::Tensor *output = runtime_kernel.outputs[outputTensorIdx];
 
   assert(input != nullptr);
-  assert(shape != nullptr);
   assert(output != nullptr);
 
   status = utils::checkCondition(input->type() == output->type());
   if (status != Ok)
     return status;
 
-  // Now only static shapes
-  // TODO: check dynamic shapes
-  status = utils::checkCondition(runtime_context.getCircleReader().isConstTensor(runtime_kernel.inputs_index[shapeTensorIdx]));
-  assert(status == Ok);
-  if (status != Ok)
-    return status;
-
   OMShape input_shape(input);
   OMShape output_shape(output);
 
+  status = utils::checkCondition(input_shape.rank() == output_shape.rank());
+  if (status != Ok)
+    return status;
+
   status = utils::checkCondition(input_shape.num_elements() == output_shape.num_elements());
+  if (status != Ok)
+    return status;
+
+  if (input->type() != circle::TensorType_INT8 and input->type() != circle::TensorType_INT16
+                                                   and input->type() != circle::TensorType_UINT8)
+    return status;
+
+  // Check quantized version
+  if (input->quantization() == nullptr or output->quantization() == nullptr)
+    return NoQuantization;
+
+  if (output->quantization()->scale() == nullptr or output->quantization()->scale()->size() != 1)
+    return NoQuantization;
+
+  if (input->quantization()->scale() == nullptr or input->quantization()->scale()->size() != 1)
+    return NoQuantization;
+
 
   return status;
 }

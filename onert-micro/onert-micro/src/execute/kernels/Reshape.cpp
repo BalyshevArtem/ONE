@@ -41,7 +41,7 @@ constexpr uint32_t outputTensorIdx = 0;
 OMStatus onert_micro::execute::execute_kernel_CircleReshape(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
                                                         core::OMKernel &kernel)
 {
-  OMRuntimeKernel runtime_kernel(numInput, numOutput);
+  OMRuntimeKernel runtime_kernel;
   runtime_kernel.readKernel(kernel, runtime_context);
 
   const circle::Tensor *input = runtime_kernel.inputs[inputTensorIdx];

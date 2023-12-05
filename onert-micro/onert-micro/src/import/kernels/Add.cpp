@@ -26,9 +26,6 @@ using namespace onert_micro::core;
 namespace
 {
 
-constexpr uint32_t numInput = 2;
-constexpr uint32_t numOutput = 1;
-
 constexpr uint32_t input1TensorIdx = 0;
 constexpr uint32_t input2TensorIdx = 1;
 constexpr uint32_t outputTensorIdx = 0;
@@ -39,7 +36,7 @@ constexpr uint32_t outputTensorIdx = 0;
 OMStatus onert_micro::import::configure_kernel_CircleAdd(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
                                                          core::OMKernel &kernel, const OMConfig&)
 {
-  onert_micro::execute::OMRuntimeKernel runtime_kernel(numInput, numOutput);
+  onert_micro::execute::OMRuntimeKernel runtime_kernel;
 
   OMStatus status = runtime_kernel.readKernel(kernel, runtime_context);
   if (status != Ok)

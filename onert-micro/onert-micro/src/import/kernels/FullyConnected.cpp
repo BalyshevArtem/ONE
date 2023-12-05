@@ -86,7 +86,7 @@ void calculateOpDataFullyConnected(core::OMKernel &kernel, const circle::Tensor 
 OMStatus onert_micro::import::configure_kernel_CircleFullyConnected(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
                                                                     core::OMKernel &kernel, const OMConfig &configs)
 {
-  execute::OMRuntimeKernel runtime_kernel(numInput, numOutput);
+  execute::OMRuntimeKernel runtime_kernel;
   runtime_kernel.readKernel(kernel, runtime_context);
 
   const circle::Tensor *input = runtime_kernel.inputs[inputTensorIdx];

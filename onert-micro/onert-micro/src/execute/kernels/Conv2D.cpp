@@ -59,8 +59,10 @@ OMStatus onert_micro::execute::execute_kernel_CircleConv2D(core::OMRuntimeStorag
   const circle::Conv2DOptions *options;
   // Read kernel
   {
-    execute::OMRuntimeKernel runtime_kernel(numInput, numOutput);
-    runtime_kernel.readKernel(kernel, runtime_context);
+    execute::OMRuntimeKernel runtime_kernel;
+    OMStatus status = runtime_kernel.readKernel(kernel, runtime_context);
+    if (status != Ok)
+      return status;
 
     input = runtime_kernel.inputs[inputTensorIdx];
     weight = runtime_kernel.inputs[weightTensorIdx];
@@ -70,7 +72,9 @@ OMStatus onert_micro::execute::execute_kernel_CircleConv2D(core::OMRuntimeStorag
     // Bias can be nullptr
     assert(output != nullptr);
 
-    runtime_kernel.getDataFromStorage(kernel, runtime_storage, runtime_context);
+    status = runtime_kernel.getDataFromStorage(kernel, runtime_storage, runtime_context);
+    if (status != Ok)
+      return status;
 
     input_data = runtime_kernel.inputs_data[inputTensorIdx];
     weight_data = runtime_kernel.inputs_data[weightTensorIdx];

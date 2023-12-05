@@ -15,17 +15,21 @@
  * limitations under the License.
  */
 
-#ifndef LUCI_INTERPRETER_PAL_MAX_POOL_2D_COMMON_H
-#define LUCI_INTERPRETER_PAL_MAX_POOL_2D_COMMON_H
+#ifndef ONERT_MICRO_EXECUTE_PAL_MAX_POOL_2D_COMMON_H
+#define ONERT_MICRO_EXECUTE_PAL_MAX_POOL_2D_COMMON_H
 
 #include "Params.h"
 #include "PALUtils.h"
 
-namespace luci_interpreter_pal
+namespace onert_micro
+{
+namespace execute
+{
+namespace pal
 {
 
-inline void MaxPool(const PoolParams &params, const luci_interpreter::RuntimeShape &input_shape,
-                    const float *input_data, const luci_interpreter::RuntimeShape &output_shape,
+OMStatus MaxPool(const core::Pool2DParams &params, const core::OMRuntimeShape &input_shape,
+                    const float *input_data, const core::OMRuntimeShape &output_shape,
                     float *output_data)
 {
   const int batches = input_shape.dims(0);
@@ -34,8 +38,8 @@ inline void MaxPool(const PoolParams &params, const luci_interpreter::RuntimeSha
   const int input_width = input_shape.dims(2);
   const int output_height = output_shape.dims(1);
   const int output_width = output_shape.dims(2);
-  const int stride_height = params.stride_height;
-  const int stride_width = params.stride_width;
+  const int stride_height = params.stride_h;
+  const int stride_width = params.stride_w;
   for (int batch = 0; batch < batches; ++batch)
   {
     for (int out_y = 0; out_y < output_height; ++out_y)
@@ -44,14 +48,14 @@ inline void MaxPool(const PoolParams &params, const luci_interpreter::RuntimeSha
       {
         for (int channel = 0; channel < depth; ++channel)
         {
-          const int in_x_origin = (out_x * stride_width) - params.padding_values.width;
-          const int in_y_origin = (out_y * stride_height) - params.padding_values.height;
+          const int in_x_origin = (out_x * stride_width) - params.pad_w;
+          const int in_y_origin = (out_y * stride_height) - params.pad_h;
           // Compute the boundaries of the filter region clamped so as to
           // ensure that the filter window fits in the input array.
           const int filter_x_start = std::max(0, -in_x_origin);
-          const int filter_x_end = std::min(params.filter_width, input_width - in_x_origin);
+          const int filter_x_end = std::min(params.filter_w, input_width - in_x_origin);
           const int filter_y_start = std::max(0, -in_y_origin);
-          const int filter_y_end = std::min(params.filter_height, input_height - in_y_origin);
+          const int filter_y_end = std::min(params.filter_h, input_height - in_y_origin);
           float max = std::numeric_limits<float>::lowest();
           for (int filter_y = filter_y_start; filter_y < filter_y_end; ++filter_y)
           {
@@ -74,13 +78,16 @@ inline void MaxPool(const PoolParams &params, const luci_interpreter::RuntimeSha
             channel;
 
           output_data[output_data_offset] =
-            std::min(std::max(max, params.float_activation_min), params.float_activation_max);
+            std::min(std::max(max, params.activation_min), params.activation_max);
         }
       }
     }
   }
+  return Ok;
 }
 
-} // namespace luci_interpreter_pal
+} // namespace onert_micro
+} // namespace execute
+} // namespace pal
 
-#endif // LUCI_INTERPRETER_PAL_MAX_POOL_2D_COMMON_H
+#endif // ONERT_MICRO_EXECUTE_PAL_MAX_POOL_2D_COMMON_H

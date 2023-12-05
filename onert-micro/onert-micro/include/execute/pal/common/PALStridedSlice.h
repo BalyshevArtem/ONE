@@ -15,12 +15,16 @@
  * limitations under the License.
  */
 
-#ifndef LUCI_INTERPRETER_PAL_STRIDED_SLICE_H
-#define LUCI_INTERPRETER_PAL_STRIDED_SLICE_H
+#ifndef ONERT_MICRO_EXECUTE_PAL_STRIDED_SLICE_H
+#define ONERT_MICRO_EXECUTE_PAL_STRIDED_SLICE_H
 
 #include "Params.h"
 
-namespace luci_interpreter_pal
+namespace onert_micro
+{
+namespace execute
+{
+namespace pal
 {
 
 namespace
@@ -46,8 +50,8 @@ inline bool loopCondition(int index, int stop, int stride)
 // element. ie. So if you were iterating through all elements of a 1D array of
 // size 4, this function would return 4 as the stop, because it is one past the
 // "real" indices of 0, 1, 2 & 3.
-inline int stopForAxis(const StridedSliceParams &params,
-                       const luci_interpreter::RuntimeShape &input_shape, int axis,
+inline int stopForAxis(const core::StridedSliceParams &params,
+                       const core::OMRuntimeShape &input_shape, int axis,
                        int start_for_axis)
 {
   const auto end_mask = params.end_mask;
@@ -115,8 +119,8 @@ inline int stopForAxis(const StridedSliceParams &params,
 // Return the index for the first element along that axis. This index will be a
 // positive integer between [0, axis_size] (or [-1, axis_size -1] if stride < 0)
 // that can be used to index directly into the data.
-inline int startForAxis(const StridedSliceParams &params,
-                        const luci_interpreter::RuntimeShape &input_shape, int axis)
+inline int startForAxis(const core::StridedSliceParams &params,
+                        const core::OMRuntimeShape &input_shape, int axis)
 {
   const auto begin_mask = params.begin_mask;
   const auto *start_indices = params.start_indices;
@@ -167,7 +171,7 @@ inline int startForAxis(const StridedSliceParams &params,
   return start;
 }
 
-inline void stridedSlicePadIndices(StridedSliceParams *p, int dim_count)
+inline void stridedSlicePadIndices(core::StridedSliceParams *p, int dim_count)
 {
   const int pad_count = dim_count - p->start_indices_count;
 
@@ -202,12 +206,12 @@ inline void stridedSlicePadIndices(StridedSliceParams *p, int dim_count)
 } // namespace
 
 template <typename T>
-inline void StridedSlice(StridedSliceParams &op_params,
-                         const luci_interpreter::RuntimeShape &unextended_input_shape,
+OMStatus StridedSlice(core::StridedSliceParams &op_params,
+                         const core::OMRuntimeShape &unextended_input_shape,
                          const T *input_data, T *output_data)
 {
-  const luci_interpreter::RuntimeShape input_shape =
-    luci_interpreter::RuntimeShape::extendedShape(5, unextended_input_shape);
+  const core::OMRuntimeShape input_shape =
+    core::OMRuntimeShape::extendedShape(5, unextended_input_shape);
 
   // Reverse and pad to 5 dimensions because that is what the runtime code
   // requires (ie. all shapes must be 5D and are given backwards).
@@ -253,8 +257,12 @@ inline void StridedSlice(StridedSliceParams &op_params,
       }
     }
   }
+  return Ok;
 }
 
-} // namespace luci_interpreter_pal
+} // namespace pal
+} // namespace execute
+} // namespace onert_micro
 
-#endif // LUCI_INTERPRETER_PAL_STRIDED_SLICE_H
+
+#endif // ONERT_MICRO_EXECUTE_PAL_STRIDED_SLICE_H

@@ -54,7 +54,7 @@ OMStatus onert_micro::execute::execute_kernel_CircleMul(core::OMRuntimeStorage &
   const circle::MulOptions *options;
   // Read kernel
   {
-    execute::OMRuntimeKernel runtime_kernel(numInput, numOutput);
+    execute::OMRuntimeKernel runtime_kernel;
     runtime_kernel.readKernel(kernel, runtime_context);
 
     input1 = runtime_kernel.inputs[input1TensorIdx];

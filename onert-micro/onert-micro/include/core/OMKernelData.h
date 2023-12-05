@@ -51,6 +51,65 @@ struct DataMul
   // empty
 };
 
+struct DataConcatenation
+{
+  // empty
+};
+
+struct ConcatenationParams
+{
+  uint32_t num_inputs;
+  uint32_t axis;
+};
+
+struct DataMaxPool2D
+{
+  int32_t padding_h = 0;
+  int32_t padding_w = 0;
+};
+
+struct Pool2DParams
+{
+  int32_t stride_w;
+  int32_t stride_h;
+  int32_t dilation_width_factor;
+  int32_t dilation_height_factor;
+  int32_t filter_h;
+  int32_t filter_w;
+  int32_t pad_h;
+  int32_t pad_w;
+  float activation_min;
+  float activation_max;
+  int32_t quantized_activation_min;
+  int32_t quantized_activation_max;
+};
+
+struct DataStridedSlice
+{
+  // Empty
+};
+
+struct DataLogistic
+{
+  // Empty
+};
+
+struct StridedSliceParams
+{
+  int8_t start_indices_count;
+  int32_t start_indices[5];
+  int8_t stop_indices_count;
+  int32_t stop_indices[5];
+  int8_t strides_count;
+  int32_t strides[5];
+
+  int16_t begin_mask;
+  int16_t ellipsis_mask;
+  int16_t end_mask;
+  int16_t new_axis_mask;
+  int16_t shrink_axis_mask;
+};
+
 struct BinaryArithmeticBroadcastParams
 {
   // float activation params.

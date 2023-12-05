@@ -16,9 +16,11 @@
 
 #include "import/OMKernelConfigureBuilder.h"
 #include "core/OMUtils.h"
+#include "execute/OMUtils.h"
+#include "core/OMShape.h"
+#include "core/OMKernelData.h"
 #include "OMStatus.h"
 #include "execute/OMRuntimeKernel.h"
-#include "core/OMShape.h"
 
 using namespace onert_micro;
 using namespace onert_micro::core;
@@ -26,48 +28,44 @@ using namespace onert_micro::core;
 namespace
 {
 
-constexpr uint32_t numInput = 2;
-constexpr uint32_t numOutput = 1;
-
 constexpr uint32_t inputTensorIdx = 0;
-constexpr uint32_t shapeTensorIdx = 1;
+constexpr uint32_t beginTensorIdx = 1;
+constexpr uint32_t endTensorIdx = 2;
+constexpr uint32_t stridesTensorIdx = 3;
+
 constexpr uint32_t outputTensorIdx = 0;
 
 } // namespace
 
-
-OMStatus onert_micro::import::configure_kernel_CircleReshape(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                                            core::OMKernel &kernel, const OMConfig&)
+OMStatus onert_micro::import::configure_kernel_CircleStridedSlice(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
+                                                            core::OMKernel &kernel, const OMConfig &configs)
 {
-  onert_micro::execute::OMRuntimeKernel runtime_kernel;
-
+  execute::OMRuntimeKernel runtime_kernel;
   OMStatus status = runtime_kernel.readKernel(kernel, runtime_context);
   if (status != Ok)
     return status;
 
   const circle::Tensor *input = runtime_kernel.inputs[inputTensorIdx];
-  const circle::Tensor *shape = runtime_kernel.inputs[shapeTensorIdx];
+  const circle::Tensor *begin = runtime_kernel.inputs[beginTensorIdx];
+  const circle::Tensor *end = runtime_kernel.inputs[endTensorIdx];
+  const circle::Tensor *strides = runtime_kernel.inputs[stridesTensorIdx];
+
   const circle::Tensor *output = runtime_kernel.outputs[outputTensorIdx];
 
   assert(input != nullptr);
-  assert(shape != nullptr);
+  assert(begin != nullptr);
+  assert(end != nullptr);
+  assert(strides != nullptr);
   assert(output != nullptr);
 
   status = utils::checkCondition(input->type() == output->type());
   if (status != Ok)
     return status;
 
-  // Now only static shapes
-  // TODO: check dynamic shapes
-  status = utils::checkCondition(runtime_context.getCircleReader().isConstTensor(runtime_kernel.inputs_index[shapeTensorIdx]));
-  assert(status == Ok);
+  status = utils::checkCondition(begin->type() == circle::TensorType_INT32 and end->type() == circle::TensorType_INT32 and
+                                 strides->type() == circle::TensorType_INT32);
   if (status != Ok)
     return status;
-
-  OMShape input_shape(input);
-  OMShape output_shape(output);
-
-  status = utils::checkCondition(input_shape.num_elements() == output_shape.num_elements());
 
   return status;
 }

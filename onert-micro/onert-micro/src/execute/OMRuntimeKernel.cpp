@@ -19,13 +19,6 @@
 using namespace onert_micro::execute;
 using namespace onert_micro;
 
-onert_micro::execute::OMRuntimeKernel::OMRuntimeKernel(uint32_t inputs_num, uint32_t outputs_num):
-                                                                                                    inputs_num(inputs_num),
-                                                                                                    outputs_num(outputs_num)
-{
-  // Do nothing
-}
-
 OMStatus onert_micro::execute::OMRuntimeKernel::readKernel(core::OMKernel &kernel, core::OMRuntimeContext &runtime_context)
 {
   const std::vector<uint16_t> &kernel_operators = kernel.getKernelOperators();
@@ -36,10 +29,16 @@ OMStatus onert_micro::execute::OMRuntimeKernel::readKernel(core::OMKernel &kerne
   first_operator = runtime_context.getCircleOperatorAt(first_operator_index);
   const circle::Operator *last_operator = runtime_context.getCircleOperatorAt(last_operator_index);
 
-  if (inputs_num != first_operator->inputs()->size() or inputs_num >= maxInputSize)
+  inputs_num = first_operator->inputs()->size();
+  assert(inputs_num < maxInputSize);
+
+  if (inputs_num >= maxInputSize)
     return UnknownError;
 
-  if (outputs_num != first_operator->outputs()->size() or outputs_num >= maxOutputSize)
+  outputs_num = last_operator->outputs()->size();
+  assert(outputs_num < maxOutputSize);
+
+  if (outputs_num >= maxOutputSize)
     return UnknownError;
 
   assert(inputs_num > 0 and outputs_num > 0);

@@ -24,36 +24,21 @@
 using namespace onert_micro;
 using namespace onert_micro::core;
 
-namespace
-{
-
-constexpr uint32_t numOutput = 1;
-
-} // namespace
-
-
 OMStatus onert_micro::import::configure_kernel_CircleConcatenation(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
                                                                   core::OMKernel &kernel, const OMConfig&)
 {
-  const auto cur_op_index = kernel.getKernelOperators().front();
-  const auto cur_op = runtime_context.getCircleOperatorAt(cur_op_index);
+  onert_micro::execute::OMRuntimeKernel runtime_kernel;
 
-  if (cur_op == nullptr)
-    return UnknownError;
+  OMStatus status = runtime_kernel.readKernel(kernel, runtime_context);
+  if (status != Ok)
+    return status;
 
-  const int num_inputs = cur_op->inputs()->size();
-  assert(num_inputs > 0);
+  const int num_inputs = runtime_kernel.inputs_num;
 
-  auto input_index = cur_op->inputs()->operator[](0);
-  auto output_index = cur_op->outputs()->operator[](0);
+  const auto *t0 = runtime_kernel.inputs[0];
+  const auto *output = runtime_kernel.outputs[0];
 
-  assert(input_index != -1);
-  assert(output_index != -1);
-
-  const auto *t0 = runtime_context.getTensorByIndex(input_index);
-  const auto *output = runtime_context.getTensorByIndex(output_index);
-
-  const auto *params = cur_op->builtin_options_as_ConcatenationOptions();
+  const auto *params = runtime_kernel.first_operator->builtin_options_as_ConcatenationOptions();
 
   // TODO: Support concat with fused activation function
   if (params->fused_activation_function() != circle::ActivationFunctionType_NONE)
@@ -69,8 +54,7 @@ OMStatus onert_micro::import::configure_kernel_CircleConcatenation(core::OMRunti
 
   for (int i = 1; i < num_inputs; ++i)
   {
-    input_index = cur_op->inputs()->operator[](i);
-    const auto *tensor = runtime_context.getTensorByIndex(input_index);
+    const auto *tensor = runtime_kernel.inputs[i];
     if (tensor->type() != t0->type())
       return FailedCheckCondition;
 
@@ -88,8 +72,7 @@ OMStatus onert_micro::import::configure_kernel_CircleConcatenation(core::OMRunti
   // should be the same
   for (int i = 0; i < num_inputs; ++i)
   {
-    input_index = cur_op->inputs()->operator[](i);
-    const auto *tensor = runtime_context.getTensorByIndex(input_index);
+    const auto *tensor = runtime_kernel.inputs[i];
 
     if (tensor->quantization() == nullptr)
       return FailedCheckCondition;

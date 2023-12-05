@@ -15,16 +15,22 @@
  * limitations under the License.
  */
 
-#ifndef LUCI_INTERPRETER_PAL_LOGISTIC_H
-#define LUCI_INTERPRETER_PAL_LOGISTIC_H
+#ifndef ONERT_MICRO_EXECUTE_PAL_LOGISTIC_H
+#define ONERT_MICRO_EXECUTE_PAL_LOGISTIC_H
 
 #include "Params.h"
 #include "PALUtils.h"
 
-namespace luci_interpreter_pal
+#include <cmath>
+
+namespace onert_micro
+{
+namespace execute
+{
+namespace pal
 {
 
-inline void Logistic(const int flat_size, const float *input_data, float *output_data)
+OMStatus Logistic(const int flat_size, const float *input_data, float *output_data)
 {
   const float cutoff_upper = 16.619047164916992188f;
   const float cutoff_lower = -9.f;
@@ -55,9 +61,10 @@ inline void Logistic(const int flat_size, const float *input_data, float *output
     }
     output_data[i] = result;
   }
+  return Ok;
 }
 
-inline void Logistic(const int flat_size, const int8_t *input_data, float input_scale,
+OMStatus Logistic(const int flat_size, const int8_t *input_data, float input_scale,
                      int input_zero_point, int8_t *output_data, float output_scale,
                      int output_zero_point)
 {
@@ -93,10 +100,11 @@ inline void Logistic(const int flat_size, const int8_t *input_data, float input_
     int8_t output = static_cast<int8_t>(result / output_scale + output_zero_point);
     output_data[i] = output;
   }
+  return Ok;
 }
 
-inline void Logistic(int32_t input_multiplier, int32_t input_left_shift, int32_t input_size,
-                     const int16_t *ptr_input_data, int16_t *ptr_output_data)
+OMStatus Logistic(int32_t input_multiplier, int32_t input_left_shift, int32_t input_size,
+                  const int16_t *ptr_input_data, int16_t *ptr_output_data)
 {
   // We use the LUT for sigmoid and take into account, that
   // tanh(x) = 2*sigmoid(2*x) - 1
@@ -149,8 +157,11 @@ inline void Logistic(int32_t input_multiplier, int32_t input_left_shift, int32_t
 
     *ptr_output_data = result;
   }
+  return Ok;
 }
 
-} // namespace luci_interpreter_pal
+} // namespace pal
+} // namespace execute
+} // namespace onert_micro
 
-#endif // LUCI_INTERPRETER_PAL_LOGISTIC_H
+#endif // ONERT_MICRO_EXECUTE_PAL_LOGISTIC_H

@@ -35,8 +35,7 @@ namespace execute
 class OMRuntimeKernel
 {
 public:
-  OMRuntimeKernel() = delete;
-  OMRuntimeKernel(uint32_t inputs_num, uint32_t outputs_num);
+  OMRuntimeKernel() = default;
   OMRuntimeKernel(const OMRuntimeKernel &) = delete;
   OMRuntimeKernel(OMRuntimeKernel&&) = delete;
   ~OMRuntimeKernel() = default;
