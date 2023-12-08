@@ -34,10 +34,10 @@ namespace pal
 {
 
 template <typename InputType, typename WeightType, typename OutputType, typename BiasType>
-OMStatus FullyConnected(const core::QuantFullyConnected *params,
-                           const InputType *input_data, const core::OMRuntimeShape &filter_shape,
-                           const WeightType *filter_data, const BiasType *bias_data,
-                           const core::OMRuntimeShape &output_shape, OutputType *output_data)
+inline OMStatus FullyConnected(const core::FullyConnectedParams *params,
+                        const InputType *input_data, const core::OMRuntimeShape &filter_shape,
+                        const WeightType *filter_data, const BiasType *bias_data,
+                        const core::OMRuntimeShape &output_shape, OutputType *output_data)
 {
   const int32_t input_offset = params->input_offset;
   const int32_t filter_offset = params->weights_offset;
@@ -81,7 +81,8 @@ OMStatus FullyConnected(const core::QuantFullyConnected *params,
   return Ok;
 }
 
-OMStatus FullyConnectedFloat(const core::FloatFullyConnected *params,
+template <>
+inline OMStatus FullyConnected<float>(const core::FullyConnectedParams *params,
                                     const float *input_data,  const core::OMRuntimeShape &filter_shape,
                                     const float *filter_data, const float *bias_data,
                                     const core::OMRuntimeShape &output_shape, float *output_data)
@@ -89,7 +90,8 @@ OMStatus FullyConnectedFloat(const core::FloatFullyConnected *params,
   const float output_activation_min = params->float_activation_min;
   const float output_activation_max = params->float_activation_max;
 
-  const int batches = flatSizeSkipDim(output_shape.dimsData(), output_shape.dimensionsCount() - 1, output_shape.dimensionsCount());
+  const int batches = flatSizeSkipDim(output_shape.dimsData(), output_shape.dimensionsCount() - 1,
+                                      output_shape.dimensionsCount());
   const int output_depth = output_shape.dims(output_shape.dimensionsCount() - 1);
   const int accum_depth = filter_shape.dims(filter_shape.dimensionsCount() - 1);
 

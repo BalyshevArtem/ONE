@@ -105,7 +105,7 @@ OMStatus onert_micro::import::configure_kernel_CircleUnidirectionalSequenceLSTM(
 {
  OMStatus status = Ok;
 
-  execute::lstm::LSTMStruct lstm_struct;
+  execute::lstm::LSTMStruct lstm_struct{};
 
   status = lstm_struct.readKernel(kernel, runtime_storage, runtime_context);
   if (status != Ok)

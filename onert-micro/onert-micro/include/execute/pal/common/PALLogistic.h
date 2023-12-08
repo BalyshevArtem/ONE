@@ -30,7 +30,7 @@ namespace execute
 namespace pal
 {
 
-OMStatus Logistic(const int flat_size, const float *input_data, float *output_data)
+inline OMStatus Logistic(const int flat_size, const float *input_data, float *output_data)
 {
   const float cutoff_upper = 16.619047164916992188f;
   const float cutoff_lower = -9.f;
@@ -64,7 +64,7 @@ OMStatus Logistic(const int flat_size, const float *input_data, float *output_da
   return Ok;
 }
 
-OMStatus Logistic(const int flat_size, const int8_t *input_data, float input_scale,
+inline OMStatus Logistic(const int flat_size, const int8_t *input_data, float input_scale,
                      int input_zero_point, int8_t *output_data, float output_scale,
                      int output_zero_point)
 {
@@ -103,7 +103,7 @@ OMStatus Logistic(const int flat_size, const int8_t *input_data, float input_sca
   return Ok;
 }
 
-OMStatus Logistic(int32_t input_multiplier, int32_t input_left_shift, int32_t input_size,
+inline OMStatus Logistic(int32_t input_multiplier, int32_t input_left_shift, int32_t input_size,
                   const int16_t *ptr_input_data, int16_t *ptr_output_data)
 {
   // We use the LUT for sigmoid and take into account, that

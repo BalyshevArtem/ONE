@@ -15,75 +15,80 @@
  * limitations under the License.
  */
 
-#ifndef LUCI_INTERPRETER_PAL_TANH_H
-#define LUCI_INTERPRETER_PAL_TANH_H
+#ifndef ONERT_MICRO_EXECUTE_PAL_TANH_H
+#define ONERT_MICRO_EXECUTE_PAL_TANH_H
 
 #include "PALUtils.h"
+#include <cmath>
 
-namespace luci_interpreter_pal
+namespace onert_micro
+{
+namespace execute
+{
+namespace pal
 {
 
-inline void Tanh(const int flat_size, const float *input_data, float *output_data)
-{
-  for (int i = 0; i < flat_size; i++)
+  inline void Tanh(const int flat_size, const float *input_data, float *output_data)
   {
-    float val = input_data[i];
-    float result = std::tanh(val);
-    output_data[i] = result;
-  }
-}
-
-inline void Tanh(int32_t input_multiplier, int32_t input_left_shift, const int flat_size,
-                 const int16_t *ptr_input_data, int16_t *ptr_output_data)
-{
-  // We use the LUT for sigmoid and take into account, that
-  // tanh(x) = 2*sigmoid(2*x) - 1
-
-  // We scale by 3/4 to expand range [-8,8]->[-10.7,10.7].
-  // In case of general parameter scale, multiplier 3 is taken into account
-  // in TanhPrepare function and it is included in
-  // input_multiplier already.
-
-  if (input_multiplier == 0)
-  { // power of two case
-    input_multiplier = 3 << input_left_shift;
-    input_left_shift = 0;
-  }
-
-  int32_t round = (input_left_shift > 0) ? 1 << (input_left_shift - 1) : 0;
-
-  for (int i = 0; i < flat_size; ++i, ptr_input_data++, ptr_output_data++)
-  {
-    int32_t input_data = ((*ptr_input_data) * input_multiplier + round) >> input_left_shift;
-
-    uint32_t abs_input_data = abs(input_data);
-    uint32_t uh = abs_input_data >> 8;
-    int32_t result;
-
-    if (uh >= 255)
+    for (int i = 0; i < flat_size; i++)
     {
-      // Saturate to maximum.
-      result = 0xFFFF << 8;
+      float val = input_data[i];
+      float result = std::tanh(val);
+      output_data[i] = result;
     }
-    else
-    {
-      uint32_t ua = sigmoid_table_uint16[uh];
-      uint32_t ub = sigmoid_table_uint16[uh + 1];
+  }
 
-      uint8_t ut = abs_input_data & 0xFF;
+  inline void Tanh(int32_t input_multiplier, int32_t input_left_shift, const int flat_size,
+                   const int16_t *ptr_input_data, int16_t *ptr_output_data)
+  {
+    // We use the LUT for sigmoid and take into account, that
+    // tanh(x) = 2*sigmoid(2*x) - 1
 
-      result = (ua << 8) + ut * (ub - ua);
+    // We scale by 3/4 to expand range [-8,8]->[-10.7,10.7].
+    // In case of general parameter scale, multiplier 3 is taken into account
+    // in TanhPrepare function and it is included in
+    // input_multiplier already.
+
+    if (input_multiplier == 0)
+    { // power of two case
+      input_multiplier = 3 << input_left_shift;
+      input_left_shift = 0;
     }
 
-    result = (input_data >= 0) ? (result - (1 << (14 + 9)) + (1 << (9 - 2)))
-                               : (-result + (1 << (14 + 9)) + (1 << (9 - 2)) - 1);
+    int32_t round = (input_left_shift > 0) ? 1 << (input_left_shift - 1) : 0;
 
-    // Convert back to 16-bit.
-    result >>= (9 - 1);
+    for (int i = 0; i < flat_size; ++i, ptr_input_data++, ptr_output_data++)
+    {
+      int32_t input_data = ((*ptr_input_data) * input_multiplier + round) >> input_left_shift;
 
-    *ptr_output_data = result;
+      uint32_t abs_input_data = abs(input_data);
+      uint32_t uh = abs_input_data >> 8;
+      int32_t result;
+
+      if (uh >= 255)
+      {
+        // Saturate to maximum.
+        result = 0xFFFF << 8;
+      }
+      else
+      {
+        uint32_t ua = sigmoid_table_uint16[uh];
+        uint32_t ub = sigmoid_table_uint16[uh + 1];
+
+        uint8_t ut = abs_input_data & 0xFF;
+
+        result = (ua << 8) + ut * (ub - ua);
+      }
+
+      result = (input_data >= 0) ? (result - (1 << (14 + 9)) + (1 << (9 - 2)))
+                                 : (-result + (1 << (14 + 9)) + (1 << (9 - 2)) - 1);
+
+      // Convert back to 16-bit.
+      result >>= (9 - 1);
+
+      *ptr_output_data = result;
+    }
   }
-}
 
 #if 0
 inline void Tanh(int32_t input_zero_point, int32_t input_range_radius,
@@ -116,6 +121,8 @@ inline void Tanh(int32_t input_zero_point, int32_t input_range_radius,
 }
 #endif // 0
 
-} // namespace luci_interpreter_pal
+} // namespace pal
+} // namespace execute
+} // namespace onert_micro
 
-#endif // LUCI_INTERPRETER_PAL_TANH_H
+#endif // ONERT_MICRO_EXECUTE_PAL_TANH_H

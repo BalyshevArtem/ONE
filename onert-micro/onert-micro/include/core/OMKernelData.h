@@ -41,6 +41,11 @@ struct DataAdd
   // empty
 };
 
+struct DataUnidirectionalSequenceLSTM
+{
+  // empty
+};
+
 struct DataSub
 {
   // empty
@@ -153,7 +158,7 @@ struct DataReshape
   // Empty
 };
 
-struct QuantFullyConnected
+struct FullyConnectedParams
 {
   int32_t input_offset;
   int32_t weights_offset;
@@ -167,10 +172,7 @@ struct QuantFullyConnected
   float input_scale;
   float weight_scale;
   float output_scale;
-};
 
-struct FloatFullyConnected
-{
   // float activation params.
   float float_activation_min;
   float float_activation_max;

@@ -94,10 +94,15 @@ struct LSTMStruct
     assert(input_to_cell_weights_index != -1);
     assert(input_to_output_weights_index != -1);
     internal_tensors[0] = runtime_context.getTensorByIndex(input_index);
+    inputs_index[0] = input_index;
     internal_tensors[1] = runtime_context.getTensorByIndex(input_to_input_weights_index);
+    inputs_index[1] = input_to_input_weights_index;
     internal_tensors[2] = runtime_context.getTensorByIndex(input_to_forget_weights_index);
+    inputs_index[2] = input_to_forget_weights_index;
     internal_tensors[3] = runtime_context.getTensorByIndex(input_to_cell_weights_index);
+    inputs_index[3] = input_to_cell_weights_index;
     internal_tensors[4] = runtime_context.getTensorByIndex(input_to_output_weights_index);
+    inputs_index[4] = input_to_output_weights_index;
 
     const auto recurrent_to_input_weights_index = cur_op->inputs()->operator[](5);
     const auto recurrent_to_forget_weights_index = cur_op->inputs()->operator[](6);
@@ -108,9 +113,13 @@ struct LSTMStruct
     assert(recurrent_to_cell_weights_index != -1);
     assert(recurrent_to_output_weights_index != -1);
     internal_tensors[5] = runtime_context.getTensorByIndex(recurrent_to_input_weights_index);
+    inputs_index[5] = recurrent_to_input_weights_index;
     internal_tensors[6] = runtime_context.getTensorByIndex(recurrent_to_forget_weights_index);
+    inputs_index[6] = recurrent_to_forget_weights_index;
     internal_tensors[7] = runtime_context.getTensorByIndex(recurrent_to_cell_weights_index);
+    inputs_index[7] = recurrent_to_cell_weights_index;
     internal_tensors[8] = runtime_context.getTensorByIndex(recurrent_to_output_weights_index);
+    inputs_index[8] = recurrent_to_output_weights_index;
 
     const auto cell_to_input_weights_index = cur_op->inputs()->operator[](9);
     const auto cell_to_forget_weights_index = cur_op->inputs()->operator[](10);
@@ -119,8 +128,11 @@ struct LSTMStruct
     // optional cell_to_forget_weights_index
     // optional cell_to_output_weights_index
     internal_tensors[9] = runtime_context.getTensorByIndex(cell_to_input_weights_index);
+    inputs_index[9] = cell_to_input_weights_index;
     internal_tensors[10] = runtime_context.getTensorByIndex(cell_to_forget_weights_index);
+    inputs_index[10] = cell_to_forget_weights_index;
     internal_tensors[11] = runtime_context.getTensorByIndex(cell_to_output_weights_index);
+    inputs_index[11] = cell_to_output_weights_index;
 
     const auto input_gate_bias_index = cur_op->inputs()->operator[](12);
     const auto forget_gate_bias_index = cur_op->inputs()->operator[](13);
@@ -131,23 +143,31 @@ struct LSTMStruct
     assert(cell_gate_bias_index != -1);
     assert(output_gate_bias_index != -1);
     internal_tensors[12] = runtime_context.getTensorByIndex(input_gate_bias_index);
+    inputs_index[12] = input_gate_bias_index;
     internal_tensors[13] = runtime_context.getTensorByIndex(forget_gate_bias_index);
+    inputs_index[13] = forget_gate_bias_index;
     internal_tensors[14] = runtime_context.getTensorByIndex(cell_gate_bias_index);
+    inputs_index[14] = cell_gate_bias_index;
     internal_tensors[15] = runtime_context.getTensorByIndex(output_gate_bias_index);
+    inputs_index[15] = output_gate_bias_index;
 
     const auto projection_weights_index = cur_op->inputs()->operator[](16);
     const auto projection_bias_index = cur_op->inputs()->operator[](17);
     // optional projection_weights_index
     // optional projection_bias_index
     internal_tensors[16] = runtime_context.getTensorByIndex(projection_weights_index);
+    inputs_index[16] = projection_weights_index;
     internal_tensors[17] = runtime_context.getTensorByIndex(projection_bias_index);
+    inputs_index[17] = projection_bias_index;
 
     const auto output_state_index = cur_op->inputs()->operator[](18);
     const auto cell_state_index = cur_op->inputs()->operator[](19);
     assert(output_state_index != -1);
     assert(cell_state_index != -1);
     internal_tensors[18] = runtime_context.getTensorByIndex(output_state_index);
+    inputs_index[18] = output_state_index;
     internal_tensors[19] = runtime_context.getTensorByIndex(cell_state_index);
+    inputs_index[19] = cell_state_index;
 
     const auto input_layer_norm_coefficients_index = cur_op->inputs()->operator[](20);
     const auto forget_layer_norm_coefficients_index = cur_op->inputs()->operator[](21);
@@ -159,14 +179,18 @@ struct LSTMStruct
     // optional output_layer_norm_coefficients_index
     internal_tensors[20] =
       runtime_context.getTensorByIndex(input_layer_norm_coefficients_index);
+    inputs_index[20] = input_layer_norm_coefficients_index;
     internal_tensors[21] =
       runtime_context.getTensorByIndex(forget_layer_norm_coefficients_index);
+    inputs_index[21] = forget_layer_norm_coefficients_index;
     internal_tensors[22] =
       runtime_context.getTensorByIndex(cell_layer_norm_coefficients_index);
+    inputs_index[22] = cell_layer_norm_coefficients_index;
     internal_tensors[23] =
       runtime_context.getTensorByIndex(output_layer_norm_coefficients_index);
+    inputs_index[23] = output_layer_norm_coefficients_index;
 
-    const auto output_index = cur_op->outputs()->operator[](0);
+    output_index = cur_op->outputs()->operator[](0);
     assert(output_index != -1);
     output_internal = runtime_context.getTensorByIndex(output_index);
 
@@ -182,7 +206,7 @@ struct LSTMStruct
 
     for (int32_t i = 1; i < 9; ++i)
     {
-      if (internal_tensors[i] != nullptr or
+      if (internal_tensors[i] != nullptr and
           input_to_forget_weights()->type() != internal_tensors[i]->type())
       {
         return FailedCheckCondition;
@@ -191,7 +215,7 @@ struct LSTMStruct
 
     for (int32_t i = 12; i < 16; ++i)
     {
-      if (internal_tensors[i] != nullptr or
+      if (internal_tensors[i] != nullptr and
           forget_gate_bias()->type() != internal_tensors[i]->type())
       {
         return FailedCheckCondition;
@@ -238,9 +262,51 @@ struct LSTMStruct
 
   const circle::Tensor *get_internal_tensor(int i) { return internal_tensors[i]; }
 
-private:
+  OMStatus readData(core::OMKernel &kernel, core::OMRuntimeStorage &storage, core::OMRuntimeContext &context)
+  {
+    OMStatus status = Ok;
+
+    for (uint32_t i = 0; i < 24; ++i)
+    {
+      if (inputs_index[i] == -1)
+        continue;
+      status = storage.getDataByTensorIndex(&inputs_data[i], inputs_index[i]);
+      if (inputs_data[i] == nullptr)
+        status = context.getConstDataByTensorIndex(&inputs_data[i], inputs_index[i]);
+      if (status != Ok)
+        return status;
+    }
+
+    if (output_index == -1)
+      return UnknownError;
+
+    status = storage.getDataByTensorIndex(&output_data, output_index);
+
+    if (status != Ok)
+      return status;
+
+    if (kernel.getKernelType() == core::Inplace)
+    {
+      output_data = inputs_data[0];
+      status = storage.removeTensorFromTensorIndexToData(inputs_index[0]);
+
+      if (status != Ok)
+        return status;
+
+      status = storage.saveDataToTensorIndex(output_data, output_index);
+    }
+    return status;
+  }
+
+public:
   const circle::Tensor *output_internal;
   const circle::Tensor *internal_tensors[24];
+
+  int32_t inputs_index[24] = {-1};
+  int32_t output_index = -1;
+
+  uint8_t *inputs_data[24] = {nullptr};
+  uint8_t *output_data = nullptr;
 };
 
 struct GateParameters

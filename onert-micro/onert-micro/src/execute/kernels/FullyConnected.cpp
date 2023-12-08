@@ -90,13 +90,13 @@ OMStatus onert_micro::execute::execute_kernel_CircleFullyConnected(core::OMRunti
   {
 #ifndef DIS_FLOAT
     case circle::TensorType_FLOAT32: {
-      FloatFullyConnected params;
+      FullyConnectedParams params{};
       status = calculateActivationRange(options->fused_activation_function(),
                                         &params.float_activation_min, &params.float_activation_max);
       if (status != Ok)
         return status;
 
-      status = pal::FullyConnectedFloat(
+      status = pal::FullyConnected(
         &params, core::utils::castInputData<float>(input_data), OMRuntimeShape(weight),
         core::utils::castInputData<float>(weight_data),
         core::utils::castInputData<float>(bias_data), OMRuntimeShape(output),
@@ -106,7 +106,7 @@ OMStatus onert_micro::execute::execute_kernel_CircleFullyConnected(core::OMRunti
 #endif // DIS_FLOAT
 #ifndef DIS_QUANT
     case circle::TensorType_INT8: {
-      QuantFullyConnected op_params;
+      FullyConnectedParams op_params{};
       op_params.input_offset = *input->quantization()->zero_point()->begin();
       op_params.weights_offset = *weight->quantization()->zero_point()->begin();
       op_params.output_offset = *output->quantization()->zero_point()->begin();
