@@ -1742,6 +1742,38 @@ loco::NodeShape infer_bcq_gather(const luci::CircleBCQGather *node)
   return loco::NodeShape{output_shape};
 }
 
+loco::NodeShape infer_circle_gru(const luci::CircleGRU *node)
+{
+  loco::TensorShape input_shape;
+  loco::TensorShape output_shape;
+
+  const auto input_binary_shape = luci::shape_get(node->input()).as<loco::TensorShape>();
+  const auto indices_shape = luci::shape_get(node->indices()).as<loco::TensorShape>();
+  auto axis = node->axis();
+
+  auto input_clusters = loco::must_cast<luci::CircleConst *>(node->input_clusters());
+  auto qbits_sum = 0;
+  for (uint32_t i = 0; i < input_clusters->dim(0).value(); ++i)
+  {
+    qbits_sum += input_clusters->at<loco::DataType::S32>(i * 2 + 1);
+  }
+
+  input_shape.rank(2);
+  input_shape.dim(0) = qbits_sum;
+  input_shape.dim(1) = input_binary_shape.dim(1).value() * 32;
+
+  output_shape.rank(input_shape.rank() - 1 + indices_shape.rank());
+  int32_t outdim_index = 0;
+  for (int32_t i = 0; i < axis; ++i)
+    output_shape.dim(outdim_index++) = input_shape.dim(i);
+  for (uint32_t i = 0; i < indices_shape.rank(); ++i)
+    output_shape.dim(outdim_index++) = indices_shape.dim(i);
+  for (uint32_t i = axis + 1; i < input_shape.rank(); ++i)
+    output_shape.dim(outdim_index++) = input_shape.dim(i);
+
+  return loco::NodeShape{output_shape};
+}
+
 // Virtual
 loco::NodeShape infer_input(const luci::CircleInput *node)
 {
@@ -2472,6 +2504,13 @@ public:
   loco::NodeShape visit(const luci::CircleBCQGather *node) final { return infer_bcq_gather(node); }
 
   loco::NodeShape visit(const luci::CircleInstanceNorm *node) final
+  {
+    auto input_shape = luci::shape_get(node->input()).as<loco::TensorShape>();
+
+    return loco::NodeShape{input_shape};
+  }
+
+  loco::NodeShape visit(const luci::CircleGRU *node) final
   {
     auto input_shape = luci::shape_get(node->input()).as<loco::TensorShape>();
 
