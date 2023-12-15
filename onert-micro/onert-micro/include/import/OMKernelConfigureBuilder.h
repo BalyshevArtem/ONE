@@ -18,7 +18,6 @@
 #define ONERT_MICRO_IMPORT_KERNEL_CONFIGURE_BUILDER_H
 
 #include "core/reader/OMCircleReader.h"
-#include "core/OMKernel.h"
 #include "core/OMKernelType.h"
 #include "core/OMRuntimeStorage.h"
 #include "core/OMRuntimeContext.h"
@@ -30,19 +29,19 @@ namespace import
 {
 
 using KernelConfigureFunc = OMStatus (core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                      core::OMKernel &kernel, const OMConfig &configs);
+                                      uint16_t kernel_index, const OMConfig &configs);
 
 #define REGISTER_KERNEL(builtin_operator, name)                                       \
 OMStatus configure_kernel_Circle##name(core::OMRuntimeStorage &runtime_storage,       \
                                          core::OMRuntimeContext &runtime_context,     \
-                                         core::OMKernel &kernel, const OMConfig &configs);
+                                         uint16_t kernel_index, const OMConfig &configs);
 #include "KernelsToBuild.lst"
 #undef REGISTER_KERNEL
 
 #define REGISTER_CUSTOM_KERNEL(name, string_name)                                 \
 OMStatus configure_kernel_Circle##name(core::OMRuntimeStorage &runtime_storage,   \
                                          core::OMRuntimeContext &runtime_context, \
-                                         core::OMKernel &kernel, const OMConfig &configs);
+                                         uint16_t kernel_index, const OMConfig &configs);
 #include "CustomKernelsToBuild.lst"
 #undef REGISTER_CUSTOM_KERNEL
 
@@ -59,9 +58,6 @@ public:
 
 #undef REGISTER_KERNEL
   }
-
-//  void configureKernel(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-//                       core::OMKernel &kernel) const;
 
 public:
   OMStatus getKernelConfigureFunc(core::OMBuilderID builderID, KernelConfigureFunc **configure_func) const
@@ -101,9 +97,6 @@ public:
 
 #undef REGISTER_CUSTOM_KERNEL
   }
-
-//  void configureKernel(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-//                       core::OMKernel &kernel) const;
 
 public:
   OMStatus getKernelConfigureFunc(core::OMBuilderID builderID, KernelConfigureFunc **configure_func) const

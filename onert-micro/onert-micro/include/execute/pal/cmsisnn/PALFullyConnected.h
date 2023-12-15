@@ -29,7 +29,7 @@ namespace pal
 {
 
 template <>
-OMStatus FullyConnected<int8_t>(const core::QuantFullyConnected *params,
+OMStatus FullyConnected<int8_t>(const core::FullyConnected &params,
                         const int8_t *input_data, const core::OMRuntimeShape &filter_shape,
                         const int8_t *filter_data, const int32_t *bias_data,
                         const core::OMRuntimeShape &output_shape, int8_t *output_data)

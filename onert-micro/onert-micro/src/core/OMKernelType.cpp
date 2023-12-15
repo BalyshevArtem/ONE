@@ -36,29 +36,6 @@ OMStatus onert_micro::core::getBuiltinOperatorBuilderId(const circle::BuiltinOpe
   return Ok;
 }
 
-OMStatus onert_micro::core::getBuiltinOperatorByBuilderId(core::OMBuilderID &builderID, circle::BuiltinOperator &opcode)
-{
-  switch (builderID)
-  {
-#define REGISTER_KERNEL(builtin_operator, name)    \
-  case core::OMBuilderID::BuiltinOperator_##builtin_operator: \
-    opcode = circle::BuiltinOperator_##builtin_operator; \
-    break;
-#include "KernelsToBuild.lst"
-#undef REGISTER_KERNEL
-#define REGISTER_CUSTOM_KERNEL(name, string_name)           \
-  case core::OMBuilderID::CUSTOM_##name:                    \
-    opcode = circle::BuiltinOperator_CUSTOM;                \
-    break;
-#include "CustomKernelsToBuild.lst"
-#undef REGISTER_CUSTOM_KERNEL
-    default:
-      assert(false && "Unsupported operation");
-      return UnsupportedOp;
-  }
-  return Ok;
-}
-
 OMStatus onert_micro::core::getCustomOperatorByBuilderId(core::OMBuilderID &builderID, OMBuilderCustomID &opcode)
 {
   switch (builderID)
@@ -74,6 +51,22 @@ OMStatus onert_micro::core::getCustomOperatorByBuilderId(core::OMBuilderID &buil
       return UnsupportedOp;
   }
   return Ok;
+}
+
+OMStatus onert_micro::core::getBuilderId(const circle::OperatorCode *opcode, core::OMBuilderID &builderID)
+{
+  OMStatus status;
+
+  if (opcode->builtin_code() == circle::BuiltinOperator_CUSTOM)
+    status = core::getCustomOperatorBuilderId(opcode->custom_code(), builderID);
+  else
+    status = core::getBuiltinOperatorBuilderId(opcode->builtin_code(), builderID);
+
+  assert(status == Ok && "Unknown operation");
+  if (status == UnsupportedOp or builderID == core::OMBuilderID::Size)
+    return UnsupportedOp;
+
+  return status;
 }
 
 OMStatus onert_micro::core::getCustomOperatorBuilderId(const flatbuffers::String *custom_opcode, core::OMBuilderID &builderID)

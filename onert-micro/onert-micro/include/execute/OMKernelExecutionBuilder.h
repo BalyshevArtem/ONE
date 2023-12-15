@@ -18,7 +18,6 @@
 #define ONERT_MICRO_EXECUTE_KERNEL_EXECUTION_BUILDER_H
 
 #include "core/reader/OMCircleReader.h"
-#include "core/OMKernel.h"
 #include "core/OMKernelType.h"
 #include "core/OMRuntimeStorage.h"
 #include "core/OMRuntimeContext.h"
@@ -29,20 +28,17 @@ namespace execute
 {
 
 using KernelExecuteFunc = OMStatus(core::OMRuntimeStorage &runtime_storage,
-                                   core::OMRuntimeContext &runtime_context,
-                                   core::OMKernel &kernel);
+                                   core::OMRuntimeContext &runtime_context, uint16_t kernel_index);
 
 #define REGISTER_KERNEL(builtin_operator, name)                                   \
   OMStatus execute_kernel_Circle##name(core::OMRuntimeStorage &runtime_storage, \
-                                         core::OMRuntimeContext &runtime_context, \
-                                         core::OMKernel &kernel);
+                                         core::OMRuntimeContext &runtime_context, uint16_t kernel_index);
 #include "KernelsToBuild.lst"
 #undef REGISTER_KERNEL
 
 #define REGISTER_CUSTOM_KERNEL(name, string_name)                                 \
   OMStatus execute_kernel_Circle##name(core::OMRuntimeStorage &runtime_storage, \
-                                         core::OMRuntimeContext &runtime_context, \
-                                         core::OMKernel &kernel);
+                                         core::OMRuntimeContext &runtime_context, uint16_t kernel_index);
 #include "CustomKernelsToBuild.lst"
 #undef REGISTER_CUSTOM_KERNEL
 

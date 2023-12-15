@@ -36,36 +36,10 @@ enum class BroadcastableOpCategory : uint8_t
   kScalarSecondBroadcast,     // Scalar
 };
 
-struct DataAdd
-{
-  // empty
-};
-
-struct DataSub
-{
-  // empty
-};
-
-struct DataMul
-{
-  // empty
-};
-
-struct DataConcatenation
-{
-  // empty
-};
-
 struct ConcatenationParams
 {
   uint32_t num_inputs;
   uint32_t axis;
-};
-
-struct DataMaxPool2D
-{
-  int32_t padding_h = 0;
-  int32_t padding_w = 0;
 };
 
 struct Pool2DParams
@@ -82,16 +56,6 @@ struct Pool2DParams
   float activation_max;
   int32_t quantized_activation_min;
   int32_t quantized_activation_max;
-};
-
-struct DataStridedSlice
-{
-  // Empty
-};
-
-struct DataLogistic
-{
-  // Empty
 };
 
 struct StridedSliceParams
@@ -122,20 +86,6 @@ struct BinaryArithmeticBroadcastParams
   BroadcastableOpCategory broadcast_category;
 };
 
-struct DataFullyConnected
-{
-  int32_t output_multiplier;
-  int output_shift;
-};
-
-struct DataConv2D
-{
-  std::vector<int32_t> per_channel_output_multiplier = {};
-  std::vector<int32_t> per_channel_output_shift = {};
-  int32_t padding_h = 0;
-  int32_t padding_w = 0;
-};
-
 struct FloatConv2D
 {
   int32_t stride_w;
@@ -148,13 +98,12 @@ struct FloatConv2D
   float activation_max;
 };
 
-struct DataReshape
+struct FullyConnectedParams
 {
-  // Empty
-};
+  // float activation params.
+  float float_activation_min;
+  float float_activation_max;
 
-struct QuantFullyConnected
-{
   int32_t input_offset;
   int32_t weights_offset;
   int32_t output_offset;
@@ -163,22 +112,6 @@ struct QuantFullyConnected
   // uint8_t, etc, activation params.
   int32_t quantized_activation_min;
   int32_t quantized_activation_max;
-
-  float input_scale;
-  float weight_scale;
-  float output_scale;
-};
-
-struct FloatFullyConnected
-{
-  // float activation params.
-  float float_activation_min;
-  float float_activation_max;
-};
-
-struct DataAbs
-{
-// Empty
 };
 
 } // core

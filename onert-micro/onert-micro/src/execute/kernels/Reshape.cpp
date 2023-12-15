@@ -39,10 +39,10 @@ constexpr uint32_t outputTensorIdx = 0;
 
 // NOTE: doesnt currently support dynamic shapes
 OMStatus onert_micro::execute::execute_kernel_CircleReshape(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                                        core::OMKernel &kernel)
+                                                        uint16_t op_index)
 {
   OMRuntimeKernel runtime_kernel;
-  runtime_kernel.readKernel(kernel, runtime_context);
+  runtime_kernel.readKernel(op_index, runtime_context);
 
   const circle::Tensor *input = runtime_kernel.inputs[inputTensorIdx];
   const circle::Tensor *output = runtime_kernel.outputs[outputTensorIdx];
@@ -52,7 +52,7 @@ OMStatus onert_micro::execute::execute_kernel_CircleReshape(core::OMRuntimeStora
 
   OMStatus status = Ok;
 
-  status = runtime_kernel.getDataFromStorage(kernel, runtime_storage, runtime_context);
+  status = runtime_kernel.getDataFromStorage(op_index, runtime_storage, runtime_context);
   if (status != Ok)
     return status;
 

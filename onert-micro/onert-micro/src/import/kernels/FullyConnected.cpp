@@ -37,57 +37,13 @@ constexpr uint32_t biasTensorIdx = 2;
 
 constexpr uint32_t outputTensorIdx = 0;
 
-#ifndef DIS_QUANT
-void calculateOpDataFullyConnected(core::OMKernel &kernel, const circle::Tensor *input,
-                                   const circle::Tensor *weights, const circle::Tensor *output,
-                                   circle::ActivationFunctionType activation)
-{
-  double real_multiplier = 0.0;
-  int output_shift;
-  int32_t output_activation_min;
-  int32_t output_activation_max;
-  int32_t output_multiplier;
-
-  assert(input->quantization() != nullptr);                 // Fix caller
-  assert(input->quantization()->scale()->size() == 1);      // Fix caller
-  assert(input->quantization()->zero_point()->size() == 1); // Fix caller
-
-  assert(weights->quantization() != nullptr);                 // Fix caller
-  assert(weights->quantization()->scale()->size() == 1);      // Fix caller
-  assert(weights->quantization()->zero_point()->size() == 1); // Fix caller
-
-  assert(output->quantization() != nullptr);                 // Fix caller
-  assert(output->quantization()->scale()->size() == 1);      // Fix caller
-  assert(output->quantization()->zero_point()->size() == 1); // Fix caller
-
-  const float input_scale = *input->quantization()->scale()->begin();
-  const float weight_scale = *weights->quantization()->scale()->begin();
-  const float output_scale = *output->quantization()->scale()->begin();
-
-  const float output_zero_point = *output->quantization()->zero_point()->begin();
-
-  real_multiplier =
-    execute::getQuantizedConvolutionMultipler(input_scale, weight_scale, output_scale);
-  execute::quantizeMultiplier(real_multiplier, &output_multiplier, &output_shift);
-  execute::calculateActivationRangeQuantized(activation, output_zero_point, output_scale,
-                                             output->type(), &output_activation_min,
-                                             &output_activation_max);
-
-  DataFullyConnected *op_params = new DataFullyConnected;
-  op_params->output_multiplier = output_multiplier;
-  op_params->output_shift = output_shift;
-
-  kernel.setKernelData(reinterpret_cast<uint8_t *>(op_params));
-}
-#endif
-
 } // namespace
 
 OMStatus onert_micro::import::configure_kernel_CircleFullyConnected(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                                                    core::OMKernel &kernel, const OMConfig &configs)
+                                                                    uint16_t op_index, const OMConfig &configs)
 {
   execute::OMRuntimeKernel runtime_kernel;
-  runtime_kernel.readKernel(kernel, runtime_context);
+  runtime_kernel.readKernel(op_index, runtime_context);
 
   const circle::Tensor *input = runtime_kernel.inputs[inputTensorIdx];
   const circle::Tensor *weight = runtime_kernel.inputs[weightTensorIdx];
@@ -132,9 +88,6 @@ OMStatus onert_micro::import::configure_kernel_CircleFullyConnected(core::OMRunt
 
   if (weight->quantization()->scale() == nullptr or weight->quantization()->scale()->size() != 1)
     return NoQuantization;
-
-  if (configs.cmsis_nn)
-    calculateOpDataFullyConnected(kernel, input, weight, output, runtime_kernel.first_operator->builtin_options_as_FullyConnectedOptions()->fused_activation_function());
 
 #endif // DIS_QUANT
   return status;

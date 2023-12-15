@@ -37,9 +37,9 @@ OMStatus OMExecutionPlanCreator::createExecutionPlan(core::OMRuntimeStorage &run
 
   std::map<uint16_t , Lifetime> lifetimes;
 
-  std::vector<OMKernel> &kernels = runtime_storage.getKernels();
+  const reader::CircleOperators *operators = runtime_context.getCircleOperators();
 
-  const size_t num_kernels = kernels.size();
+  const size_t num_kernels = operators->size();
 
   if (not keep_input)
   {
@@ -52,17 +52,11 @@ OMStatus OMExecutionPlanCreator::createExecutionPlan(core::OMRuntimeStorage &run
 
   for (int32_t index = 0; index < num_kernels; ++index)
   {
-    auto &kernel = kernels.at(index);
+    auto *cur_op = operators->operator[](index);
 
-    uint16_t input_operator_index = kernel.getKernelOperators().front();
-    uint16_t output_operator_index = kernel.getKernelOperators().back();
-
-    const auto operators = reader.operators();
-    const auto *input_op = operators->operator[](input_operator_index);
-    const auto *output_op = operators->operator[](output_operator_index);
-    const auto *op_inputs = input_op->inputs();
-    const auto *op_outputs = output_op->outputs();
-
+    const auto *op_inputs = cur_op->inputs();
+    const auto *op_outputs = cur_op->outputs();
+    auto kernel_type = runtime_storage.getKernelType(index);
     for (int32_t j = 0; j < op_inputs->size(); ++j)
     {
       const auto input_index = op_inputs->operator[](j);
@@ -76,7 +70,7 @@ OMStatus OMExecutionPlanCreator::createExecutionPlan(core::OMRuntimeStorage &run
 
       if (lifetimes.count(input_index) > 0)
       {
-        if (kernel.getKernelType() == Inplace)
+        if (kernel_type == Inplace)
           lifetimes.at(input_index).second = -1;
         else
           lifetimes.at(input_index).second = index;
@@ -87,7 +81,7 @@ OMStatus OMExecutionPlanCreator::createExecutionPlan(core::OMRuntimeStorage &run
     {
       const auto output_index = op_outputs->operator[](j);
 
-      if (kernel.getKernelType() == Inplace)
+      if (kernel_type == Inplace)
         lifetimes[output_index] = Lifetime(-1, index);
       else
         lifetimes[output_index] = Lifetime(index, index);

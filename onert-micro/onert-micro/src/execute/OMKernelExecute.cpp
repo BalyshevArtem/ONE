@@ -23,11 +23,10 @@ using namespace onert_micro;
 
 OMStatus OMKernelExecute::executeKernel(core::OMRuntimeStorage &runtime_storage,
                                         core::OMRuntimeContext &runtime_context,
-                                        core::OMKernel &kernel)
+                                        core::OMBuilderID builder_id,
+                                        uint16_t op_index)
 {
   OMStatus status = Ok;
-
-  const core::OMBuilderID builder_id = kernel.getBuilderID();
 
   KernelExecuteFunc *execute_func = nullptr;
   if (size_t(builder_id) < size_t(core::OMBuilderID::BuiltinOperatorsSize))
@@ -45,7 +44,7 @@ OMStatus OMKernelExecute::executeKernel(core::OMRuntimeStorage &runtime_storage,
   if (status != Ok)
     return status;
 
-  status = execute_func(runtime_storage, runtime_context, kernel);
+  status = execute_func(runtime_storage, runtime_context, op_index);
 
   assert(status == Ok);
 

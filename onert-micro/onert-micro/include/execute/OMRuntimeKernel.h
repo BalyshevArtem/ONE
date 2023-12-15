@@ -18,7 +18,6 @@
 #define ONERT_MICRO_EXECUTE_RUNTIME_KERNEL_H
 
 #include "core/reader/OMCircleReader.h"
-#include "core/OMKernel.h"
 #include "core/OMRuntimeContext.h"
 #include "core/OMRuntimeStorage.h"
 
@@ -43,9 +42,9 @@ public:
   OMRuntimeKernel &&operator=(const OMRuntimeKernel &&) = delete;
 
 public:
-  OMStatus readKernel(core::OMKernel &kernel, core::OMRuntimeContext &runtime_context);
+  OMStatus readKernel(uint16_t op_index, core::OMRuntimeContext &runtime_context);
 
-  OMStatus getDataFromStorage(core::OMKernel &kernel,
+  OMStatus getDataFromStorage(uint16_t op_index,
                               core::OMRuntimeStorage &storage,
                               core::OMRuntimeContext &context);
 

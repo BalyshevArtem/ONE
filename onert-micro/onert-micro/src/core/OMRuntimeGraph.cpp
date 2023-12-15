@@ -26,20 +26,33 @@ OMStatus OMRuntimeGraph::run()
 {
   OMStatus status = Ok;
 
-  std::vector<OMKernel> &kernels = _storage.getKernels();
+  const reader::CircleOperators *operators = _context.getCircleOperators();
 
-  const size_t num_kernels = kernels.size();
+  const auto num_operators = static_cast<uint16_t>(operators->size());
+  const auto *op_codes = _context.getCircleOpcodes();
 
-  for (uint32_t i = 0; i < num_kernels; ++i)
+  for (uint16_t i = 0; i < num_operators; ++i)
   {
     status = _allocator.allocate(i, &_context, &_storage);
 
     if (status != Ok)
       return status;
 
-    OMKernel &cur_kernel = kernels.at(i);
+    OMBuilderID builder_id = core::OMBuilderID::Size;
+    const circle::Operator *op = operators->operator[](i);
+    uint32_t index = op->opcode_index();
 
-    status = execute::OMKernelExecute::executeKernel(_storage, _context, cur_kernel);
+    assert(index < op_codes->size());
+
+    const auto opcode = op_codes->operator[](index);
+
+    status = core::getBuilderId(opcode, builder_id);
+
+    assert(status == Ok);
+    if (status != Ok)
+      return status;
+
+    status = execute::OMKernelExecute::executeKernel(_storage, _context, builder_id, i);
 
     if (status != Ok)
       return status;

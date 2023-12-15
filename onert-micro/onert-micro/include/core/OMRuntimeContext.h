@@ -58,6 +58,13 @@ public:
     return _reader;
   }
 
+  const reader::CircleOperators *getCircleOperators();
+
+  const reader::CircleOperatorCodes *getCircleOpcodes()
+  {
+    return _reader.opcodes();
+  }
+
   const circle::Operator *getCircleOperatorAt(uint16_t index);
   const circle::Tensor *getTensorByIndex(int32_t tensor_index);
 

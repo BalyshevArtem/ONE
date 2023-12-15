@@ -24,13 +24,27 @@ using namespace onert_micro;
 
 OMStatus OMKernelConfiguration::configureKernels(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context, const OMConfig &configs)
 {
+  const reader::CircleOperators *operators = runtime_context.getCircleOperators();
+
+  const auto num_operators = static_cast<uint16_t>(operators->size());
+  const auto op_codes = runtime_context.getCircleOpcodes();
+
   OMStatus status = Ok;
-
-  std::vector<OMKernel> &kernels = runtime_storage.getKernels();
-
-  for (auto &cur_kernel : kernels)
+  for (uint16_t i = 0; i < num_operators; ++i)
   {
-    const OMBuilderID builder_id = cur_kernel.getBuilderID();
+    OMBuilderID builder_id = core::OMBuilderID::Size;
+    const circle::Operator *op = operators->operator[](i);
+    uint32_t index = op->opcode_index();
+
+    assert(index < op_codes->size());
+
+    const auto opcode = op_codes->operator[](index);
+
+    status = core::getBuilderId(opcode, builder_id);
+
+    assert(status == Ok);
+    if (status != Ok)
+      return status;
 
     KernelConfigureFunc *configure_func = nullptr;
     if (size_t(builder_id) < size_t(core::OMBuilderID::BuiltinOperatorsSize))
@@ -48,7 +62,7 @@ OMStatus OMKernelConfiguration::configureKernels(core::OMRuntimeStorage &runtime
     if (status != Ok)
       return status;
 
-    status = configure_func(runtime_storage, runtime_context, cur_kernel, configs);
+    status = configure_func(runtime_storage, runtime_context, i, configs);
     assert(status == Ok);
   }
 

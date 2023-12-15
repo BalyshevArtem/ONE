@@ -8,7 +8,6 @@ message(STATUS "ONERT MICRO CORE BUILD BEGIN")
 #add_subdirectory(${OM_SOURCE_OPTIMIZE_DIR})
 
 set(SOURCES
-        OMKernel.cpp
         OMKernelType.cpp
         OMRuntimeContext.cpp
         OMRuntimeStorage.cpp

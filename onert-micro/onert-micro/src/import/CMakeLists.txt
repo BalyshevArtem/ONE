@@ -1,7 +1,6 @@
 message(STATUS "ONERT MICRO IMPORT BUILD BEGIN")
 
 set(SOURCES
-        OMGraphLoader.cpp
         OMExecutionPlanCreator.cpp
         OMKernelConfiguration.cpp
         OMKernelConfigureBuilder.cpp

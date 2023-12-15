@@ -26,16 +26,18 @@ using namespace onert_micro;
 
 namespace
 {
-OMStatus isInplaceOperation(core::OMBuilderID op, bool &is_inplace)
+OMStatus isInplaceOperation(const circle::Operator *op, core::OMRuntimeContext &runtime_context, bool &is_inplace)
 {
   OMStatus status = Ok;
-  circle::BuiltinOperator builtin_operator;
-  status = core::getBuiltinOperatorByBuilderId(op, builtin_operator);
 
-  if (status != Ok)
-    return status;
+  const auto op_codes = runtime_context.getCircleOpcodes();
+  uint32_t index = op->opcode_index();
 
-  switch (builtin_operator)
+  assert(index < op_codes->size());
+
+  const auto opcode = op_codes->operator[](index);
+
+  switch (opcode->builtin_code())
   {
     case circle::BuiltinOperator_ABS:
     case circle::BuiltinOperator_CEIL:
@@ -61,10 +63,18 @@ OMStatus isInplaceOperation(core::OMBuilderID op, bool &is_inplace)
     case circle::BuiltinOperator_CUSTOM:
     {
       core::OMBuilderCustomID custom_id;
-      status = core::getCustomOperatorByBuilderId(op, custom_id);
+
+      core::OMBuilderID builderID = core::OMBuilderID::Size;
+      status = core::getCustomOperatorBuilderId(opcode->custom_code(), builderID);
 
       if (status != Ok)
         return status;
+
+      status = core::getCustomOperatorByBuilderId(builderID, custom_id);
+
+      if (status != Ok)
+        return status;
+
       switch (custom_id)
       {
         case onert_micro::core::CUSTOM_custom_gru:
@@ -116,15 +126,11 @@ bool isSingleUsageOfTensor(core::reader::OMCircleReader &reader, const int32_t t
 }
 
 OMStatus checkInplaceOp(core::OMRuntimeContext &context,
-                        core::reader::OMCircleReader &reader,  uint16_t input_operator_index,
-                        uint16_t output_operator_index, bool &is_inplace)
+                        core::reader::OMCircleReader &reader, const circle::Operator *cur_op, bool &is_inplace)
 {
-  const auto operators = reader.operators();
   const auto graph_outputs = reader.outputs();
-  const auto *input_op = operators->operator[](input_operator_index);
-  const auto *output_op = operators->operator[](output_operator_index);
-  const auto *op_inputs = input_op->inputs();
-  const auto *op_outputs = output_op->outputs();
+  const auto *op_inputs = cur_op->inputs();
+  const auto *op_outputs = cur_op->outputs();
 
   auto non_const_input_it = op_inputs->begin();
   while (non_const_input_it != op_inputs->end())
@@ -189,32 +195,32 @@ OMStatus checkInplaceOp(core::OMRuntimeContext &context,
   return Ok;
 }
 
-OMStatus findInplaceOp(std::vector<core::OMKernel> &kernels, core::OMRuntimeContext &context, const OMConfig &configs, bool &is_changed)
+OMStatus findInplaceOp(core::OMRuntimeStorage &storage, core::OMRuntimeContext &context, const OMConfig &configs, bool &is_changed)
 {
   OMStatus status;
   core::reader::OMCircleReader &reader = context.getCircleReader();
 
-  for (uint32_t i = 0; i < kernels.size(); ++i)
-  {
-    core::OMKernel &cur_kernel = kernels.at(i);
+  const core::reader::CircleOperators *operators = context.getCircleOperators();
 
-    if (cur_kernel.getKernelType() == onert_micro::core::Inplace)
+  for (uint32_t i = 0; i < operators->size(); ++i)
+  {
+    auto kernel_type = storage.getKernelType(i);
+    if (kernel_type == onert_micro::core::Inplace)
       continue;
 
+    auto cur_op = operators->operator[](i);
+
     bool is_inplace = false;
-    status = isInplaceOperation(cur_kernel.getBuilderID(), is_inplace);
+    status = isInplaceOperation(cur_op, context, is_inplace);
     if (status != Ok)
       return status;
 
     if (is_inplace == false)
       continue;
 
-    uint16_t input_operator_index = cur_kernel.getKernelOperators().front();
-    uint16_t output_operator_index = cur_kernel.getKernelOperators().back();
-
     is_inplace = true;
 
-    status = checkInplaceOp(context, reader, input_operator_index, output_operator_index, is_inplace);
+    status = checkInplaceOp(context, reader, cur_op, is_inplace);
 
     if (status != Ok)
       return status;
@@ -223,7 +229,7 @@ OMStatus findInplaceOp(std::vector<core::OMKernel> &kernels, core::OMRuntimeCont
       continue;
 
     is_changed = true;
-    cur_kernel.setKernelType(onert_micro::core::Inplace);
+    storage.setKernelType(i, onert_micro::core::Inplace);
   }
 
   return status;
@@ -235,13 +241,11 @@ optimize::OMGraphStatus optimize::onert_micro_FindInplaceOpPass(core::OMRuntimeS
 {
   bool changed = false;
 
-  std::vector<core::OMKernel> &kernels = storage.getKernels();
-
   OMGraphStatus graph_status = {Unchanged, Ok};
   do
   {
     changed = false;
-    graph_status.main_status = findInplaceOp(kernels, context, configs, changed);
+    graph_status.main_status = findInplaceOp(storage, context, configs, changed);
 
     if (graph_status.main_status != Ok)
       return graph_status;

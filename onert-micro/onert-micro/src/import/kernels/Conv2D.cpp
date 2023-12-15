@@ -38,7 +38,7 @@ constexpr uint32_t biasTensorIdx = 2;
 constexpr uint32_t outputTensorIdx = 0;
 
 #ifndef DIS_QUANT
-void calculateOpDataConv2D(core::OMKernel &kernel, const circle::Tensor *input,
+void calculateOpDataConv2D(const circle::Tensor *input,
                                    const circle::Tensor *weights, const circle::Tensor *output,
                                    circle::ActivationFunctionType activation)
 {
@@ -75,21 +75,21 @@ void calculateOpDataConv2D(core::OMKernel &kernel, const circle::Tensor *input,
                                              output->type(), &output_activation_min,
                                              &output_activation_max);
 
-  DataFullyConnected *op_params = new DataFullyConnected;
-  op_params->output_multiplier = output_multiplier;
-  op_params->output_shift = output_shift;
+//  DataFullyConnected *op_params = new DataFullyConnected;
+//  op_params->output_multiplier = output_multiplier;
+//  op_params->output_shift = output_shift;
 
-  kernel.setKernelData(reinterpret_cast<uint8_t *>(op_params));
+  //kernel.setKernelData(reinterpret_cast<uint8_t *>(op_params));
 }
 #endif
 
 } // namespace
 
 OMStatus onert_micro::import::configure_kernel_CircleConv2D(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                                            core::OMKernel &kernel, const OMConfig &configs)
+                                                            uint16_t op_index, const OMConfig &configs)
 {
   execute::OMRuntimeKernel runtime_kernel;
-  runtime_kernel.readKernel(kernel, runtime_context);
+  runtime_kernel.readKernel(op_index, runtime_context);
 
   const circle::Tensor *input = runtime_kernel.inputs[inputTensorIdx];
   const circle::Tensor *weight = runtime_kernel.inputs[weightTensorIdx];
@@ -130,34 +130,33 @@ OMStatus onert_micro::import::configure_kernel_CircleConv2D(core::OMRuntimeStora
 
   status = utils::checkCondition(bias == nullptr or weight_shape.dim(0) == bias_shape.num_elements());
 
-  const auto option = runtime_kernel.first_operator->builtin_options_as_Conv2DOptions();
+//  const auto option = runtime_kernel.first_operator->builtin_options_as_Conv2DOptions();
+//
+//  int32_t padding_h = 0;
+//  int32_t padding_w = 0;
+//
+//  const int input_width = input_shape.dim(2); //input->dims->data[2];
+//  const int input_height = input_shape.dim(1); //input->dims->data[1];
+//  const int weight_width = weight_shape.dim(2);// filter->dims->data[2];
+//  const int weight_height = weight_shape.dim(1); //filter->dims->data[1];
+//  execute::computePaddingHeightWidth(option->stride_h(), option->stride_w(), option->dilation_h_factor(),
+//                          option->dilation_w_factor(), input_height, input_width, weight_height, weight_width,
+//                                     option->padding(), &padding_h, &padding_w);
 
-  int32_t padding_h = 0;
-  int32_t padding_w = 0;
-
-  const int input_width = input_shape.dim(2); //input->dims->data[2];
-  const int input_height = input_shape.dim(1); //input->dims->data[1];
-  const int weight_width = weight_shape.dim(2);// filter->dims->data[2];
-  const int weight_height = weight_shape.dim(1); //filter->dims->data[1];
-  execute::computePaddingHeightWidth(option->stride_h(), option->stride_w(), option->dilation_h_factor(),
-                          option->dilation_w_factor(), input_height, input_width, weight_height, weight_width,
-                                     option->padding(), &padding_h, &padding_w);
-
-  DataConv2D *data = new DataConv2D;
-
-  data->per_channel_output_multiplier.resize(0);
-  data->per_channel_output_shift.resize(0);
-  data->padding_w = padding_w;
-  data->padding_h = padding_h;
-
-
-  if (input->type() != circle::TensorType_FLOAT32)
-  {
-    // TODO: enable quant params
-  }
-
-
-  kernel.setKernelData(reinterpret_cast<uint8_t *>(data));
+//  DataConv2D *data = new DataConv2D;
+//
+//  data->per_channel_output_multiplier.resize(0);
+//  data->per_channel_output_shift.resize(0);
+//  data->padding_w = padding_w;
+//  data->padding_h = padding_h;
+//
+//
+//  if (input->type() != circle::TensorType_FLOAT32)
+//  {
+//    // TODO: enable quant params
+//  }
+//
+//  runtime_storage.setKernelData(reinterpret_cast<uint8_t *>(data));
 
   return status;
 }

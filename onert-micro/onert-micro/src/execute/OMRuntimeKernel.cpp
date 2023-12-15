@@ -19,15 +19,10 @@
 using namespace onert_micro::execute;
 using namespace onert_micro;
 
-OMStatus onert_micro::execute::OMRuntimeKernel::readKernel(core::OMKernel &kernel, core::OMRuntimeContext &runtime_context)
+OMStatus onert_micro::execute::OMRuntimeKernel::readKernel(uint16_t op_index, core::OMRuntimeContext &runtime_context)
 {
-  const std::vector<uint16_t> &kernel_operators = kernel.getKernelOperators();
-
-  const uint16_t first_operator_index = kernel_operators.front();
-  const uint16_t last_operator_index = kernel_operators.back();
-
-  first_operator = runtime_context.getCircleOperatorAt(first_operator_index);
-  const circle::Operator *last_operator = runtime_context.getCircleOperatorAt(last_operator_index);
+  first_operator = runtime_context.getCircleOperatorAt(op_index);
+  const circle::Operator *last_operator = runtime_context.getCircleOperatorAt(op_index);
 
   inputs_num = first_operator->inputs()->size();
   assert(inputs_num < maxInputSize);
@@ -68,7 +63,7 @@ OMStatus onert_micro::execute::OMRuntimeKernel::readKernel(core::OMKernel &kerne
 }
 
 // Note: if inplace then first input and first output will be inplace
-OMStatus onert_micro::execute::OMRuntimeKernel::getDataFromStorage(core::OMKernel &kernel,
+OMStatus onert_micro::execute::OMRuntimeKernel::getDataFromStorage(uint16_t op_index,
                                                                    core::OMRuntimeStorage &storage,
                                                                    core::OMRuntimeContext &context)
 {
@@ -94,7 +89,7 @@ OMStatus onert_micro::execute::OMRuntimeKernel::getDataFromStorage(core::OMKerne
     if (status != Ok)
       return status;
 
-    if (kernel.getKernelType() == core::Inplace)
+    if (storage.getKernelType(op_index) == core::Inplace)
     {
       outputs_data[i] = inputs_data[i];
       status = storage.removeTensorFromTensorIndexToData(inputs_index[i]);

@@ -18,7 +18,6 @@
 #define ONERT_MICRO_EXECUTE_KERNEL_EXECUTE_H
 
 #include "OMStatus.h"
-#include "core/OMKernel.h"
 #include "core/OMRuntimeContext.h"
 #include "core/OMRuntimeStorage.h"
 
@@ -30,7 +29,7 @@ namespace execute
 struct OMKernelExecute
 {
   static OMStatus executeKernel(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                core::OMKernel &kernel);
+                                core::OMBuilderID builder_id, uint16_t op_index);
 };
 
 } // execute

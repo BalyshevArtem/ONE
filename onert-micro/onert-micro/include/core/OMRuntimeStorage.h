@@ -18,8 +18,8 @@
 #define ONERT_MICRO_CORE_RUNTIME_STORAGE_H
 
 #include "OMRuntimeShape.h"
-#include "OMKernel.h"
 #include "OMStatus.h"
+#include "OMKernelType.h"
 
 #include <vector>
 #include <unordered_map>
@@ -34,8 +34,8 @@ class OMRuntimeStorage
 {
 private:
   std::unordered_map<uint16_t, OMRuntimeShape> _tensor_index_to_runtime_shape;
-  std::vector<OMKernel> _kernels;
   std::unordered_map<uint16_t, uint8_t *> _tensor_index_to_data;
+  std::unordered_map<uint16_t, OMKernelType> _operator_index_to_kernel_type;
 
 public:
   OMRuntimeStorage() = default;
@@ -52,25 +52,25 @@ public:
 
   OMStatus getDataByTensorIndex(uint8_t **data, uint16_t tensor_index);
 
-  OMStatus saveKernels(std::vector<OMKernel> &&kernels)
+  OMKernelType getKernelType(uint16_t op_index)
   {
-    _kernels.clear();
-    _kernels = std::move(kernels);
-    return Ok;
+    auto it = _operator_index_to_kernel_type.find(op_index);
+    if (it == _operator_index_to_kernel_type.end())
+      return Normal;
+
+    return it->second;
   }
 
-  std::vector<OMKernel> &getKernels()
+  OMStatus setKernelType(uint16_t op_index, OMKernelType type)
   {
-    return _kernels;
+    _operator_index_to_kernel_type[op_index] = type;
+    return Ok;
   }
 
   void clearTensorIndexToData()
   {
     _tensor_index_to_data.clear();
   }
-
-  //OMStatus saveRuntimeShapeToTensorIndex(void *data, uint16_t tensor_index);
-  //OMStatus getRuntimeShapeByTensorIndex(void *data, uint16_t tensor_index);
 };
 
 } // core

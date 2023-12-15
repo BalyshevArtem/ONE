@@ -56,11 +56,11 @@ enum class OMBuilderID
 
 OMStatus getBuiltinOperatorBuilderId(const circle::BuiltinOperator &opcode, core::OMBuilderID &builderID);
 
-OMStatus getBuiltinOperatorByBuilderId(core::OMBuilderID &builderID, circle::BuiltinOperator &opcode);
-
 OMStatus getCustomOperatorBuilderId(const flatbuffers::String *custom_opcode, core::OMBuilderID &builderID);
 
 OMStatus getCustomOperatorByBuilderId(core::OMBuilderID &builderID, OMBuilderCustomID &opcode);
+
+OMStatus getBuilderId(const circle::OperatorCode *opcode, core::OMBuilderID &builderID);
 
 } // core
 } // namespace onert_micro

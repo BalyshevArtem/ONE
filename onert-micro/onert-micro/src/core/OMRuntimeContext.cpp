@@ -26,6 +26,11 @@ const circle::Operator *OMRuntimeContext::getCircleOperatorAt(uint16_t index)
   return operators->operator[](index);
 }
 
+const reader::CircleOperators * OMRuntimeContext::getCircleOperators()
+{
+  return _reader.operators();
+}
+
 const circle::Tensor *OMRuntimeContext::getTensorByIndex(int32_t tensor_index)
 {
   if (tensor_index == -1)

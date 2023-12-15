@@ -15,7 +15,6 @@
  */
 
 #include "core/OMRuntimeModule.h"
-#include "import/OMGraphLoader.h"
 #include "optimize/OMOptimizer.h"
 #include "import/OMExecutionPlanCreator.h"
 #include "import/OMKernelConfiguration.h"
@@ -93,11 +92,6 @@ OMStatus OMRuntimeModule::importModel(const char *model_ptr, const OMConfig &con
     memory::OMRuntimeAllocator &runtime_allocator = graph.getRuntimeAllocator();
 
     runtime_context.setModel(model_ptr, i);
-
-    status = import::OMGraphLoader::loadGraph(runtime_storage, runtime_context, config);
-
-    if (status != Ok)
-      return status;
 
     // Third - optimize it until can
     status = optimize::OMOptimizer::optimize(runtime_storage, runtime_context, config);
