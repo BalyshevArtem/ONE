@@ -22,6 +22,8 @@
 #include "core/OMShape.h"
 #include "PALMaxPool2D.h"
 
+#include "core/OMKernelData.h"
+
 using namespace onert_micro;
 using namespace onert_micro::execute;
 
@@ -35,7 +37,7 @@ constexpr uint32_t outputTensorIdx = 0;
 
 // NOTE: doesnt currently support dynamic shapes
 OMStatus onert_micro::execute::execute_kernel_CircleMaxPool2D(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                                        core::OMKernel &kernel)
+                                                        uint16_t op_index)
 {
   const circle::Tensor *input = nullptr;
   const circle::Tensor *output = nullptr;
@@ -48,7 +50,7 @@ OMStatus onert_micro::execute::execute_kernel_CircleMaxPool2D(core::OMRuntimeSto
   const circle::Pool2DOptions *options = nullptr;
   {
     OMRuntimeKernel runtime_kernel;
-    runtime_kernel.readKernel(kernel, runtime_context);
+    runtime_kernel.readKernel(op_index, runtime_context);
 
     input = runtime_kernel.inputs[inputTensorIdx];
     output = runtime_kernel.outputs[outputTensorIdx];
@@ -56,7 +58,7 @@ OMStatus onert_micro::execute::execute_kernel_CircleMaxPool2D(core::OMRuntimeSto
     assert(input != nullptr);
     assert(output != nullptr);
 
-    status = runtime_kernel.getDataFromStorage(kernel, runtime_storage, runtime_context);
+    status = runtime_kernel.getDataFromStorage(op_index, runtime_storage, runtime_context);
     if (status != Ok)
       return status;
 
@@ -72,16 +74,18 @@ OMStatus onert_micro::execute::execute_kernel_CircleMaxPool2D(core::OMRuntimeSto
 
   core::OMRuntimeShape input_shape(input);
 
-  core::DataMaxPool2D *data = reinterpret_cast<core::DataMaxPool2D *>(kernel.getKernelData());
+  int32_t padding_h = 0;
+  int32_t padding_w = 0;
 
-  if (data == nullptr)
-    return UnknownError;
-
-  assert(data != nullptr);
+  const int input_width = input_shape.dims(2);
+  const int input_height = input_shape.dims(1);
+  execute::computePaddingHeightWidth(options->stride_h(), options->stride_w(), 1 /* dilation_rate_height */,
+                                     1 /* dilation_rate_width */, input_height, input_width, options->filter_height(), options->filter_width(),
+                                     options->padding(), &padding_h, &padding_w);
 
   core::Pool2DParams params{};
-  params.pad_h = data->padding_h;
-  params.pad_w = data->padding_w;
+  params.pad_h = padding_h;
+  params.pad_w = padding_w;
   params.stride_h = options->stride_h();
   params.stride_w = options->stride_w();
   params.filter_h = options->filter_height();
@@ -94,23 +98,23 @@ OMStatus onert_micro::execute::execute_kernel_CircleMaxPool2D(core::OMRuntimeSto
       calculateActivationRange(options->fused_activation_function(), &params.activation_min,
                                &params.activation_max);
       status = pal::MaxPool(
-        params, core::OMRuntimeShape(input), core::utils::castInputData<float>(input_data),
+        params, input_shape, core::utils::castInputData<float>(input_data),
         core::OMRuntimeShape(output), core::utils::castOutputData<float>(output_data));
     }
       break;
 #endif // DIS_FLOAT
-#ifndef DIS_FLOAT
+#ifndef DIS_QUANT
     case circle::TensorType_INT8:
     case circle::TensorType_INT16: {
       calculateActivationRange(options->fused_activation_function(),
                                         &params.quantized_activation_min,
                                         &params.quantized_activation_max);
       status = pal::MaxPool(
-        params, core::OMRuntimeShape(input), core::utils::castInputData<uint8_t>(input_data),
+        params, input_shape, core::utils::castInputData<uint8_t>(input_data),
         core::OMRuntimeShape(output), core::utils::castOutputData<uint8_t>(output_data), input->type());
     }
       break;
-#endif // DIS_FLOAT
+#endif // DIS_QUANT
     default: {
       status = UnsupportedType;
       assert(false && "Unsupported type.");

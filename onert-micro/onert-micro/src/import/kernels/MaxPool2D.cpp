@@ -35,11 +35,11 @@ constexpr uint32_t outputTensorIdx = 0;
 
 
 OMStatus onert_micro::import::configure_kernel_CircleMaxPool2D(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                                         core::OMKernel &kernel, const OMConfig&)
+                                                         uint16_t op_index, const OMConfig&)
 {
   onert_micro::execute::OMRuntimeKernel runtime_kernel;
 
-  OMStatus status = runtime_kernel.readKernel(kernel, runtime_context);
+  OMStatus status = runtime_kernel.readKernel(op_index, runtime_context);
   if (status != Ok)
     return status;
 
@@ -68,22 +68,6 @@ OMStatus onert_micro::import::configure_kernel_CircleMaxPool2D(core::OMRuntimeSt
     return UnknownError;
 
   assert(option != nullptr);
-
-  int32_t padding_h = 0;
-  int32_t padding_w = 0;
-
-  const int input_width = input_shape.dim(2);
-  const int input_height = input_shape.dim(1);
-  execute::computePaddingHeightWidth(option->stride_h(), option->stride_w(), 1 /* dilation_rate_height */,
-                                     1 /* dilation_rate_width */, input_height, input_width, option->filter_height(), option->filter_width(),
-                                     option->padding(), &padding_h, &padding_w);
-
-  DataMaxPool2D *data = new DataMaxPool2D;
-
-  data->padding_w = padding_w;
-  data->padding_h = padding_h;
-
-  kernel.setKernelData(reinterpret_cast<uint8_t *>(data));
 
   if (input->type() != circle::TensorType_INT8 and input->type() != circle::TensorType_INT16)
     return status;

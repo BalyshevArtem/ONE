@@ -42,6 +42,16 @@ struct ConcatenationParams
   uint32_t axis;
 };
 
+struct SoftmaxParams
+{
+  float beta;
+  int32_t input_multiplier;
+  int32_t input_left_shift;
+  int diff_min;
+  int num_rows;
+  int row_size;
+};
+
 struct Pool2DParams
 {
   int32_t stride_w;

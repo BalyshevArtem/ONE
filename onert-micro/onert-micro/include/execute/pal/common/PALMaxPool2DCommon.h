@@ -21,6 +21,8 @@
 #include "Params.h"
 #include "PALUtils.h"
 
+#include "core/OMKernelData.h"
+
 namespace onert_micro
 {
 namespace execute

@@ -25,11 +25,11 @@ using namespace onert_micro;
 using namespace onert_micro::core;
 
 OMStatus onert_micro::import::configure_kernel_CircleConcatenation(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                                                  core::OMKernel &kernel, const OMConfig&)
+                                                                  uint16_t op_index, const OMConfig&)
 {
   onert_micro::execute::OMRuntimeKernel runtime_kernel;
 
-  OMStatus status = runtime_kernel.readKernel(kernel, runtime_context);
+  OMStatus status = runtime_kernel.readKernel(op_index, runtime_context);
   if (status != Ok)
     return status;
 

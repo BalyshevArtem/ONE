@@ -19,7 +19,7 @@
 #include "execute/OMRuntimeKernel.h"
 #include "core/OMUtils.h"
 #include "core/OMShape.h"
-#include "PALLogistic.h"
+#include "PALSoftmax.h"
 
 using namespace onert_micro;
 using namespace onert_micro::execute;
@@ -33,8 +33,8 @@ constexpr uint32_t outputTensorIdx = 0;
 } // namespace
 
 // NOTE: doesnt currently support dynamic shapes
-OMStatus onert_micro::execute::execute_kernel_CircleLogistic(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                                        uint16_t op_index)
+OMStatus onert_micro::execute::execute_kernel_CircleSoftmax(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
+                                                             uint16_t op_index)
 {
   const circle::Tensor *input = nullptr;
   const circle::Tensor *output = nullptr;
@@ -44,6 +44,7 @@ OMStatus onert_micro::execute::execute_kernel_CircleLogistic(core::OMRuntimeStor
 
   OMStatus status = Ok;
 
+  const circle::SoftmaxOptions *options;
   {
     OMRuntimeKernel runtime_kernel;
     runtime_kernel.readKernel(op_index, runtime_context);
@@ -60,6 +61,8 @@ OMStatus onert_micro::execute::execute_kernel_CircleLogistic(core::OMRuntimeStor
 
     input_data = runtime_kernel.inputs_data[inputTensorIdx];
     output_data = runtime_kernel.outputs_data[outputTensorIdx];
+
+    options = runtime_kernel.first_operator->builtin_options_as_SoftmaxOptions();
   }
 
   assert(input_data != nullptr);
@@ -69,38 +72,33 @@ OMStatus onert_micro::execute::execute_kernel_CircleLogistic(core::OMRuntimeStor
   {
 #ifndef DIS_FLOAT
     case circle::TensorType_FLOAT32: {
-      status = pal::Logistic(core::OMRuntimeShape(input).flatSize(),
+      const float beta = options->beta();
+
+      core::OMRuntimeShape inputs_shape(input);
+      core::OMRuntimeShape outputs_shape(output);
+
+      const auto dim_count = inputs_shape.dimensionsCount();
+
+      const auto trailing_dim = dim_count - 1;
+
+      int flat_size = 1;
+      for (int i = 0; i < inputs_shape.dimensionsCount() ; ++i)
+      {
+        flat_size *= (i == trailing_dim) ? 1 : inputs_shape.dims(i);
+      }
+
+      core::SoftmaxParams params;
+      params.beta = beta;
+      params.num_rows = flat_size;
+      params.row_size = std::min(inputs_shape.dims(trailing_dim), outputs_shape.dims(trailing_dim));
+
+
+      status = pal::Softmax(params,
                              core::utils::castInputData<float>(input_data),
                              core::utils::castOutputData<float>(output_data));
     }
-    break;
+      break;
 #endif // DIS_FLOAT
-#ifndef DIS_QUANT
-    case circle::TensorType_INT8: {
-      assert(input->quantization() != nullptr);
-      assert(input->quantization()->scale() != nullptr);
-      assert(input->quantization()->scale()->size() == 1);
-      assert(input->quantization()->zero_point() != nullptr);
-      assert(input->quantization()->zero_point()->size() == 1);
-
-      assert(output->quantization() != nullptr);
-      assert(output->quantization()->scale() != nullptr);
-      assert(output->quantization()->scale()->size() == 1);
-      assert(output->quantization()->zero_point() != nullptr);
-      assert(output->quantization()->zero_point()->size() == 1);
-
-      auto input_scale = *input->quantization()->scale()->begin();
-      auto input_zero_point = *input->quantization()->zero_point()->begin();
-      auto output_scale = *input->quantization()->scale()->begin();
-      auto output_zero_point = *input->quantization()->zero_point()->begin();
-
-      status = pal::Logistic(core::OMRuntimeShape(input).flatSize(),
-                             core::utils::castInputData<int8_t>(input_data), input_scale,
-                             input_zero_point, core::utils::castOutputData<int8_t>(output_data),
-                             output_scale, output_zero_point);
-    }
-    break;
-#endif // DIS_QUANT
     default: {
       status = UnsupportedType;
       assert(false && "Unsupported type.");

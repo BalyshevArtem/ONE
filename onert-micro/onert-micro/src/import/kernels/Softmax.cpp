@@ -26,18 +26,14 @@ using namespace onert_micro::core;
 namespace
 {
 
-constexpr uint32_t numInput = 2;
-constexpr uint32_t numOutput = 1;
-
-constexpr uint32_t input1TensorIdx = 0;
-constexpr uint32_t input2TensorIdx = 1;
+constexpr uint32_t inputTensorIdx = 0;
 constexpr uint32_t outputTensorIdx = 0;
 
 } // namespace
 
 
-OMStatus onert_micro::import::configure_kernel_CircleMul(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                                         uint16_t op_index, const OMConfig&)
+OMStatus onert_micro::import::configure_kernel_CircleSoftmax(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
+                                                              uint16_t op_index, const OMConfig&)
 {
   onert_micro::execute::OMRuntimeKernel runtime_kernel;
 
@@ -45,37 +41,41 @@ OMStatus onert_micro::import::configure_kernel_CircleMul(core::OMRuntimeStorage 
   if (status != Ok)
     return status;
 
-  const circle::Tensor *input1 = runtime_kernel.inputs[input1TensorIdx];
-  const circle::Tensor *input2 = runtime_kernel.inputs[input2TensorIdx];
+  const circle::Tensor *input = runtime_kernel.inputs[inputTensorIdx];
   const circle::Tensor *output = runtime_kernel.outputs[outputTensorIdx];
 
-  assert(input1 != nullptr);
-  assert(input2 != nullptr);
+  assert(input != nullptr);
   assert(output != nullptr);
 
-  status = utils::checkCondition(input1->type() == output->type());
+  status = utils::checkCondition(input->type() == output->type());
   if (status != Ok)
     return status;
 
-  status = utils::checkCondition(input2->type() == output->type());
+  OMShape input_shape(input);
+  OMShape output_shape(output);
+
+  status = utils::checkCondition(input_shape.rank() == output_shape.rank());
   if (status != Ok)
     return status;
 
-  if (input1->type() != circle::TensorType_INT8 and input1->type() != circle::TensorType_INT16)
+  status = utils::checkCondition(input_shape.rank() >= 1);
+  if (status != Ok)
     return status;
 
-  // Check quantization params
-  if (input1->quantization() == nullptr or input2->quantization() == nullptr or
-      output->quantization() == nullptr)
-  {
+  if (input->type() != circle::TensorType_INT8 and input->type() != circle::TensorType_INT16
+      and input->type() != circle::TensorType_UINT8)
+    return status;
+
+  // Check quantized version
+  if (input->quantization() == nullptr or output->quantization() == nullptr)
     return NoQuantization;
-  }
 
-  if (input1->quantization()->scale()->size() != 1 or
-      input2->quantization()->scale()->size() != 1 or output->quantization()->scale()->size() != 1)
-  {
-    return UnsupportedType;
-  }
+  if (output->quantization()->scale() == nullptr or output->quantization()->scale()->size() != 1)
+    return NoQuantization;
+
+  if (input->quantization()->scale() == nullptr or input->quantization()->scale()->size() != 1)
+    return NoQuantization;
+
 
   return status;
 }

@@ -66,7 +66,7 @@ buildStridedSliceParams(int32_t dims, const int32_t *begin, const int32_t *end,
 
 // NOTE: doesnt currently support dynamic shapes
 OMStatus onert_micro::execute::execute_kernel_CircleStridedSlice(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                                                   core::OMKernel &kernel)
+                                                                 uint16_t op_index)
 {
   const circle::Tensor *input = nullptr;
   const circle::Tensor *begin = nullptr;
@@ -87,7 +87,7 @@ OMStatus onert_micro::execute::execute_kernel_CircleStridedSlice(core::OMRuntime
   // Read kernel
   {
     execute::OMRuntimeKernel runtime_kernel;
-    runtime_kernel.readKernel(kernel, runtime_context);
+    runtime_kernel.readKernel(op_index, runtime_context);
 
     input = runtime_kernel.inputs[inputTensorIdx];
     begin = runtime_kernel.inputs[beginTensorIdx];
@@ -101,7 +101,7 @@ OMStatus onert_micro::execute::execute_kernel_CircleStridedSlice(core::OMRuntime
     assert(strides != nullptr);
     assert(output != nullptr);
 
-    status = runtime_kernel.getDataFromStorage(kernel, runtime_storage, runtime_context);
+    status = runtime_kernel.getDataFromStorage(op_index, runtime_storage, runtime_context);
     if (status != Ok)
       return status;
 

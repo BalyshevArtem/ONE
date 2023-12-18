@@ -18,7 +18,9 @@
 #include "OMStatus.h"
 #include "execute/OMRuntimeKernel.h"
 #include "core/OMUtils.h"
+#include "execute/OMUtils.h"
 #include "core/OMShape.h"
+#include "core/OMDataType.h"
 #include "PALUnidirectionalSequenceLSTM.h"
 #include "PALUnidirectionalSequenceLSTMKernel.h"
 
@@ -34,11 +36,11 @@ constexpr uint32_t outputTensorIdx = 0;
 } // namespace
 
 #ifndef DIS_FLOAT
-luci_interpreter_pal::FullyConnectedParams createFcParamsFloat()
+lstm::FullyConnectedParams createFcParamsFloat()
 {
-  luci_interpreter_pal::FullyConnectedParams op_params;
-  kernels::calculateActivationRange(FusedActFunc::NONE, &op_params.float_activation_min,
-                                    &op_params.float_activation_max);
+  lstm::FullyConnectedParams op_params{};
+  calculateActivationRange(circle::ActivationFunctionType_NONE,
+                           &op_params.float_activation_min, &op_params.float_activation_max);
   op_params.quantized_activation_max = op_params.float_activation_max;
   op_params.quantized_activation_min = op_params.float_activation_min;
   return op_params;
@@ -46,7 +48,7 @@ luci_interpreter_pal::FullyConnectedParams createFcParamsFloat()
 
 lstm::GateParameters createGateParamsFloat()
 {
-  lstm::GateParameters gate_params;
+  lstm::GateParameters gate_params{};
 
   gate_params.input_fc_params = createFcParamsFloat();
   gate_params.recurrent_fc_params = createFcParamsFloat();
@@ -56,14 +58,14 @@ lstm::GateParameters createGateParamsFloat()
 
 lstm::CellStateInfo createLstmCellStateInfoFloat(const float cell_clip)
 {
-  lstm::CellStateInfo cell_state_info;
+  lstm::CellStateInfo cell_state_info{};
   cell_state_info.cell_clip = cell_clip;
   cell_state_info.cell_state_scale_power = 0; // no quantization
   cell_state_info.quantized_cell_clip = 0;    // no quantization
   return cell_state_info;
 }
 
-void prepareGateParamsFloat(lstm::LSTMParameters *float_lstm_params)
+OMStatus prepareGateParamsFloat(lstm::LSTMParameters *float_lstm_params)
 {
   // Gate Parameters
   float_lstm_params->forget_gate_parameters = createGateParamsFloat();
@@ -72,29 +74,36 @@ void prepareGateParamsFloat(lstm::LSTMParameters *float_lstm_params)
   float_lstm_params->output_gate_parameters = createGateParamsFloat();
 
   // Inter gate multiplication parameters
-  lstm::ArithmeticParams op_params;
-  kernels::calculateActivationRange(FusedActFunc::NONE, &op_params.float_activation_min,
-                                    &op_params.float_activation_max);
+  lstm::ArithmeticParams op_params{};
+  OMStatus status = calculateActivationRange(circle::ActivationFunctionType_NONE,
+                                             &op_params.float_activation_min, &op_params.float_activation_max);
+
   op_params.quantized_activation_max = op_params.float_activation_max;
   op_params.quantized_activation_min = op_params.float_activation_min;
   float_lstm_params->inter_gate_parameters.forget_cell_mul_params = op_params;
   float_lstm_params->inter_gate_parameters.input_mul_params = op_params;
   float_lstm_params->inter_gate_parameters.output_mul_params = op_params;
+
+  return status;
 }
 
-void evalFloat(lstm::LSTMStruct &lstm_struct, core::OMRuntimeStorage *storage, core::OMRuntimeContext *context)
+OMStatus evalFloat(lstm::LSTMStruct &lstm_struct, core::OMRuntimeStorage &storage, core::OMRuntimeContext &context)
 {
   lstm::CellStateInfo cell_state_info =
     createLstmCellStateInfoFloat(lstm_struct.options->cell_clip());
 
-  lstm::LSTMParameters lstm_params;
-  prepareGateParamsFloat(&lstm_params);
+  lstm::LSTMParameters lstm_params{};
+  OMStatus status = prepareGateParamsFloat(&lstm_params);
+
+  core::OMRuntimeShape input_shape(lstm_struct.input());
+  core::OMRuntimeShape output_state_shape(lstm_struct.output_state());
+  core::OMRuntimeShape cell_state_shape(lstm_struct.cell_state());
 
   const bool time_major = lstm_struct.options->time_major();
   const auto batch_size =
-    time_major ? Tensor::dim(lstm_struct.input(), 1) : Tensor::dim(lstm_struct.input(), 0);
-  const auto state_dimension = Tensor::dim(lstm_struct.output_state(), 1);
-  const auto cell_state_type_size = getDataTypeSize(Tensor::element_type(lstm_struct.cell_state()));
+    time_major ? input_shape.dims(1) : input_shape.dims(0); //Tensor::dim(lstm_struct.input(), 1) : Tensor::dim(lstm_struct.input(), 0);
+  const auto state_dimension = output_state_shape.dims(1); //Tensor::dim(lstm_struct.output_state(), 1);
+  const auto cell_state_type_size = core::getOMDataTypeSize(core::onertMicroDatatype(lstm_struct.cell_state()->type()));//getDataTypeSize(Tensor::element_type(lstm_struct.cell_state()));
 
   auto scratch_0_data =
     std::make_unique<uint8_t[]>(batch_size * state_dimension * cell_state_type_size);
@@ -106,32 +115,38 @@ void evalFloat(lstm::LSTMStruct &lstm_struct, core::OMRuntimeStorage *storage, c
     std::make_unique<uint8_t[]>(batch_size * state_dimension * cell_state_type_size);
 
   // Create and fill with 0 output state tensor
-  auto output_state_data =
-    std::make_unique<float[]>(Tensor::num_elements(lstm_struct.output_state()));
-  std::fill_n(output_state_data.get(), Tensor::num_elements(lstm_struct.output_state()), 0);
+  auto output_state_data = std::make_unique<float[]>(output_state_shape.flatSize());
+  //std::make_unique<float[]>(Tensor::num_elements(lstm_struct.output_state()));
+  std::fill_n(output_state_data.get(), output_state_shape.flatSize(), 0);
 
   // Create and fill with 0 cell state tensor
-  auto cell_state_data = std::make_unique<float[]>(Tensor::num_elements(lstm_struct.cell_state()));
-  std::fill_n(cell_state_data.get(), Tensor::num_elements(lstm_struct.cell_state()), 0);
+  auto cell_state_data = std::make_unique<float[]>(cell_state_shape.flatSize());
+  std::fill_n(cell_state_data.get(), cell_state_shape.flatSize(), 0);
 
-  luci_interpreter_pal::evalLSTM<float, float, float, float>(
+  status = pal::evalLSTM<float, float, float, float>(
     &lstm_struct, &lstm_params, &cell_state_info, output_state_data.get(), cell_state_data.get(),
-    kernels::getTensorData<float>(scratch_0_data.get()),
-    kernels::getTensorData<float>(scratch_1_data.get()),
-    kernels::getTensorData<float>(scratch_2_data.get()),
-    kernels::getTensorData<float>(scratch_3_data.get()), runtime_graph);
+    core::utils::castOutputData<float>(scratch_0_data.get()),
+    core::utils::castOutputData<float>(scratch_1_data.get()),
+    core::utils::castOutputData<float>(scratch_2_data.get()),
+    core::utils::castOutputData<float>(scratch_3_data.get()), storage, context);
+
+  return status;
 }
 #endif // DIS_FLOAT
 
 // NOTE: doesnt currently support dynamic shapes
 OMStatus onert_micro::execute::execute_kernel_CircleUnidirectionalSequenceLSTM(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                                        core::OMKernel &kernel)
+                                                                               uint16_t op_index)
 {
   OMStatus status = Ok;
 
-  execute::lstm::LSTMStruct lstm_struct;
+  execute::lstm::LSTMStruct lstm_struct{};
 
-  status = lstm_struct.readKernel(kernel, runtime_storage, runtime_context);
+  status = lstm_struct.readKernel(op_index, runtime_storage, runtime_context);
+  if (status != Ok)
+    return status;
+
+  status = lstm_struct.readData(op_index, runtime_storage, runtime_context);
   if (status != Ok)
     return status;
 
@@ -139,8 +154,7 @@ OMStatus onert_micro::execute::execute_kernel_CircleUnidirectionalSequenceLSTM(c
   {
 #ifndef DIS_FLOAT
     case circle::TensorType_FLOAT32:
-      status = pal::Abs(core::OMRuntimeShape(input), core::utils::castInputData<float>(input_data),
-                        core::utils::castOutputData<float>(output_data));
+      status = evalFloat(lstm_struct, runtime_storage, runtime_context);
       break;
 #endif // DIS_FLOAT
     default: {
@@ -149,5 +163,5 @@ OMStatus onert_micro::execute::execute_kernel_CircleUnidirectionalSequenceLSTM(c
     }
   }
 
-  return status
+  return status;
 }

@@ -22,6 +22,7 @@
 #include "core/OMShape.h"
 #include "core/OMRuntimeShape.h"
 #include "PALConcatenation.h"
+#include "core/OMKernelData.h"
 
 using namespace onert_micro;
 using namespace onert_micro::execute;
@@ -72,10 +73,10 @@ OMStatus evalGeneric(OMRuntimeKernel &runtime_kernel)
 
 } // namespace
 
-OMStatus onert_micro::execute::execute_kernel_CircleConcatenation(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context, core::OMKernel &kernel)
+OMStatus onert_micro::execute::execute_kernel_CircleConcatenation(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context, uint16_t op_index)
 {
   execute::OMRuntimeKernel runtime_kernel;
-  runtime_kernel.readKernel(kernel, runtime_context);
+  runtime_kernel.readKernel(op_index, runtime_context);
 
   const int num_inputs = runtime_kernel.inputs_num;
   assert(num_inputs > 0);
@@ -83,7 +84,7 @@ OMStatus onert_micro::execute::execute_kernel_CircleConcatenation(core::OMRuntim
   const auto *t0 = runtime_kernel.inputs[0];
   OMStatus status = Ok;
 
-  status = runtime_kernel.getDataFromStorage(kernel, runtime_storage, runtime_context);
+  status = runtime_kernel.getDataFromStorage(op_index, runtime_storage, runtime_context);
 
   if (status != Ok)
     return status;

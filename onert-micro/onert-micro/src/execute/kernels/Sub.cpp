@@ -40,7 +40,7 @@ constexpr uint32_t outputTensorIdx = 0;
 
 // NOTE: doesnt currently support dynamic shapes
 OMStatus onert_micro::execute::execute_kernel_CircleSub(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                                        core::OMKernel &kernel)
+                                                        uint16_t op_index)
 {
 
   const circle::Tensor *input1;
@@ -55,7 +55,7 @@ OMStatus onert_micro::execute::execute_kernel_CircleSub(core::OMRuntimeStorage &
   // Read kernel
   {
     execute::OMRuntimeKernel runtime_kernel;
-    runtime_kernel.readKernel(kernel, runtime_context);
+    runtime_kernel.readKernel(op_index, runtime_context);
 
     input1 = runtime_kernel.inputs[input1TensorIdx];
     input2 = runtime_kernel.inputs[input2TensorIdx];
@@ -64,7 +64,7 @@ OMStatus onert_micro::execute::execute_kernel_CircleSub(core::OMRuntimeStorage &
     assert(input2 != nullptr);
     assert(output != nullptr);
 
-    runtime_kernel.getDataFromStorage(kernel, runtime_storage, runtime_context);
+    runtime_kernel.getDataFromStorage(op_index, runtime_storage, runtime_context);
 
     input1_data = runtime_kernel.inputs_data[input1TensorIdx];
     input2_data = runtime_kernel.inputs_data[input2TensorIdx];

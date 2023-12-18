@@ -15,29 +15,38 @@
  * limitations under the License.
  */
 
-#ifndef LUCI_INTERPRETER_PAL_SOFTMAX_H
-#define LUCI_INTERPRETER_PAL_SOFTMAX_H
+#ifndef ONERT_MICRO_EXECUTE_PAL_SOFTMAX_H
+#define ONERT_MICRO_EXECUTE_PAL_SOFTMAX_H
 
 #include "PALSoftmaxCommon.h"
 
-namespace luci_interpreter_pal
+namespace onert_micro
+{
+namespace execute
+{
+namespace pal
 {
 
-inline void Softmax(const SoftmaxParams &params, const int8_t *input_data, int8_t *output_data)
-{
-  assert(false && "Not supported now");
-}
-
-inline void Softmax(const SoftmaxParams &params, const int8_t *input_data, int16_t *output_data)
-{
-  assert(false && "Not supported now");
-}
-
-inline void Softmax(const SoftmaxParams &params, const int16_t *input_data, int16_t *output_data)
+OMStatus Softmax(const core::SoftmaxParams &params, const int8_t *input_data, int8_t *output_data)
 {
   assert(false && "Not supported now");
+  return UnsupportedType;
 }
 
-} // namespace luci_interpreter_pal
+OMStatus Softmax(const core::SoftmaxParams &params, const int8_t *input_data, int16_t *output_data)
+{
+  assert(false && "Not supported now");
+  return UnsupportedType;
+}
 
-#endif // LUCI_INTERPRETER_PAL_SOFTMAX_H
+OMStatus Softmax(const core::SoftmaxParams &params, const int16_t *input_data, int16_t *output_data)
+{
+  assert(false && "Not supported now");
+  return UnsupportedType;
+}
+
+} // namespace pal
+} // namespace execute
+} // namespace onert_micro
+
+#endif // ONERT_MICRO_EXECUTE_PAL_SOFTMAX_H

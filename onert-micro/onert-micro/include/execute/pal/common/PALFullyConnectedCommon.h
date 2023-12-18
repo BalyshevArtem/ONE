@@ -69,7 +69,7 @@ OMStatus FullyConnected(const core::FullyConnectedParams &params,
       {
         acc += bias_data[out_c];
       }
-      int32_t acc_scaled = MultiplyByQuantizedMultiplier(acc, output_multiplier, output_shift);
+      int32_t acc_scaled = multiplyByQuantizedMultiplier(acc, output_multiplier, output_shift);
       acc_scaled += output_offset;
       acc_scaled = std::max(acc_scaled, output_activation_min);
       acc_scaled = std::min(acc_scaled, output_activation_max);
@@ -80,7 +80,7 @@ OMStatus FullyConnected(const core::FullyConnectedParams &params,
 }
 
 template <>
-OMStatus FullyConnected<float>(const core::FullyConnectedParams &params,
+OMStatus inline FullyConnected<float>(const core::FullyConnectedParams &params,
                                     const float *input_data,  const core::OMRuntimeShape &filter_shape,
                                     const float *filter_data, const float *bias_data,
                                     const core::OMRuntimeShape &output_shape, float *output_data)

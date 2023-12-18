@@ -101,13 +101,13 @@ OMStatus validateTensorsSize(execute::lstm::LSTMStruct *lstm_struct, const bool 
 
 
 OMStatus onert_micro::import::configure_kernel_CircleUnidirectionalSequenceLSTM(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                                         core::OMKernel &kernel, const OMConfig&)
+                                                         uint16_t op_index, const OMConfig&)
 {
  OMStatus status = Ok;
 
-  execute::lstm::LSTMStruct lstm_struct;
+  execute::lstm::LSTMStruct lstm_struct{};
 
-  status = lstm_struct.readKernel(kernel, runtime_storage, runtime_context);
+  status = lstm_struct.readKernel(op_index, runtime_storage, runtime_context);
   if (status != Ok)
     return status;
 

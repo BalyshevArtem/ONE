@@ -15,14 +15,22 @@
  * limitations under the License.
  */
 
-#ifndef LUCI_INTERPRETER_PAL_SOFTMAX_COMMON_H
-#define LUCI_INTERPRETER_PAL_SOFTMAX_COMMON_H
+#ifndef ONERT_MICRO_EXECUTE_PAL_SOFTMAX_COMMON_H
+#define ONERT_MICRO_EXECUTE_PAL_SOFTMAX_COMMON_H
 
 #include "Params.h"
+#include "core/OMKernelData.h"
 
-namespace luci_interpreter_pal
+#include <cmath>
+
+namespace onert_micro
 {
-inline void Softmax(const SoftmaxParams &params, const float *input_data, float *output_data)
+namespace execute
+{
+namespace pal
+{
+
+OMStatus Softmax(const core::SoftmaxParams &params, const float *input_data, float *output_data)
 {
   const int outer_size = params.num_rows;
   const int depth = params.row_size;
@@ -54,8 +62,11 @@ inline void Softmax(const SoftmaxParams &params, const float *input_data, float 
       output_data[i * depth + c] = output_data[i * depth + c] / sum;
     }
   }
+  return Ok;
 }
 
-} // namespace luci_interpreter_pal
+} // namespace pal
+} // namespace execute
+} // namespace onert_micro
 
-#endif // LUCI_INTERPRETER_PAL_SOFTMAX_COMMON_H
+#endif // ONERT_MICRO_EXECUTE_PAL_SOFTMAX_COMMON_H
