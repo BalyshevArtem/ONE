@@ -33,7 +33,9 @@ namespace core
 class OMRuntimeStorage
 {
 private:
-  std::unordered_map<uint16_t, OMRuntimeShape> _tensor_index_to_runtime_shape;
+#ifndef DIS_DYN_SHAPES
+  std::unordered_map<uint16_t, uint32_t> _tensor_index_to_dynamic_tensor_size;
+#endif
   std::unordered_map<uint16_t, uint8_t *> _tensor_index_to_data;
   std::unordered_map<uint16_t, OMKernelType> _operator_index_to_kernel_type;
 
@@ -66,6 +68,22 @@ public:
     _operator_index_to_kernel_type[op_index] = type;
     return Ok;
   }
+#ifndef DIS_DYN_SHAPES
+  int32_t getDynamicTensorSize(uint16_t tensor_index)
+  {
+    auto it = _tensor_index_to_dynamic_tensor_size.find(tensor_index);
+    if (it == _tensor_index_to_dynamic_tensor_size.end())
+      return -1;
+
+    return it->second;
+  }
+
+  OMStatus setDynamicTensorSize(uint16_t tensor_index, uint32_t dynamic_size)
+  {
+    _tensor_index_to_dynamic_tensor_size[tensor_index] = dynamic_size;
+    return Ok;
+  }
+#endif // DIS_DYN_SHAPES
 
   void clearTensorIndexToData()
   {

@@ -21,6 +21,7 @@
 #include "OMConfig.h"
 #include "core/OMRuntimeStorage.h"
 #include "core/OMRuntimeContext.h"
+#include "import/OMConfigureArgs.h"
 
 namespace onert_micro
 {
@@ -29,8 +30,7 @@ namespace import
 
 struct OMKernelConfiguration
 {
-  static OMStatus configureKernels(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                   const OMConfig &configs);
+  static OMStatus configureKernels(OMConfigureArgs &);
 };
 
 } // import

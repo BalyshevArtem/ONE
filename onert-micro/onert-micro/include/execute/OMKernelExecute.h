@@ -20,6 +20,8 @@
 #include "OMStatus.h"
 #include "core/OMRuntimeContext.h"
 #include "core/OMRuntimeStorage.h"
+#include "execute/OMExecuteArgs.h"
+#include "core/memory/OMRuntimeAllocator.h"
 
 namespace onert_micro
 {
@@ -28,8 +30,7 @@ namespace execute
 
 struct OMKernelExecute
 {
-  static OMStatus executeKernel(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                core::OMBuilderID builder_id, uint16_t op_index);
+  static OMStatus executeKernel(OMExecuteArgs &, core::memory::OMRuntimeAllocator &allocator);
 };
 
 } // execute

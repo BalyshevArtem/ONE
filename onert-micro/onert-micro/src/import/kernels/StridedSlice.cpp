@@ -37,9 +37,11 @@ constexpr uint32_t outputTensorIdx = 0;
 
 } // namespace
 
-OMStatus onert_micro::import::configure_kernel_CircleStridedSlice(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                                            uint16_t op_index, const OMConfig &configs)
+OMStatus onert_micro::import::configure_kernel_CircleStridedSlice(const OMConfigureArgs &config_args)
 {
+  OMRuntimeContext &runtime_context = config_args.runtime_context;
+  uint16_t op_index = config_args.kernel_index;
+
   execute::OMRuntimeKernel runtime_kernel;
   OMStatus status = runtime_kernel.readKernel(op_index, runtime_context);
   if (status != Ok)

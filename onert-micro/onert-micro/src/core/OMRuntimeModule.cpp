@@ -18,6 +18,8 @@
 #include "optimize/OMOptimizer.h"
 #include "import/OMExecutionPlanCreator.h"
 #include "import/OMKernelConfiguration.h"
+#include "import/OMConfigureArgs.h"
+#include "execute/OMKernelExecute.h"
 
 using namespace onert_micro::core;
 using namespace onert_micro;
@@ -104,7 +106,9 @@ OMStatus OMRuntimeModule::importModel(const char *model_ptr, const OMConfig &con
       return status;
 
     // 5 - KernelConfigure
-    status = import::OMKernelConfiguration::configureKernels(runtime_storage, runtime_context, config);
+    import::OMConfigureArgs configure_args = {runtime_storage, runtime_context, 0, config, *this};
+
+    status = import::OMKernelConfiguration::configureKernels(configure_args);
     if (status != Ok)
       return status;
 
@@ -131,7 +135,11 @@ OMStatus OMRuntimeModule::run()
 
   core::OMRuntimeGraph &main_graph = _graphs.at(0);
 
-  status = main_graph.run();
+  execute::OMExecuteArgs execute_args = {main_graph.getRuntimeStorage(), main_graph.getRuntimeContext(), 0, *this};
+
+  status = execute::OMKernelExecute::executeKernel(execute_args, main_graph.getRuntimeAllocator());
+  if (status != Ok)
+    return status;
 
   return status;
 }
@@ -149,4 +157,14 @@ OMStatus OMRuntimeModule::reset()
   }
 
   return status;
+}
+
+OMStatus OMRuntimeModule::getRuntimeGraphAt(uint32_t pos, OMRuntimeGraph **runtime_graph)
+{
+  if (pos >= _graphs.size())
+    return UnknownError;
+
+  *runtime_graph = &_graphs.at(pos);
+
+  return Ok;
 }

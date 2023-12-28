@@ -33,9 +33,11 @@ constexpr uint32_t outputTensorIdx = 0;
 } // namespace
 
 
-OMStatus onert_micro::import::configure_kernel_CircleAdd(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                                         uint16_t op_index, const OMConfig&)
+OMStatus onert_micro::import::configure_kernel_CircleAdd(const OMConfigureArgs &config_args)
 {
+  OMRuntimeContext &runtime_context = config_args.runtime_context;
+  uint16_t op_index = config_args.kernel_index;
+
   onert_micro::execute::OMRuntimeKernel runtime_kernel;
 
   OMStatus status = runtime_kernel.readKernel(op_index, runtime_context);

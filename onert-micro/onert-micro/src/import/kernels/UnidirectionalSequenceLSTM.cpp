@@ -28,9 +28,6 @@ using namespace onert_micro::core;
 namespace
 {
 
-constexpr uint32_t numInput = 2;
-constexpr uint32_t numOutput = 1;
-
 constexpr uint32_t input1TensorIdx = 0;
 constexpr uint32_t input2TensorIdx = 1;
 constexpr uint32_t outputTensorIdx = 0;
@@ -100,9 +97,12 @@ OMStatus validateTensorsSize(execute::lstm::LSTMStruct *lstm_struct, const bool 
 } // namespace
 
 
-OMStatus onert_micro::import::configure_kernel_CircleUnidirectionalSequenceLSTM(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                                         uint16_t op_index, const OMConfig&)
+OMStatus onert_micro::import::configure_kernel_CircleUnidirectionalSequenceLSTM(const OMConfigureArgs &config_args)
 {
+  OMRuntimeContext &runtime_context = config_args.runtime_context;
+  uint16_t op_index = config_args.kernel_index;
+  OMRuntimeStorage &runtime_storage = config_args.runtime_storage;
+
  OMStatus status = Ok;
 
   execute::lstm::LSTMStruct lstm_struct{};

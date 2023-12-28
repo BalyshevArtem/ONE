@@ -15,12 +15,16 @@
  * limitations under the License.
  */
 
-#ifndef LUCI_INTERPRETER_PAL_TANH_H
-#define LUCI_INTERPRETER_PAL_TANH_H
+#ifndef ONERT_MICRO_EXECUTE_PAL_TANH_H
+#define ONERT_MICRO_EXECUTE_PAL_TANH_H
 
 #include "PALUtils.h"
 
-namespace luci_interpreter_pal
+namespace onert_micro
+{
+namespace execute
+{
+namespace pal
 {
 namespace
 {
@@ -109,6 +113,8 @@ inline void ReduceGeneric(const T *input_data, const int *input_dims, const int 
   } while (nextIndex(input_num_dims, input_dims, temp_index));
 }
 
-} // namespace luci_interpreter_pal
+} // namespace pal
+} // namespace execute
+} // namespace onert_micro
 
-#endif // LUCI_INTERPRETER_PAL_TANH_H
+#endif // ONERT_MICRO_EXECUTE_PAL_TANH_H

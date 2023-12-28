@@ -21,32 +21,66 @@
 using namespace onert_micro::execute;
 using namespace onert_micro;
 
-OMStatus OMKernelExecute::executeKernel(core::OMRuntimeStorage &runtime_storage,
-                                        core::OMRuntimeContext &runtime_context,
-                                        core::OMBuilderID builder_id,
-                                        uint16_t op_index)
+OMStatus OMKernelExecute::executeKernel(OMExecuteArgs &execute_args, core::memory::OMRuntimeAllocator &allocator)
 {
   OMStatus status = Ok;
 
-  KernelExecuteFunc *execute_func = nullptr;
-  if (size_t(builder_id) < size_t(core::OMBuilderID::BuiltinOperatorsSize))
+  core::OMRuntimeContext &context = execute_args.runtime_context;
+  core::OMRuntimeStorage &storage = execute_args.runtime_storage;
+
+  const core::reader::CircleOperators *operators = context.getCircleOperators();
+
+  const auto num_operators = static_cast<uint16_t>(operators->size());
+  const auto *op_codes = context.getCircleOpcodes();
+
+  for (uint16_t i = 0; i < num_operators; ++i)
   {
-    // Builtin operator
-    status = kernel_builtin_execute.getKernelExecuteFunc(builder_id, &execute_func);
-  } else
-  {
-    // Custom
-    status = kernel_custom_execute.getKernelExecuteFunc(builder_id, &execute_func);
+    status = allocator.allocate(i, &context, &storage);
+
+    if (status != Ok)
+      return status;
+
+    core::OMBuilderID builder_id = core::OMBuilderID::Size;
+    const circle::Operator *op = operators->operator[](i);
+    uint32_t index = op->opcode_index();
+
+    assert(index < op_codes->size());
+
+    const auto opcode = op_codes->operator[](index);
+
+    status = core::getBuilderId(opcode, builder_id);
+
+    assert(status == Ok);
+    if (status != Ok)
+      return status;
+
+    execute_args.kernel_index = i;
+
+    KernelExecuteFunc *execute_func = nullptr;
+    if (size_t(builder_id) < size_t(core::OMBuilderID::BuiltinOperatorsSize))
+    {
+      // Builtin operator
+      status = kernel_builtin_execute.getKernelExecuteFunc(builder_id, &execute_func);
+    } else
+    {
+      // Custom
+      status = kernel_custom_execute.getKernelExecuteFunc(builder_id, &execute_func);
+    }
+
+    assert(execute_func != nullptr);
+
+    if (status != Ok)
+      return status;
+
+    status = execute_func(execute_args);
+
+    assert(status == Ok);
+
+    if (status != Ok)
+      return status;
+
+    status = allocator.deallocate(i, &storage);
   }
-
-  assert(execute_func != nullptr);
-
-  if (status != Ok)
-    return status;
-
-  status = execute_func(runtime_storage, runtime_context, op_index);
-
-  assert(status == Ok);
 
   return status;
 }

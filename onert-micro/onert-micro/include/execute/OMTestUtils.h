@@ -36,8 +36,8 @@ namespace testing
 ::testing::Matcher<std::vector<float>> FloatArrayNear(const std::vector<float> &values,
                                                       float max_abs_error = 1.0e-5f);
 
-template <typename T>
-std::vector<T> checkSISOKernel(onert_micro::test_model::TestDataBase<T> *test_data_base)
+template <typename T, typename U = T>
+std::vector<U> checkSISOKernel(onert_micro::test_model::TestDataBase<T, U> *test_data_base)
 {
 
   onert_micro::OMInterpreter interpreter;
@@ -55,9 +55,9 @@ std::vector<T> checkSISOKernel(onert_micro::test_model::TestDataBase<T> *test_da
 
   interpreter.run();
 
-  T *output_data = reinterpret_cast<T *>(interpreter.getOutputDataAt(0));
+  U *output_data = reinterpret_cast<U *>(interpreter.getOutputDataAt(0));
   const size_t num_elements = interpreter.getOutputSizeAt(0);
-  std::vector<T> output_data_vector(output_data, output_data + num_elements);
+  std::vector<U> output_data_vector(output_data, output_data + num_elements);
   return output_data_vector;
 }
 

@@ -39,9 +39,11 @@ constexpr uint32_t outputTensorIdx = 0;
 } // namespace
 
 // NOTE: doesnt currently support dynamic shapes
-OMStatus onert_micro::execute::execute_kernel_CircleAdd(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                                        uint16_t op_index)
+OMStatus onert_micro::execute::execute_kernel_CircleAdd(const OMExecuteArgs &execute_args)
 {
+  core::OMRuntimeContext &runtime_context = execute_args.runtime_context;
+  core::OMRuntimeStorage &runtime_storage = execute_args.runtime_storage;
+  uint16_t op_index = execute_args.kernel_index;
 
   const circle::Tensor *input1;
   const circle::Tensor *input2;
@@ -50,6 +52,8 @@ OMStatus onert_micro::execute::execute_kernel_CircleAdd(core::OMRuntimeStorage &
   uint8_t *input1_data;
   uint8_t *input2_data;
   uint8_t *output_data;
+
+  uint16_t input1_index = 0;
 
   const circle::AddOptions *options;
   // Read kernel
@@ -74,6 +78,8 @@ OMStatus onert_micro::execute::execute_kernel_CircleAdd(core::OMRuntimeStorage &
     assert(output_data != nullptr);
 
     options = runtime_kernel.first_operator->builtin_options_as_AddOptions();
+
+    input1_index = runtime_kernel.inputs_index[input1TensorIdx];
   }
 
   OMStatus status;
@@ -82,12 +88,22 @@ OMStatus onert_micro::execute::execute_kernel_CircleAdd(core::OMRuntimeStorage &
   core::OMRuntimeShape input2_shape(input2);
   core::OMRuntimeShape output_shape(output);
 
+#ifndef DIS_DYN_SHAPES
+  int32_t dyn_tensor_size = runtime_storage.getDynamicTensorSize(input1_index);
+  if (dyn_tensor_size != -1)
+  {
+    input1_shape = output_shape;
+  }
+#else
+  core::OMRuntimeShape input1_shape(input1);
+#endif // DIS_DYN_SHAPES
+
   switch (input1->type())
   {
 #ifndef DIS_FLOAT
     case circle::TensorType_FLOAT32: {
       core::BinaryArithmeticBroadcastParams params{};
-      status = execute::calculateActivationRange(options->fused_activation_function(),
+      execute::calculateActivationRange(options->fused_activation_function(),
                                         &params.float_activation_min, &params.float_activation_max);
 
       const bool need_broadcast =
@@ -100,14 +116,14 @@ OMStatus onert_micro::execute::execute_kernel_CircleAdd(core::OMRuntimeStorage &
                                          core::utils::castOutputData<float>(output_data));
       } else
       {
-        status = pal::Add(params, input1_shape.flatSize(), core::utils::castInputData<float>(input1_data),
+        status = pal::Add(params, output_shape.flatSize(), core::utils::castInputData<float>(input1_data),
                           core::utils::castInputData<float>(input2_data), core::utils::castOutputData<float>(output_data));
       }
     }
     break;
     case circle::TensorType_INT64: {
       core::BinaryArithmeticBroadcastParams params{};
-      status = execute::calculateActivationRange(options->fused_activation_function(),
+      execute::calculateActivationRange(options->fused_activation_function(),
                                                  &params.int64_activation_min, &params.int64_activation_max);
 
       const bool need_broadcast =
@@ -127,7 +143,7 @@ OMStatus onert_micro::execute::execute_kernel_CircleAdd(core::OMRuntimeStorage &
     break;
     case circle::TensorType_INT32: {
       core::BinaryArithmeticBroadcastParams params{};
-      status = execute::calculateActivationRange(options->fused_activation_function(),
+      execute::calculateActivationRange(options->fused_activation_function(),
                                                  &params.int32_activation_min, &params.int32_activation_max);
 
       const bool need_broadcast =

@@ -23,6 +23,8 @@
 #include "OMRuntimeStorage.h"
 #include "memory/OMRuntimeAllocator.h"
 
+//#include "execute/OMExecuteArgs.h"
+
 #include <cstdint>
 
 namespace onert_micro
@@ -56,7 +58,7 @@ public:
 
   OMStatus allocateGraphInputs();
 
-  OMStatus run();
+  //OMStatus run(execute::OMExecuteArgs &execute_args);
 
   OMStatus reset();
 

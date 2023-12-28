@@ -21,24 +21,22 @@
 #include "core/OMKernelType.h"
 #include "core/OMRuntimeStorage.h"
 #include "core/OMRuntimeContext.h"
+#include "execute/OMExecuteArgs.h"
 
 namespace onert_micro
 {
 namespace execute
 {
 
-using KernelExecuteFunc = OMStatus(core::OMRuntimeStorage &runtime_storage,
-                                   core::OMRuntimeContext &runtime_context, uint16_t kernel_index);
+using KernelExecuteFunc = OMStatus(const OMExecuteArgs &);
 
 #define REGISTER_KERNEL(builtin_operator, name)                                   \
-  OMStatus execute_kernel_Circle##name(core::OMRuntimeStorage &runtime_storage, \
-                                         core::OMRuntimeContext &runtime_context, uint16_t kernel_index);
+  OMStatus execute_kernel_Circle##name(const OMExecuteArgs &);
 #include "KernelsToBuild.lst"
 #undef REGISTER_KERNEL
 
 #define REGISTER_CUSTOM_KERNEL(name, string_name)                                 \
-  OMStatus execute_kernel_Circle##name(core::OMRuntimeStorage &runtime_storage, \
-                                         core::OMRuntimeContext &runtime_context, uint16_t kernel_index);
+  OMStatus execute_kernel_Circle##name(const OMExecuteArgs &);
 #include "CustomKernelsToBuild.lst"
 #undef REGISTER_CUSTOM_KERNEL
 

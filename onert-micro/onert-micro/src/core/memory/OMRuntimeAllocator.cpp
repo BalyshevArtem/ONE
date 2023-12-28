@@ -59,6 +59,13 @@ OMStatus OMRuntimeAllocator::allocate(size_t kernel_index, OMRuntimeContext *con
     const OMShape tensor_shape(tensor);
 
     int32_t num_elements = tensor_shape.num_elements();
+
+#ifndef DIS_DYN_SHAPES
+    int32_t dynamic_tensor_size = storage->getDynamicTensorSize(tensor_index);
+    if (dynamic_tensor_size != -1)
+      num_elements = dynamic_tensor_size;
+#endif // DIS_DYN_SHAPES
+
     assert(num_elements >= 0 && "Num elements should be positive");
     if (num_elements < 0)
       return UnknownError;

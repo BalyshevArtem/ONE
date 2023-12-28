@@ -21,6 +21,8 @@
 #include "core/OMKernelType.h"
 #include "core/OMRuntimeStorage.h"
 #include "core/OMRuntimeContext.h"
+#include "core/OMRuntimeModule.h"
+#include "import/OMConfigureArgs.h"
 #include "OMConfig.h"
 
 namespace onert_micro
@@ -28,20 +30,15 @@ namespace onert_micro
 namespace import
 {
 
-using KernelConfigureFunc = OMStatus (core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                      uint16_t kernel_index, const OMConfig &configs);
+using KernelConfigureFunc = OMStatus (const OMConfigureArgs &);
 
 #define REGISTER_KERNEL(builtin_operator, name)                                       \
-OMStatus configure_kernel_Circle##name(core::OMRuntimeStorage &runtime_storage,       \
-                                         core::OMRuntimeContext &runtime_context,     \
-                                         uint16_t kernel_index, const OMConfig &configs);
+OMStatus configure_kernel_Circle##name(const OMConfigureArgs &);
 #include "KernelsToBuild.lst"
 #undef REGISTER_KERNEL
 
 #define REGISTER_CUSTOM_KERNEL(name, string_name)                                 \
-OMStatus configure_kernel_Circle##name(core::OMRuntimeStorage &runtime_storage,   \
-                                         core::OMRuntimeContext &runtime_context, \
-                                         uint16_t kernel_index, const OMConfig &configs);
+OMStatus configure_kernel_Circle##name(const OMConfigureArgs &);
 #include "CustomKernelsToBuild.lst"
 #undef REGISTER_CUSTOM_KERNEL
 

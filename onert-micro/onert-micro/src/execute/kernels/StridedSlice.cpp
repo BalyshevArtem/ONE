@@ -65,9 +65,12 @@ buildStridedSliceParams(int32_t dims, const int32_t *begin, const int32_t *end,
 
 
 // NOTE: doesnt currently support dynamic shapes
-OMStatus onert_micro::execute::execute_kernel_CircleStridedSlice(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                                                 uint16_t op_index)
+OMStatus onert_micro::execute::execute_kernel_CircleStridedSlice(const OMExecuteArgs &execute_args)
 {
+  core::OMRuntimeContext &runtime_context = execute_args.runtime_context;
+  core::OMRuntimeStorage &runtime_storage = execute_args.runtime_storage;
+  uint16_t op_index = execute_args.kernel_index;
+
   const circle::Tensor *input = nullptr;
   const circle::Tensor *begin = nullptr;
   const circle::Tensor *end = nullptr;

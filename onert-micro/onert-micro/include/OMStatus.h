@@ -30,6 +30,7 @@ enum OMStatus
   ModelNotImport,
   FailedCheckCondition,
   NoQuantization,
+  UnsupportedDynamicShapeCase,
 };
 
 } // namespace onert_micro

@@ -26,9 +26,6 @@ using namespace onert_micro::core;
 namespace
 {
 
-constexpr uint32_t numInput = 2;
-constexpr uint32_t numOutput = 1;
-
 constexpr uint32_t inputTensorIdx = 0;
 constexpr uint32_t shapeTensorIdx = 1;
 constexpr uint32_t outputTensorIdx = 0;
@@ -36,9 +33,12 @@ constexpr uint32_t outputTensorIdx = 0;
 } // namespace
 
 
-OMStatus onert_micro::import::configure_kernel_CircleReshape(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                                            uint16_t op_index, const OMConfig&)
+OMStatus onert_micro::import::configure_kernel_CircleReshape(const OMConfigureArgs &config_args)
 {
+  OMRuntimeContext &runtime_context = config_args.runtime_context;
+  uint16_t op_index = config_args.kernel_index;
+  OMRuntimeStorage &runtime_storage = config_args.runtime_storage;
+
   onert_micro::execute::OMRuntimeKernel runtime_kernel;
 
   OMStatus status = runtime_kernel.readKernel(op_index, runtime_context);
@@ -57,17 +57,38 @@ OMStatus onert_micro::import::configure_kernel_CircleReshape(core::OMRuntimeStor
   if (status != Ok)
     return status;
 
-  // Now only static shapes
-  // TODO: check dynamic shapes
+  OMShape input_shape(input);
+  OMShape output_shape(output);
+
+#ifndef DIS_DYN_SHAPES
+  auto is_dynamic = runtime_context.getCircleReader().isConstTensor(runtime_kernel.inputs_index[shapeTensorIdx]) == false;
+
+  if (is_dynamic)
+  {
+    auto input_shape_size = input_shape.num_elements();
+
+    status = utils::checkCondition(output_shape.num_elements() == 1);
+    if (status != Ok)
+      return status;
+
+    status = utils::checkCondition(input_shape_size != 1);
+    if (status != Ok)
+      return status;
+
+    runtime_storage.setDynamicTensorSize(runtime_kernel.outputs_index[outputTensorIdx], input_shape_size);
+  } else
+  {
+    status = utils::checkCondition(input_shape.num_elements() == output_shape.num_elements());
+    assert(status == Ok);
+    if (status != Ok)
+      return status;
+  }
+#else
   status = utils::checkCondition(runtime_context.getCircleReader().isConstTensor(runtime_kernel.inputs_index[shapeTensorIdx]));
   assert(status == Ok);
   if (status != Ok)
     return status;
-
-  OMShape input_shape(input);
-  OMShape output_shape(output);
-
-  status = utils::checkCondition(input_shape.num_elements() == output_shape.num_elements());
+#endif // DIS_DYN_SHAPES
 
   return status;
 }

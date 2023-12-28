@@ -28,9 +28,6 @@ using namespace onert_micro::core;
 namespace
 {
 
-constexpr uint32_t numInput = 3;
-constexpr uint32_t numOutput = 1;
-
 constexpr uint32_t inputTensorIdx = 0;
 constexpr uint32_t weightTensorIdx = 1;
 constexpr uint32_t biasTensorIdx = 2;
@@ -39,9 +36,12 @@ constexpr uint32_t outputTensorIdx = 0;
 
 } // namespace
 
-OMStatus onert_micro::import::configure_kernel_CircleFullyConnected(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                                                    uint16_t op_index, const OMConfig &configs)
+OMStatus onert_micro::import::configure_kernel_CircleFullyConnected(const OMConfigureArgs &config_args)
 {
+  OMRuntimeContext &runtime_context = config_args.runtime_context;
+  uint16_t op_index = config_args.kernel_index;
+  OMRuntimeStorage &runtime_storage = config_args.runtime_storage;
+
   execute::OMRuntimeKernel runtime_kernel;
   runtime_kernel.readKernel(op_index, runtime_context);
 
@@ -67,10 +67,23 @@ OMStatus onert_micro::import::configure_kernel_CircleFullyConnected(core::OMRunt
 
   core::OMShape weight_shape(weight);
   core::OMShape bias_shape(bias);
+  core::OMShape input_shape(input);
+  core::OMShape output_shape(output);
 
   status = utils::checkCondition(weight_shape.rank() == 2);
   if (status != Ok)
     return status;
+
+  if (input_shape.num_elements() == 1 and output_shape.num_elements() != 1)
+  {
+#ifndef DIS_DYN_SHAPES
+    int32_t dynamic_tensor_size = runtime_storage.getDynamicTensorSize(runtime_kernel.inputs_index[inputTensorIdx]);
+    if (dynamic_tensor_size == -1)
+      return UnsupportedDynamicShapeCase;
+#else
+    return UnsupportedDynamicShapeCase;
+#endif // DIS_DYN_SHAPES
+  }
 
   status = utils::checkCondition(bias == nullptr or weight_shape.dim(0) == bias_shape.num_elements());
 

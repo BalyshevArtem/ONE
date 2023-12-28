@@ -33,9 +33,12 @@ constexpr uint32_t outputTensorIdx = 0;
 } // namespace
 
 // NOTE: doesnt currently support dynamic shapes
-OMStatus onert_micro::execute::execute_kernel_CircleAbs(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                  uint16_t op_index)
+OMStatus onert_micro::execute::execute_kernel_CircleAbs(const OMExecuteArgs &execute_args)
 {
+  core::OMRuntimeContext &runtime_context = execute_args.runtime_context;
+  core::OMRuntimeStorage &runtime_storage = execute_args.runtime_storage;
+  uint16_t op_index = execute_args.kernel_index;
+
   const circle::Tensor *input = nullptr;
   const circle::Tensor *output = nullptr;
 

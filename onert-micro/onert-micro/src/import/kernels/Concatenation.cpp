@@ -24,9 +24,11 @@
 using namespace onert_micro;
 using namespace onert_micro::core;
 
-OMStatus onert_micro::import::configure_kernel_CircleConcatenation(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                                                  uint16_t op_index, const OMConfig&)
+OMStatus onert_micro::import::configure_kernel_CircleConcatenation(const OMConfigureArgs &config_args)
 {
+  OMRuntimeContext &runtime_context = config_args.runtime_context;
+  uint16_t op_index = config_args.kernel_index;
+
   onert_micro::execute::OMRuntimeKernel runtime_kernel;
 
   OMStatus status = runtime_kernel.readKernel(op_index, runtime_context);
@@ -56,11 +58,6 @@ OMStatus onert_micro::import::configure_kernel_CircleConcatenation(core::OMRunti
   {
     const auto *tensor = runtime_kernel.inputs[i];
     if (tensor->type() != t0->type())
-      return FailedCheckCondition;
-
-    OMShape cur_shape(tensor);
-
-    if (cur_shape.num_elements() != cur_shape.num_elements())
       return FailedCheckCondition;
   }
 

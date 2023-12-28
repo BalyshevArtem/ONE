@@ -28,9 +28,6 @@ using namespace onert_micro::core;
 namespace
 {
 
-constexpr uint32_t numInput = 3;
-constexpr uint32_t numOutput = 1;
-
 constexpr uint32_t inputTensorIdx = 0;
 constexpr uint32_t weightTensorIdx = 1;
 constexpr uint32_t biasTensorIdx = 2;
@@ -85,9 +82,11 @@ void calculateOpDataConv2D(const circle::Tensor *input,
 
 } // namespace
 
-OMStatus onert_micro::import::configure_kernel_CircleConv2D(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context,
-                                                            uint16_t op_index, const OMConfig &configs)
+OMStatus onert_micro::import::configure_kernel_CircleConv2D(const OMConfigureArgs &config_args)
 {
+  OMRuntimeContext &runtime_context = config_args.runtime_context;
+  uint16_t op_index = config_args.kernel_index;
+
   execute::OMRuntimeKernel runtime_kernel;
   runtime_kernel.readKernel(op_index, runtime_context);
 

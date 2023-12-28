@@ -73,13 +73,14 @@ OMStatus evalGeneric(OMRuntimeKernel &runtime_kernel)
 
 } // namespace
 
-OMStatus onert_micro::execute::execute_kernel_CircleConcatenation(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context, uint16_t op_index)
+OMStatus onert_micro::execute::execute_kernel_CircleConcatenation(const OMExecuteArgs &execute_args)
 {
+  core::OMRuntimeContext &runtime_context = execute_args.runtime_context;
+  core::OMRuntimeStorage &runtime_storage = execute_args.runtime_storage;
+  uint16_t op_index = execute_args.kernel_index;
+
   execute::OMRuntimeKernel runtime_kernel;
   runtime_kernel.readKernel(op_index, runtime_context);
-
-  const int num_inputs = runtime_kernel.inputs_num;
-  assert(num_inputs > 0);
 
   const auto *t0 = runtime_kernel.inputs[0];
   OMStatus status = Ok;

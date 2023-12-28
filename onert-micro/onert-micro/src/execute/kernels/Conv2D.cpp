@@ -43,10 +43,12 @@ constexpr uint32_t outputTensorIdx = 0;
 
 
 // NOTE: doesn't currently support dynamic shapes
-OMStatus onert_micro::execute::execute_kernel_CircleConv2D(core::OMRuntimeStorage &runtime_storage,
-                                                           core::OMRuntimeContext &runtime_context,
-                                                           uint16_t op_index)
+OMStatus onert_micro::execute::execute_kernel_CircleConv2D(const OMExecuteArgs &execute_args)
 {
+  core::OMRuntimeContext &runtime_context = execute_args.runtime_context;
+  core::OMRuntimeStorage &runtime_storage = execute_args.runtime_storage;
+  uint16_t op_index = execute_args.kernel_index;
+
   const circle::Tensor *input;
   const circle::Tensor *weight;
   const circle::Tensor *output;
@@ -96,10 +98,10 @@ OMStatus onert_micro::execute::execute_kernel_CircleConv2D(core::OMRuntimeStorag
   OMRuntimeShape weight_shape(weight);
   OMRuntimeShape input_shape(input);
 
-  const int input_width = input_shape.dims(2); //input->dims->data[2];
-  const int input_height = input_shape.dims(1); //input->dims->data[1];
-  const int weight_width = weight_shape.dims(2);// filter->dims->data[2];
-  const int weight_height = weight_shape.dims(1); //filter->dims->data[1];
+  const int input_width = input_shape.dims(2);
+  const int input_height = input_shape.dims(1);
+  const int weight_width = weight_shape.dims(2);
+  const int weight_height = weight_shape.dims(1);
   execute::computePaddingHeightWidth(options->stride_h(), options->stride_w(), options->dilation_h_factor(),
                                      options->dilation_w_factor(), input_height, input_width, weight_height, weight_width,
                                      options->padding(), &padding_h, &padding_w);
@@ -108,11 +110,6 @@ OMStatus onert_micro::execute::execute_kernel_CircleConv2D(core::OMRuntimeStorag
   {
 #ifndef DIS_FLOAT
     case circle::TensorType_FLOAT32: {
-//
-//      DataConv2D *data = reinterpret_cast<DataConv2D *>(kernel.getKernelData());
-//      assert(data != nullptr);
-//      if (data == nullptr)
-//        return UnknownError;
 
       FloatConv2D params{};
       status = calculateActivationRange(options->fused_activation_function(),

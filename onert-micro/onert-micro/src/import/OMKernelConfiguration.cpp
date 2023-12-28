@@ -22,8 +22,9 @@ using namespace onert_micro::core;
 using namespace onert_micro::import;
 using namespace onert_micro;
 
-OMStatus OMKernelConfiguration::configureKernels(core::OMRuntimeStorage &runtime_storage, core::OMRuntimeContext &runtime_context, const OMConfig &configs)
+OMStatus OMKernelConfiguration::configureKernels(OMConfigureArgs &configure_args)
 {
+  OMRuntimeContext &runtime_context = configure_args.runtime_context;
   const reader::CircleOperators *operators = runtime_context.getCircleOperators();
 
   const auto num_operators = static_cast<uint16_t>(operators->size());
@@ -62,8 +63,9 @@ OMStatus OMKernelConfiguration::configureKernels(core::OMRuntimeStorage &runtime
     if (status != Ok)
       return status;
 
-    status = configure_func(runtime_storage, runtime_context, i, configs);
-    assert(status == Ok);
+    configure_args.kernel_index = i;
+    status = configure_func(configure_args);
+    assert(status == Ok && "");
   }
 
   return status;
