@@ -320,6 +320,10 @@ void ElementwiseUnaryLayer::configure(const IPortableTensor *input, IPortableTen
       {
         _kernel = neg<int32_t>;
       }
+      else if ((input->data_type() == OperandType::QUANT_UINT8_ASYMM))
+      {
+        _kernel = neg<uint8_t>;
+      }
       else
       {
         throw std::runtime_error{"Neg: Unsupported  data type"};

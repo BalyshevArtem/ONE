@@ -81,6 +81,10 @@ void StridedSliceLayer::run()
   {
     stridedSliceImpl<int64_t>();
   }
+  else if (_input->data_type() == OperandType::QUANT_UINT8_ASYMM)
+  {
+    stridedSliceImpl<uint8_t>();
+  }
   else
   {
     throw std::runtime_error{"StridedSlice: unsupported data type"};

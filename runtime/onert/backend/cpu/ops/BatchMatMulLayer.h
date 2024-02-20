@@ -26,6 +26,7 @@ namespace nnfw
 {
 namespace cker
 {
+template <typename T>
 class BatchMatMul;
 }
 } // namespace nnfw
@@ -61,7 +62,7 @@ private:
   bool _adj_x;
   bool _adj_y;
 
-  std::unique_ptr<nnfw::cker::BatchMatMul> _kernel;
+  std::unique_ptr<nnfw::cker::BatchMatMul<float>> _kernel;
 };
 
 } // namespace ops

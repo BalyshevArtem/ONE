@@ -383,6 +383,9 @@ def GenerateBuiltinOption(new_builder, selected_builtin_option, builtin_option_t
         tflite.FullyConnectedOptions.FullyConnectedOptionsStart(new_builder)
         tflite.FullyConnectedOptions.FullyConnectedOptionsAddFusedActivationFunction(
             new_builder, fc_option.FusedActivationFunction())
+
+        tflite.FullyConnectedOptions.FullyConnectedOptionsAddKeepNumDims(
+            new_builder, fc_option.KeepNumDims())
         return tflite.FullyConnectedOptions.FullyConnectedOptionsEnd(new_builder)
 
     # SoftmaxOptions

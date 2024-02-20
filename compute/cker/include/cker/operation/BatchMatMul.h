@@ -32,6 +32,7 @@ namespace nnfw
 namespace cker
 {
 
+template <typename T>
 class BatchMatMul
 {
 public:
@@ -76,9 +77,9 @@ public:
     }
   }
 
-  void operator()(const Shape &lhs_shape, const float *lhs_data, const Shape &rhs_shape,
-                  const float *rhs_data, bool adj_x, bool adj_y, const Shape &output_shape,
-                  float *output_data)
+  void operator()(const Shape &lhs_shape, const T *lhs_data, const Shape &rhs_shape,
+                  const T *rhs_data, bool adj_x, bool adj_y, const Shape &output_shape,
+                  T *output_data)
   {
     // Assume lhs and rhs is not constant
     // TODO Handle constant input
@@ -95,8 +96,8 @@ public:
 
     Shape new_lhs_shape = adj_x ? lhs_shape : swapRowColDims(lhs_shape);
     Shape new_rhs_shape = adj_y ? rhs_shape : swapRowColDims(rhs_shape);
-    const float *new_lhs_data = adj_x ? _temp_lhs.data() : lhs_data;
-    const float *new_rhs_data = adj_y ? rhs_data : _temp_rhs.data();
+    const T *new_lhs_data = adj_x ? _temp_lhs.data() : lhs_data;
+    const T *new_rhs_data = adj_y ? rhs_data : _temp_rhs.data();
 
     // Note we pass RHS args first, LHS args second
     // Check accumulative dimensions of lhs and rhs of are equal
@@ -117,8 +118,8 @@ private:
     return swapped_shape;
   }
 
-  void transposeRowsCols(const Shape &input_shape, const float *input_data,
-                         const Shape &output_shape, float *output_data)
+  void transposeRowsCols(const Shape &input_shape, const T *input_data,
+                         const Shape &output_shape, T *output_data)
   {
     TransposeParams params;
     int rank = input_shape.DimensionsCount();
@@ -130,13 +131,13 @@ private:
     params.perm[rank - 2] = rank - 1;
     params.perm[rank - 1] = rank - 2;
 
-    Transpose<float>(params, input_shape, input_data, output_shape, output_data);
+    Transpose<T>(params, input_shape, input_data, output_shape, output_data);
   }
 
 private:
-  std::vector<float> _temp_lhs;
+  std::vector<T> _temp_lhs;
   Shape _temp_lhs_shape;
-  std::vector<float> _temp_rhs;
+  std::vector<T> _temp_rhs;
   Shape _temp_rhs_shape;
 };
 

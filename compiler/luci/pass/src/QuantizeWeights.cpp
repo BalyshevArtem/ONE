@@ -545,8 +545,8 @@ void QuantizeWeights::visit(luci::CircleFullyConnected *node)
   LOGGER(l);
   INFO(l) << "QuantizeWeights QuantizeWeights::visit node: " << node->name() << std::endl;
 
-  auto weights = loco::must_cast<luci::CircleConst *>(node->weights());
-  if (!is_quantized(weights))
+  auto weights = dynamic_cast<luci::CircleConst *>(node->weights());
+  if (weights != nullptr and !is_quantized(weights))
   {
     auto new_weights = luci::clone(weights);
     node->weights(new_weights);

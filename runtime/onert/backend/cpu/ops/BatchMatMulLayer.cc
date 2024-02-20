@@ -29,7 +29,7 @@ namespace ops
 
 BatchMatMulLayer::BatchMatMulLayer()
   : _lhs(nullptr), _rhs(nullptr), _output(nullptr), _adj_x(false), _adj_y(false),
-    _kernel(new nnfw::cker::BatchMatMul())
+    _kernel(new nnfw::cker::BatchMatMul<float>())
 {
   // DO NOTHING
 }
@@ -38,7 +38,7 @@ BatchMatMulLayer::~BatchMatMulLayer() = default;
 
 void BatchMatMulLayer::batchMatMulFloat32()
 {
-  nnfw::cker::BatchMatMul &batchmatmul_kernel = *_kernel;
+  nnfw::cker::BatchMatMul<float> batchmatmul_kernel;
   nnfw::cker::Shape lhs_shape = getShape(_lhs);
   nnfw::cker::Shape rhs_shape = getShape(_rhs);
   nnfw::cker::Shape output_shape = getShape(_output);
@@ -69,6 +69,19 @@ void BatchMatMulLayer::run()
   if ((_lhs->data_type() == OperandType::FLOAT32) && (_rhs->data_type() == OperandType::FLOAT32))
   {
     batchMatMulFloat32();
+  }
+  else if (_lhs->data_type() == OperandType::QUANT_UINT8_ASYMM)
+  {
+    nnfw::cker::BatchMatMul<uint8_t> batchmatmul_kernel;
+    nnfw::cker::Shape lhs_shape = getShape(_lhs);
+    nnfw::cker::Shape rhs_shape = getShape(_rhs);
+    nnfw::cker::Shape output_shape = getShape(_output);
+
+    // TODO implement for constant input
+
+    batchmatmul_kernel.prepare(lhs_shape, rhs_shape, _adj_x, _adj_y);
+    batchmatmul_kernel(lhs_shape, getBuffer<uint8_t>(_lhs), rhs_shape, getBuffer<uint8_t>(_rhs), _adj_x,
+                       _adj_y, output_shape, getBuffer<uint8_t>(_output));
   }
   else
   {
