@@ -178,6 +178,12 @@ void rsqrtFloat32(const IPortableTensor *input, IPortableTensor *output)
                     getBuffer<float>(output));
 }
 
+void rsqrtUint(const IPortableTensor *input, IPortableTensor *output)
+{
+  nnfw::cker::Rsqrt(getShape(input), getBuffer<uint8_t>(input), getShape(output),
+                    getBuffer<uint8_t>(output));
+}
+
 void sinFloat32(const IPortableTensor *input, IPortableTensor *output)
 {
   nnfw::cker::Sin(getShape(input), getBuffer<float>(input), getShape(output),
@@ -343,6 +349,10 @@ void ElementwiseUnaryLayer::configure(const IPortableTensor *input, IPortableTen
       if ((input->data_type() == OperandType::FLOAT32))
       {
         _kernel = rsqrtFloat32;
+      }
+      if ((input->data_type() == OperandType::QUANT_UINT8_ASYMM))
+      {
+        _kernel = rsqrtUint;
       }
       else
       {
