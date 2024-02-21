@@ -95,121 +95,226 @@ namespace luci
 /**
  * Constant Folding for AddV2 Op
  **/
+//bool FoldAddV2Pass::run(loco::Graph *g)
+//{
+//  bool changed = false;
+//  for (auto node : loco::active_nodes(loco::output_nodes(g)))
+//  {
+//    if (auto mul = dynamic_cast<luci::CircleInput *>(node))
+//    {
+//      if (mul->rank() != 3)
+//        continue;
+//
+//      auto l = mul->dim(1);
+//      auto r = mul->dim(2);
+//
+//      mul->rank(2);
+//      mul->dim(0) = l;
+//      mul->dim(1) = r;
+//
+//      auto output = dynamic_cast<luci::CircleOutput *>(output_nodes(node->graph())[0]);
+//      auto l_o = output->dim(1);
+//      auto r_o = output->dim(2);
+//
+//      output->rank(2);
+//      output->dim(0) = l_o;
+//      output->dim(1) = r_o;
+//
+//      g->outputs()->at(0)->shape({l_o, r_o});
+//
+//      changed = true;
+//    }
+//    else if (auto ss = dynamic_cast<luci::CircleStridedSlice *>(node))
+//    {
+//      auto begin = dynamic_cast<luci::CircleConst *>(ss->begin());
+//      auto end = dynamic_cast<luci::CircleConst *>(ss->end());
+//      auto strides = dynamic_cast<luci::CircleConst *>(ss->strides());
+//
+//      if (begin->dim(0) == 3)
+//      {
+//        auto l_b = begin->at<loco::DataType::S32>(1);
+//        auto r_b = begin->at<loco::DataType::S32>(2);
+//        begin->size<loco::DataType::S32>(2);
+//        begin->at<loco::DataType::S32>(0) = l_b;
+//        begin->at<loco::DataType::S32>(1) = r_b;
+//        begin->dim(0) = 2;
+//        changed = true;
+//      }
+//      if (end->dim(0) == 3)
+//      {
+//        auto l_e = end->at<loco::DataType::S32>(1);
+//        auto r_e = end->at<loco::DataType::S32>(2);
+//        end->size<loco::DataType::S32>(2);
+//        end->at<loco::DataType::S32>(0) = l_e;
+//        end->at<loco::DataType::S32>(1) = r_e;
+//        end->dim(0) = 2;
+//        changed = true;
+//      }
+//
+//      if (strides->dim(0) == 3)
+//      {
+//        auto l_s = strides->at<loco::DataType::S32>(1);
+//        auto r_s = strides->at<loco::DataType::S32>(2);
+//
+//        strides->size<loco::DataType::S32>(2);
+//        strides->at<loco::DataType::S32>(0) = l_s;
+//        strides->at<loco::DataType::S32>(1) = r_s;
+//        strides->dim(0) = 2;
+//        changed = true;
+//      }
+//    }
+//    else if (auto tr = dynamic_cast<luci::CircleTranspose *>(node))
+//    {
+//      auto perm = dynamic_cast<luci::CircleConst *>(tr->perm());
+//      if (perm->dim(0).value() != 3)
+//        continue;
+//
+//      perm->size<loco::DataType::S32>(2);
+//      perm->dim(0) = 2;
+//      perm->at<loco::DataType::S32>(0) = 1;
+//      perm->at<loco::DataType::S32>(1) = 0;
+//      changed = true;
+//    }
+//    else if (auto add = dynamic_cast<luci::CircleAdd *>(node))
+//    {
+//      auto left_node = dynamic_cast<luci::CircleConst *>(add->y());
+//      if (left_node == nullptr)
+//        continue;
+//      auto rank = left_node->rank();
+//      if (left_node->rank() != 3)
+//        continue;
+//
+//      auto l = left_node->dim(1);
+//      auto r = left_node->dim(2);
+//      left_node->rank(2);
+//      left_node->dim(0) = l;
+//      left_node->dim(1) = r;
+//
+//      changed = true;
+//    }
+//    else if (auto mul_r = dynamic_cast<luci::CircleMul *>(node))
+//    {
+//      auto left_node = dynamic_cast<luci::CircleConst *>(mul_r->y());
+//      if (left_node == nullptr)
+//        continue;
+//      auto rank = left_node->rank();
+//      if (left_node->rank() != 3)
+//        continue;
+//
+//      auto l = left_node->dim(1);
+//      auto r = left_node->dim(2);
+//      left_node->rank(2);
+//      left_node->dim(0) = l;
+//      left_node->dim(1) = r;
+//
+//      changed = true;
+//    }
+//  }
+//
+//  return changed;
+//}
+
+// Create npu part
+#if 0
 bool FoldAddV2Pass::run(loco::Graph *g)
 {
   bool changed = false;
+
+  auto f_output = dynamic_cast<luci::CircleOutput *>(output_nodes(g).at(0));
+
+  if (dynamic_cast<luci::CircleConcatenation *>(f_output->from()) != nullptr)
+    return false;
+
+  auto concat_node = f_output->graph()->nodes()->create<luci::CircleConcatenation>(g->outputs()->size());
+  concat_node->axis(-1);
+  concat_node->rank(f_output->rank());
+  concat_node->shape_status(ShapeStatus::VALID);
+  concat_node->dtype(loco::DataType::FLOAT32);
+  concat_node->name("df");
+  concat_node->fusedActivationFunction(FusedActFunc::NONE);
+  int i = 0;
   for (auto node : loco::active_nodes(loco::output_nodes(g)))
   {
-    if (auto mul = dynamic_cast<luci::CircleInput *>(node))
+    if (auto out = dynamic_cast<luci::CircleOutput *>(node))
     {
-      if (mul->rank() != 3)
+      auto mul = dynamic_cast<luci::CircleBatchMatMul *>(out->from());
+      if (mul == nullptr)
         continue;
-
-      auto l = mul->dim(1);
-      auto r = mul->dim(2);
-
-      mul->rank(2);
-      mul->dim(0) = l;
-      mul->dim(1) = r;
-
-      auto output = dynamic_cast<luci::CircleOutput *>(output_nodes(node->graph())[0]);
-      auto l_o = output->dim(1);
-      auto r_o = output->dim(2);
-
-      output->rank(2);
-      output->dim(0) = l_o;
-      output->dim(1) = r_o;
-
-      g->outputs()->at(0)->shape({l_o, r_o});
-
-      changed = true;
-    }
-    else if (auto ss = dynamic_cast<luci::CircleStridedSlice *>(node))
-    {
-      auto begin = dynamic_cast<luci::CircleConst *>(ss->begin());
-      auto end = dynamic_cast<luci::CircleConst *>(ss->end());
-      auto strides = dynamic_cast<luci::CircleConst *>(ss->strides());
-
-      if (begin->dim(0) == 3)
-      {
-        auto l_b = begin->at<loco::DataType::S32>(1);
-        auto r_b = begin->at<loco::DataType::S32>(2);
-        begin->size<loco::DataType::S32>(2);
-        begin->at<loco::DataType::S32>(0) = l_b;
-        begin->at<loco::DataType::S32>(1) = r_b;
-        begin->dim(0) = 2;
-        changed = true;
-      }
-      if (end->dim(0) == 3)
-      {
-        auto l_e = end->at<loco::DataType::S32>(1);
-        auto r_e = end->at<loco::DataType::S32>(2);
-        end->size<loco::DataType::S32>(2);
-        end->at<loco::DataType::S32>(0) = l_e;
-        end->at<loco::DataType::S32>(1) = r_e;
-        end->dim(0) = 2;
-        changed = true;
-      }
-
-      if (strides->dim(0) == 3)
-      {
-        auto l_s = strides->at<loco::DataType::S32>(1);
-        auto r_s = strides->at<loco::DataType::S32>(2);
-
-        strides->size<loco::DataType::S32>(2);
-        strides->at<loco::DataType::S32>(0) = l_s;
-        strides->at<loco::DataType::S32>(1) = r_s;
-        strides->dim(0) = 2;
-        changed = true;
-      }
-    }
-    else if (auto tr = dynamic_cast<luci::CircleTranspose *>(node))
-    {
-      auto perm = dynamic_cast<luci::CircleConst *>(tr->perm());
-      if (perm->dim(0).value() != 3)
-        continue;
-
-      perm->size<loco::DataType::S32>(2);
-      perm->dim(0) = 2;
-      perm->at<loco::DataType::S32>(0) = 1;
-      perm->at<loco::DataType::S32>(1) = 0;
-      changed = true;
-    }
-    else if (auto add = dynamic_cast<luci::CircleAdd *>(node))
-    {
-      auto left_node = dynamic_cast<luci::CircleConst *>(add->y());
-      if (left_node == nullptr)
-        continue;
-      auto rank = left_node->rank();
-      if (left_node->rank() != 3)
-        continue;
-
-      auto l = left_node->dim(1);
-      auto r = left_node->dim(2);
-      left_node->rank(2);
-      left_node->dim(0) = l;
-      left_node->dim(1) = r;
-
-      changed = true;
-    }
-    else if (auto mul_r = dynamic_cast<luci::CircleMul *>(node))
-    {
-      auto left_node = dynamic_cast<luci::CircleConst *>(mul_r->y());
-      if (left_node == nullptr)
-        continue;
-      auto rank = left_node->rank();
-      if (left_node->rank() != 3)
-        continue;
-
-      auto l = left_node->dim(1);
-      auto r = left_node->dim(2);
-      left_node->rank(2);
-      left_node->dim(0) = l;
-      left_node->dim(1) = r;
-
-      changed = true;
+      concat_node->values(i, mul);
+      i++;
     }
   }
+
+  g->outputs()->at(0)->shape({f_output->dim(0).value(), f_output->dim(1).value() * i});
+
+  f_output->dim(1) = f_output->dim(1).value() * i;
+  f_output->from(concat_node);
+//
+//  for (int j = 1; j < g->outputs()->size(); ++j)
+//  {
+//    auto c = g->outputs()->_pool;
+//
+//
+//    auto cur = dynamic_cast<luci::CircleOutput *>(output_nodes(g).at(j));
+//    cur->from(nullptr);
+//  }
+
+  auto &c = g->outputs()->_pool;
+
+  c.erase(c.begin() + 1, c.end());
+
+  return changed;
+}
+#endif
+
+// Create onert part
+const int NUM = 7;
+bool FoldAddV2Pass::run(loco::Graph *g)
+{
+  bool changed = false;
+
+  for (auto node : loco::active_nodes(loco::output_nodes(g)))
+  {
+    if (auto concate = dynamic_cast<luci::CircleConcatenation *>(node))
+    {
+      if (concate->numValues() <= 2 or concate->numValues() == 7)
+        continue;
+
+      auto concat_node = concate->graph()->nodes()->create<luci::CircleConcatenation>(NUM + 1);
+      concat_node->axis(-1);
+      concat_node->rank(concate->rank());
+      concat_node->shape_status(ShapeStatus::VALID);
+      concat_node->dtype(loco::DataType::FLOAT32);
+      concat_node->name(concate->name());
+      concat_node->fusedActivationFunction(FusedActFunc::NONE);
+
+      for (int i = 0; i < NUM; ++i)
+      {
+        concat_node->values(i, concate->values(i + 11));
+      }
+
+      auto input_new = concate->graph()->nodes()->create<luci::CircleInput>();
+      auto input = g->inputs()->create();
+      concat_node->values(NUM, input_new);
+      input_new->index(1);
+      input_new->name("sdf");
+      input_new->dtype(loco::DataType::FLOAT32);
+      input_new->shape_status(ShapeStatus::VALID);
+      input_new->shape({8, 880});
+
+      link(input, input_new);
+      input->name("sdf");
+      input->shape({8, 880});
+      input->dtype(loco::DataType::FLOAT32);
+
+      replace(concate).with(concat_node);
+    }
+  }
+
+
+  auto &c = g->outputs()->_pool;
+
+  c.erase(c.begin() + 1, c.end());
 
   return changed;
 }

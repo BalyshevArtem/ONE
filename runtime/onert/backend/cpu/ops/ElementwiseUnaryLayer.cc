@@ -350,7 +350,7 @@ void ElementwiseUnaryLayer::configure(const IPortableTensor *input, IPortableTen
       {
         _kernel = rsqrtFloat32;
       }
-      if ((input->data_type() == OperandType::QUANT_UINT8_ASYMM))
+      else if ((input->data_type() == OperandType::QUANT_UINT8_ASYMM))
       {
         _kernel = rsqrtUint;
       }

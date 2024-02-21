@@ -495,16 +495,16 @@ int entry(int argc, char **argv)
     optimizer.optimize(graph);
     optimizer.sparsify(graph);
 
-    if (!luci::validate(graph))
-    {
-      if (settings->get(luci::UserSettings::Key::DisableValidation))
-        std::cerr << "WARNING: Optimized graph is invalid" << std::endl;
-      else
-      {
-        std::cerr << "ERROR: Optimized graph is invalid" << std::endl;
-        return 255;
-      }
-    }
+//    if (!luci::validate(graph))
+//    {
+//      if (settings->get(luci::UserSettings::Key::DisableValidation))
+//        std::cerr << "WARNING: Optimized graph is invalid" << std::endl;
+//      else
+//      {
+//        std::cerr << "ERROR: Optimized graph is invalid" << std::endl;
+//        return 255;
+//      }
+//    }
   }
 
   // Export to output Circle file

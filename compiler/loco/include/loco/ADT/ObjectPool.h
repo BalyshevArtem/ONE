@@ -68,7 +68,7 @@ protected:
     return true;
   }
 
-private:
+public:
   std::vector<std::unique_ptr<T>> _pool;
 };
 
