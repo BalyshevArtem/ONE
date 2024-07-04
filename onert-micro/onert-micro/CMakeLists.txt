@@ -40,6 +40,10 @@ if (DIS_FLOAT)
     add_definitions(-DDIS_FLOAT)
 endif()
 
+if (OM_MEMORY_ESTIMATE)
+    add_definitions(-DOM_MEMORY_ESTIMATE)
+endif()
+
 # To enable training part
 if (ENABLE_TRAINING)
     add_definitions(-DENABLE_TRAINING)
@@ -47,7 +51,7 @@ endif()
 
 # TODO move it to specific cmake for platforms
 add_compile_options(-fno-exceptions)
-add_compile_options(-Os)
+#add_compile_options(-Os)
 
 # AFAIK, this will enable leak sanitizer, too
 if(ENABLE_SANITIZER)

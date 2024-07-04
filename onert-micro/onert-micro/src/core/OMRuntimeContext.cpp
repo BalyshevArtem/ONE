@@ -78,3 +78,10 @@ OMStatus OMRuntimeContext::getConstDataByTensorIndex(uint8_t **data, uint16_t te
 
   return Ok;
 }
+
+uint32_t OMRuntimeContext::calculateTensorSizeInBytes(int32_t tensorIndex)
+{
+  if (tensorIndex == -1)
+    return 0;
+  _reader.tensors()->operator[](tensor_index);
+}

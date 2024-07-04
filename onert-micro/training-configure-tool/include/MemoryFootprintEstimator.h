@@ -14,34 +14,20 @@
  * limitations under the License.
  */
 
-#ifndef ONERT_MICRO_TRAIN_BACKPROP_ARGS_H
-#define ONERT_MICRO_TRAIN_BACKPROP_ARGS_H
+#ifndef ONERT_MICRO_TRAINING_CONFIG_TOOL_MEMORY_FOOTPRINT_ESTIMATOR
+#define ONERT_MICRO_TRAINING_CONFIG_TOOL_MEMORY_FOOTPRINT_ESTIMATOR
+
+#include <stdint.h>
+#include <stdlib.h>
 
 #include "OMStatus.h"
-#include "core/OMRuntimeContext.h"
-#include "core/OMRuntimeStorage.h"
-#include "core/OMRuntimeModule.h"
-#include "core/train/OMTrainingStorage.h"
+#include "OMConfig.h"
 
-namespace onert_micro
-{
-namespace train
+namespace training_configure_tool
 {
 
-/*
- * Args to execute backpropagation graph
- */
-struct OMBackpropExecuteArgs
-{
-  core::OMRuntimeStorage &forward_storage;
-  core::OMRuntimeStorage &backward_storage;
-  core::OMRuntimeContext &backward_context;
-  bool is_last_layer;
-  bool is_trainable_layer;
-  uint16_t kernel_index;
-};
+size_t estimatePeakTrainingMemory
 
-} // namespace train
-} // namespace onert_micro
+} // namespace training_configure_tool
 
-#endif // ONERT_MICRO_TRAIN_BACKPROP_ARGS_H
+#endif // ONERT_MICRO_TRAINING_CONFIG_TOOL_MEMORY_FOOTPRINT_ESTIMATOR

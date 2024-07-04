@@ -29,8 +29,11 @@ OMStatus OMRuntimeAllocator::clearAllTensorsData(OMRuntimeContext *context,
 
   for (auto &cur_tensor_index_data : tensor_index_to_data)
   {
-    auto tensor_index = cur_tensor_index_data.first;
     uint8_t *allocated_data = cur_tensor_index_data.second;
+#ifdef OM_MEMORY_ESTIMATE
+    auto tensor_index = cur_tensor_index_data.first;
+
+#endif // OM_MEMORY_ESTIMATE
 
     OMMemoryManager::deallocateMemory(allocated_data);
   }

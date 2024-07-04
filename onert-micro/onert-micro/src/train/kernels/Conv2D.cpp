@@ -147,20 +147,23 @@ OMStatus onert_micro::train::train_kernel_CircleConv2D(const OMBackpropExecuteAr
   params.pad_h = 0;
   params.pad_w = 0;
 
-  // 2. Calculate weight gradient
-  pal::Conv2DWeightGrad(params, input_shape, utils::castInputData<float>(input_data), output_shape,
-                        utils::castInputData<float>(dloss_doutput_data), weight_shape,
-                        utils::castOutputData<float>(dloss_dweight_data));
-
-  // 3. Calculate bias gradient
-  if (dloss_dbias_data)
+  if (args.is_trainable_layer)
   {
-    assert(bias_data != nullptr);
-    if (bias_data == nullptr)
-      return UnknownError;
+    // 2. Calculate weight gradient
+    pal::Conv2DWeightGrad(params, input_shape, utils::castInputData<float>(input_data),
+                          output_shape, utils::castInputData<float>(dloss_doutput_data),
+                          weight_shape, utils::castOutputData<float>(dloss_dweight_data));
 
-    pal::Conv2DBiasGrad(output_shape, utils::castInputData<float>(dloss_doutput_data),
-                        utils::castOutputData<float>(dloss_dbias_data));
+    // 3. Calculate bias gradient
+    if (dloss_dbias_data)
+    {
+      assert(bias_data != nullptr);
+      if (bias_data == nullptr)
+        return UnknownError;
+
+      pal::Conv2DBiasGrad(output_shape, utils::castInputData<float>(dloss_doutput_data),
+                          utils::castOutputData<float>(dloss_dbias_data));
+    }
   }
 
   // 4. Calculate (if needed) input grad

@@ -54,6 +54,11 @@ OMStatus OMTrainingRuntimeModule::importTrainModel(char *model_ptr, const OMConf
     if (config.wof_ptr != nullptr)
       runtime_context.setWofFile(config.wof_ptr);
 
+    // Parse and validate Train Config File if it is exists
+    // WARNING: setTrainConfigFile method of RuntimeContext should follow after setModel.
+    if (config.train_mode and config.training_context.training_config_info_data != nullptr)
+      runtime_context.setTrainConfigFile(config.training_context.training_config_info_data);
+
     // AllocDeallocPlan backward graph creation
     status = import::OMExecutionPlanCreator::createBackwardExecutionPlan(
       runtime_storage, runtime_context, runtime_allocator, config);
@@ -144,7 +149,7 @@ OMStatus OMTrainingRuntimeModule::trainSingleStep(OMConfig &config)
       //  d. Run backward graph
       {
         onert_micro::train::OMBackpropExecuteArgs backprop_execute_args = {
-          forward_storage, backward_storage, backward_context, false, 0};
+          forward_storage, backward_storage, backward_context, false, false, 0};
 
         status = onert_micro::train::OMBackpropExecute::runBackward(
           config, backprop_execute_args, backward_graph.getRuntimeAllocator());

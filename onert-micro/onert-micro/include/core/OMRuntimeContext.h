@@ -21,6 +21,7 @@
 
 #include "reader/OMCircleReader.h"
 #include "reader/OMWeightOnlyFormatReader.h"
+#include "reader/OMTrainingConfigFileReader.h"
 
 #include <cstdint>
 
@@ -34,6 +35,7 @@ class OMRuntimeContext
 private:
   reader::OMCircleReader _reader;
   reader::OMWeightOnlyFormatReader _wof_reader;
+  reader::OMTrainingConfigReader _train_config_reader;
 
 public:
   OMRuntimeContext() = default;
@@ -66,7 +68,23 @@ public:
     return Ok;
   }
 
-  const bool isConstTensor(uint32_t tensor_index) { return _reader.isConstTensor(tensor_index); }
+  OMStatus setTrainConfigFile(char *train_config_file_ptr)
+  {
+    OMStatus status = Ok;
+    _train_config_reader.parse(train_config_file_ptr);
+
+    status = _train_config_reader.validate(&_reader);
+    if (status != Ok)
+      return status;
+    return Ok;
+  }
+
+  std::unordered_set<uint16_t> getTrainableOpsIndexes()
+  {
+    return _train_config_reader.getTrainableOpsIndexes();
+  }
+
+  bool isConstTensor(uint32_t tensor_index) { return _reader.isConstTensor(tensor_index); }
 
   const reader::CircleValues *getCircleOutputs() { return _reader.outputs(); }
   const reader::CircleValues *getCircleInputs() { return _reader.inputs(); }
@@ -78,6 +96,8 @@ public:
 
   const circle::Operator *getCircleOperatorAt(uint16_t index);
   const circle::Tensor *getTensorByIndex(int32_t tensor_index);
+
+  uint32_t calculateTensorSizeInBytes(int32_t tensorIndex);
 
   uint32_t getGraphInputTensorIndex(uint32_t index);
   uint32_t getGraphOutputTensorIndex(uint32_t index);

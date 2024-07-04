@@ -14,34 +14,16 @@
  * limitations under the License.
  */
 
-#ifndef ONERT_MICRO_CORE_MEMORY_MEMORY_MANAGER_H
-#define ONERT_MICRO_CORE_MEMORY_MEMORY_MANAGER_H
+#ifndef ONERT_MICRO_TRAINING_CONFIG_TOOL_LAYER_SPARSE_BACKPROPAGATION_HANDLER
+#define ONERT_MICRO_TRAINING_CONFIG_TOOL_LAYER_SPARSE_BACKPROPAGATION_HANDLER
 
-#include "OMStatus.h"
-
-#include <cstdint>
+#include <stdint.h>
 #include <stdlib.h>
 
-namespace onert_micro
-{
-namespace core
-{
-namespace memory
+namespace training_configure_tool
 {
 
-struct OMMemoryManager
-{
-#ifdef OM_MEMORY_ESTIMATE
-  static size_t peak_memory_allocated;
-  static size_t cur_memory_allocated;
-  static OMStatus deallocateMemory(uint32_t size, uint8_t *data);
-#endif // OM_MEMORY_ESTIMATE
-  static OMStatus allocateMemory(uint32_t size, uint8_t **data);
-  static OMStatus deallocateMemory(uint8_t *data);
-};
 
-} // namespace memory
-} // namespace core
-} // namespace onert_micro
+} // namespace training_configure_tool
 
-#endif // ONERT_MICRO_CORE_MEMORY_MEMORY_MANAGER_H
+#endif // ONERT_MICRO_TRAINING_CONFIG_TOOL_LAYER_SPARSE_BACKPROPAGATION_HANDLER

@@ -14,34 +14,22 @@
  * limitations under the License.
  */
 
-#ifndef ONERT_MICRO_TRAIN_BACKPROP_ARGS_H
-#define ONERT_MICRO_TRAIN_BACKPROP_ARGS_H
+#ifndef ONERT_MICRO_TRAINING_CONFIG_TOOL_SPARSE_BACKPROPAGATION_HANDLER
+#define ONERT_MICRO_TRAINING_CONFIG_TOOL_SPARSE_BACKPROPAGATION_HANDLER
 
 #include "OMStatus.h"
-#include "core/OMRuntimeContext.h"
-#include "core/OMRuntimeStorage.h"
-#include "core/OMRuntimeModule.h"
-#include "core/train/OMTrainingStorage.h"
 
-namespace onert_micro
-{
-namespace train
+#include <stdint.h>
+#include <stdlib.h>
+#include <vector>
+
+namespace training_configure_tool
 {
 
-/*
- * Args to execute backpropagation graph
- */
-struct OMBackpropExecuteArgs
-{
-  core::OMRuntimeStorage &forward_storage;
-  core::OMRuntimeStorage &backward_storage;
-  core::OMRuntimeContext &backward_context;
-  bool is_last_layer;
-  bool is_trainable_layer;
-  uint16_t kernel_index;
-};
+onert_micro::OMStatus createResultFile(const char *save_path);
 
-} // namespace train
-} // namespace onert_micro
+onert_micro::OMStatus createResultData(std::vector<char> &result_buffer);
 
-#endif // ONERT_MICRO_TRAIN_BACKPROP_ARGS_H
+} // namespace training_configure_tool
+
+#endif // ONERT_MICRO_TRAINING_CONFIG_TOOL_SPARSE_BACKPROPAGATION_HANDLER

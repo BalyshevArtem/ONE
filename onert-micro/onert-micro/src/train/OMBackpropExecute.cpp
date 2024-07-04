@@ -38,11 +38,21 @@ OMStatus OMBackpropExecute::runBackward(const OMConfig &config, OMBackpropExecut
   const auto *op_codes = context.getCircleOpcodes();
 
   uint32_t num_train_layers = config.training_context.num_of_train_layers == 0
-                                ? num_operators
-                                : config.training_context.num_of_train_layers;
-  uint32_t last_node_pos = std::min(num_operators, num_train_layers);
+                              ? num_operators
+                              : std::min(num_operators, config.training_context.num_of_train_layers);
+  std::unordered_set<uint16_t> trainable_ops_indexes = context.getTrainableOpsIndexes();
 
-  for (uint32_t i = 0; i < last_node_pos; ++i)
+  // If context has config file defined trainable operations
+  // than ignore  configs.training_context.num_of_train_layers value
+  // and use max value from trainable_ops_indexes to define last train op
+  uint16_t last_train_op_indx = num_operators - num_train_layers;
+  if (!trainable_ops_indexes.empty())
+  {
+    last_train_op_indx = *std::min_element(trainable_ops_indexes.begin(), trainable_ops_indexes.end());
+    num_train_layers = (num_operators - last_train_op_indx);
+  }
+
+  for (int32_t i = 0; i < num_train_layers; ++i)
   {
     uint32_t cur_op_index = num_operators - i - 1;
     auto *cur_op = operators->operator[](cur_op_index);
@@ -68,8 +78,21 @@ OMStatus OMBackpropExecute::runBackward(const OMConfig &config, OMBackpropExecut
 
     args.kernel_index = cur_op_index;
 
-    if (i == last_node_pos - 1)
+    if (i == num_train_layers - 1)
+    {
       args.is_last_layer = true;
+    } else
+    {
+      args.is_last_layer = false;
+    }
+
+    if (trainable_ops_indexes.find(cur_op_index) != trainable_ops_indexes.end())
+    {
+      args.is_trainable_layer = true;
+    } else
+    {
+      args.is_trainable_layer = false;
+    }
 
     // Calculate gradients
     KernelTrainFunc *train_func = nullptr;
