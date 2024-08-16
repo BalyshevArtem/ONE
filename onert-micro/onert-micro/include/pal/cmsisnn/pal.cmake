@@ -1,5 +1,5 @@
 macro(initialize_pal)
-    nnas_find_package(CMSIS-NN EXACT 4.1.0 REQUIRED)
+    nnas_find_package(CMSIS-NN EXACT 6.0.0 REQUIRED)
 
     if (NOT CMSIS_NNSource_FOUND)
         message(STATUS "Skipping luci-interpreter: CMSIS-NN not found")

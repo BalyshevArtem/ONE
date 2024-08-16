@@ -110,7 +110,7 @@ endif ()
 # Choosing Kernel: reference mcu, optimized cmsisnn
 if (NOT KERNELS)
     message(STATUS "KERNEL variable is not defined, default reference mcu kernels will be used")
-    set(OM_PAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/onert-micro/include/pal/mcu")
+    set(OM_PAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/onert-micro/include/pal/cmsisnn")
 elseif ("${KERNELS}" STREQUAL "mcu")
     message(STATUS "ONERT_MICRO will use reference mcu kernels")
     set(OM_PAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/onert-micro/include/pal/mcu")
